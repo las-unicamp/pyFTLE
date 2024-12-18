@@ -1,0 +1,61 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceRoot}"
+            },
+            "args": [
+                // input parameters
+                "--input_filename=shadowgraph.mat",
+            ],
+            "purpose": [
+                "debug-in-terminal"
+            ]
+        },
+        {
+            "name": "Debug Pytest: Current Test File",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}" // Adjust if your PYTHONPATH is different
+            },
+            "args": [
+                "-s",
+                "${file}" // Runs the currently open test file
+            ],
+            "purpose": [
+                "debug-in-terminal"
+            ]
+        },
+        {
+            "name": "Debug Pytest: Specific Test",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}" // Adjust if your PYTHONPATH is different
+            },
+            "args": [
+                "tests/test_integration.py::test_tgv_laplacian_integration_finite_diff" // Replace with specific test path
+            ],
+            "purpose": [
+                "debug-in-terminal"
+            ]
+        }
+    ]
+}

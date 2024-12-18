@@ -1,0 +1,70 @@
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+
+target-version = "py312"
+line-length = 88
+indent-width = 4
+
+
+[lint]
+select = ["E", "F", "W", "Q", "I", "N", "ARG"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+[lint.pylint]
+# Maximum number of arguments for function / method
+max-args = 5
+# Maximum number of boolean expressions in a if statement
+max-bool-expr = 10
+# Maximum number of branch for function / method body
+max-branches = 100
+# Maximum number of locals for function / method body
+max-locals = 15
+# Maximum number of nested blocks for function / method body
+max-nested-blocks = 5
+# Maximum number of positional arguments allowed for a function or method definition
+max-positional-args = 10
+# Maximum number of public methods for a class (see R0904).
+max-public-methods = 30
+# Maximum number of return statements allowed for a function or method body
+max-returns = 10
+# Maximum number of statements in function / method body
+max-statements = 1000
