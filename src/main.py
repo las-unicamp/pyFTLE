@@ -4,6 +4,7 @@ from typing import List
 
 from tqdm import tqdm
 
+from src.file_readers import read_seed_particles_coordinates
 from src.file_utils import get_grid_files_list, get_velocity_files_list
 from src.hyperparameters import args
 
@@ -19,6 +20,8 @@ def main():
     grid_files = get_grid_files_list(args.list_grid_files)
 
     validate_input_lists(snapshot_files, grid_files)
+
+    particles = read_seed_particles_coordinates(args.particles_filename)
 
     progress_bar = tqdm(
         total=len(snapshot_files),

@@ -69,9 +69,11 @@ parser.add_argument(
 parser.add_argument(
     "--particles_filename",
     type=str,
-    default="particles.csv",
-    help="Name of file containing the particles coordinates in csv format. The "
-    "column headers must be `coordinate_x` and `coordinate_y`.",
+    default="particles.mat",
+    help="Name of file containing the particles coordinates in MATLAB format. The "
+    "headers must be `left`, `right`, `top` and `bottom`. Each value must be an "
+    "array of shape [n_particles, 2], representing the coordinates x and y of "
+    "the particles.",
 )
 parser.add_argument(
     "--snapshot_timestep",

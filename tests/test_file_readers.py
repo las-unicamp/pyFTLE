@@ -2,7 +2,12 @@ import numpy as np
 import pytest
 from scipy.io import loadmat, savemat
 
-from src.file_readers import read_coordinates, read_velocity_data
+from src.dtos import NeighboringParticles
+from src.file_readers import (
+    read_coordinates,
+    read_seed_particles_coordinates,
+    read_velocity_data,
+)
 
 
 # Helper to create a mock MATLAB file for testing
@@ -80,3 +85,50 @@ def test_coordinates_caching(mock_coordinate_file, mocker):
     read_coordinates(mock_coordinate_file)
     read_coordinates(mock_coordinate_file)
     mocked_loadmat.assert_called_once_with(mock_coordinate_file)
+
+
+@pytest.fixture
+def mock_seed_particle_file(tmp_path):
+    file_path = tmp_path / "seed_particles.mat"
+    data = {
+        "top": np.array([[1.0, 2.0], [3.0, 4.0]]),
+        "bottom": np.array([[5.0, 6.0], [7.0, 8.0]]),
+        "left": np.array([[9.0, 10.0], [11.0, 12.0]]),
+        "right": np.array([[13.0, 14.0], [15.0, 16.0]]),
+    }
+    create_mock_matlab_file(file_path, data)
+    return file_path
+
+
+def test_read_seed_particles_coordinates(mock_seed_particle_file):
+    expected: NeighboringParticles = {
+        "top": np.array([[1.0, 2.0], [3.0, 4.0]]),
+        "bottom": np.array([[5.0, 6.0], [7.0, 8.0]]),
+        "left": np.array([[9.0, 10.0], [11.0, 12.0]]),
+        "right": np.array([[13.0, 14.0], [15.0, 16.0]]),
+    }
+    result = read_seed_particles_coordinates(mock_seed_particle_file)
+
+    # Check that all keys exist and values match the expected arrays
+    assert set(result.keys()) == set(expected.keys())
+    for key in expected.keys():
+        np.testing.assert_array_equal(result[key], expected[key])
+
+
+def test_read_seed_particles_coordinates_caching(mock_seed_particle_file, mocker):
+    # Patch loadmat in the src.file_readers namespace
+    mocked_loadmat = mocker.patch("src.file_readers.loadmat", wraps=loadmat)
+
+    # Call the function twice with the same file
+    result1 = read_seed_particles_coordinates(mock_seed_particle_file)
+    result2 = read_seed_particles_coordinates(mock_seed_particle_file)
+
+    # Verify the results are the same
+    np.testing.assert_array_equal(result1, result2)
+
+    # Ensure loadmat is only called once (subsequent calls used the cache)
+    read_seed_particles_coordinates(mock_seed_particle_file)
+    read_seed_particles_coordinates(mock_seed_particle_file)
+    read_seed_particles_coordinates(mock_seed_particle_file)
+    read_seed_particles_coordinates(mock_seed_particle_file)
+    mocked_loadmat.assert_called_once_with(mock_seed_particle_file)
