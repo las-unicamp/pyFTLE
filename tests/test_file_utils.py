@@ -1,51 +1,99 @@
+import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import mock_open, patch
 
-import pytest
+import pandas as pd
 
-from src.file_utils import find_files_with_pattern, write_list_to_txt
-
-
-# Test for find_files_with_pattern
-@pytest.fixture
-def mock_rglob():
-    with patch("pathlib.Path.rglob") as mock:
-        yield mock
+from src.file_utils import (
+    find_files_with_pattern,
+    get_grid_files_list,
+    get_velocity_files_list,
+    write_list_to_txt,
+)
 
 
-def test_find_files_with_pattern(mock_rglob):
-    # Arrange
-    mock_rglob.return_value = [
-        Path("/mock/path/file1.txt"),
-        Path("/mock/path/file2.txt"),
-    ]
-    root_dir = "/mock/path"
-    pattern = ".txt"
+class TestFileUtils(unittest.TestCase):
+    @patch("pathlib.Path.rglob")
+    def test_find_files_with_pattern(self, mock_rglob):
+        # Setup mock
+        mock_rglob.return_value = [
+            Path("root_dir/file1.txt"),
+            Path("root_dir/file2.txt"),
+        ]
 
-    # Act
-    result = find_files_with_pattern(root_dir, pattern)
+        # Test
+        result = find_files_with_pattern("root_dir", "file")
 
-    # Assert
-    assert result == ["/mock/path/file1.txt", "/mock/path/file2.txt"]
-    mock_rglob.assert_called_once_with("*" + pattern + "*")
+        # Verify
+        self.assertEqual(result, ["root_dir/file1.txt", "root_dir/file2.txt"])
+        mock_rglob.assert_called_with("*file*")
+
+    @patch("builtins.open", new_callable=mock_open)
+    def test_write_list_to_txt(self, mock_file):
+        # Test data
+        file_list = ["file1.txt", "file2.txt"]
+        output_file = "output.txt"
+
+        # Call the function
+        write_list_to_txt(file_list, output_file)
+
+        # Verify file write
+        mock_file.assert_called_once_with(output_file, "w")
+        mock_file().write.assert_any_call("file1.txt\n")
+        mock_file().write.assert_any_call("file2.txt\n")
+
+    @patch("os.path.exists")
+    @patch("pandas.read_csv")
+    def test_get_velocity_files_list_exists(self, mock_read_csv, mock_exists):
+        # Mock
+        mock_exists.return_value = True
+        mock_read_csv.return_value = pd.DataFrame(
+            {0: ["file1.txt", "file2.txt", "file3.txt"]}
+        )  # Mocking data without headers
+
+        # Test
+        result = get_velocity_files_list("velocity_file.csv")
+
+        # Verify
+        self.assertEqual(result, ["file1.txt", "file2.txt", "file3.txt"])  # Flat list
+        mock_exists.assert_called_once_with("velocity_file.csv")
+        mock_read_csv.assert_called_once_with("velocity_file.csv", header=None)
+
+    @patch("os.path.exists")
+    def test_get_velocity_files_list_not_exists(self, mock_exists):
+        # Mock
+        mock_exists.return_value = False
+
+        # Test and verify exception
+        with self.assertRaises(FileNotFoundError):
+            get_velocity_files_list("non_existent_file.csv")
+
+    @patch("os.path.exists")
+    @patch("pandas.read_csv")
+    def test_get_grid_files_list_exists(self, mock_read_csv, mock_exists):
+        # Mock
+        mock_exists.return_value = True
+        mock_read_csv.return_value = pd.DataFrame(
+            {0: ["file4.txt", "file5.txt", "file6.txt"]}
+        )  # Mocking data without headers
+
+        # Test
+        result = get_grid_files_list("grid_file.csv")
+
+        # Verify
+        self.assertEqual(result, ["file4.txt", "file5.txt", "file6.txt"])  # Flat list
+        mock_exists.assert_called_once_with("grid_file.csv")
+        mock_read_csv.assert_called_once_with("grid_file.csv", header=None)
+
+    @patch("os.path.exists")
+    def test_get_grid_files_list_not_exists(self, mock_exists):
+        # Mock
+        mock_exists.return_value = False
+
+        # Test and verify exception
+        with self.assertRaises(FileNotFoundError):
+            get_grid_files_list("non_existent_file.csv")
 
 
-# Test for write_list_to_txt
-@pytest.fixture
-def mock_open():
-    with patch("builtins.open", new_callable=MagicMock) as mock:
-        yield mock
-
-
-def test_write_list_to_txt(mock_open):
-    # Arrange
-    file_list = ["/mock/path/file1.txt", "/mock/path/file2.txt"]
-    output_file = "/mock/output.txt"
-
-    # Act
-    write_list_to_txt(file_list, output_file)
-
-    # Assert
-    mock_open.assert_called_once_with(output_file, "w")
-    mock_open.return_value.write.assert_any_call("/mock/path/file1.txt\n")
-    mock_open.return_value.write.assert_any_call("/mock/path/file2.txt\n")
+if __name__ == "__main__":
+    unittest.main()
