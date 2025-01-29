@@ -19,12 +19,11 @@
                 "--experiment_name=exemple",
                 //
                 // # input parameters
-                "--input_directory=inputs/",
-                "--snapshot_file_format=.mat",
+                "--list_velocity_files=inputs_velocity.txt",
+                "--list_grid_files=inputs_grid.txt",
+                "--particles_filename=particles.mat",
                 "--snapshot_timestep=0.01",
-                "--particles_filename=particles.csv",
                 "--flow_map_period=1.0",
-                "--grid_filename=grid",
             ],
             "purpose": [
                 "debug-in-terminal"

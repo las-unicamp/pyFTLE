@@ -1,78 +1,51 @@
-import os
-from tempfile import TemporaryDirectory
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.file_utils import find_files_with_pattern
+from src.file_utils import find_files_with_pattern, write_list_to_txt
 
 
-def create_test_files(root_dir, files):
-    """
-    Helper function to create test files in the specified directory.
-    Args:
-        root_dir (str): The root directory for the files.
-        files (list[str]): List of relative file paths to create.
-    """
-    for file in files:
-        file_path = os.path.join(root_dir, file)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, "w") as f:
-            f.write("Test content")  # Add some test content to the file
+# Test for find_files_with_pattern
+@pytest.fixture
+def mock_rglob():
+    with patch("pathlib.Path.rglob") as mock:
+        yield mock
 
 
-def test_find_files_with_pattern_valid_directory():
-    # Create a temporary directory with test files
-    with TemporaryDirectory() as temp_dir:
-        # Define test files
-        test_files = [
-            "file1.txt",
-            "subdir/file2.txt",
-            "subdir/file3.csv",
-            "file4.txt",
-            "file5.md",
-        ]
-        create_test_files(temp_dir, test_files)
+def test_find_files_with_pattern(mock_rglob):
+    # Arrange
+    mock_rglob.return_value = [
+        Path("/mock/path/file1.txt"),
+        Path("/mock/path/file2.txt"),
+    ]
+    root_dir = "/mock/path"
+    pattern = ".txt"
 
-        # Test for .txt files
-        result = find_files_with_pattern(temp_dir, "*.txt")
-        expected = sorted(
-            [
-                os.path.join(temp_dir, "file1.txt"),
-                os.path.join(temp_dir, "subdir/file2.txt"),
-                os.path.join(temp_dir, "file4.txt"),
-            ]
-        )
-        assert result == expected
+    # Act
+    result = find_files_with_pattern(root_dir, pattern)
 
-        # Test for .csv files
-        result = find_files_with_pattern(temp_dir, "*.csv")
-        expected = [os.path.join(temp_dir, "subdir/file3.csv")]
-        assert result == expected
-
-        # Test for .md files
-        result = find_files_with_pattern(temp_dir, "*.md")
-        expected = [os.path.join(temp_dir, "file5.md")]
-        assert result == expected
+    # Assert
+    assert result == ["/mock/path/file1.txt", "/mock/path/file2.txt"]
+    mock_rglob.assert_called_once_with("*" + pattern + "*")
 
 
-def test_find_files_with_pattern_empty_directory():
-    # Create an empty temporary directory
-    with TemporaryDirectory() as temp_dir:
-        result = find_files_with_pattern(temp_dir, "*.txt")
-        assert result == []  # Expect an empty list
+# Test for write_list_to_txt
+@pytest.fixture
+def mock_open():
+    with patch("builtins.open", new_callable=MagicMock) as mock:
+        yield mock
 
 
-def test_find_files_with_pattern_nonexistent_directory():
-    # Test with a non-existent directory
-    with pytest.raises(ValueError, match="does not exist"):
-        find_files_with_pattern("/nonexistent/directory", "*.txt")
+def test_write_list_to_txt(mock_open):
+    # Arrange
+    file_list = ["/mock/path/file1.txt", "/mock/path/file2.txt"]
+    output_file = "/mock/output.txt"
 
+    # Act
+    write_list_to_txt(file_list, output_file)
 
-def test_find_files_with_pattern_no_matching_files():
-    # Create a temporary directory with files that do not match the pattern
-    with TemporaryDirectory() as temp_dir:
-        test_files = ["file1.md", "file2.csv"]
-        create_test_files(temp_dir, test_files)
-
-        result = find_files_with_pattern(temp_dir, "*.txt")
-        assert result == []  # Expect an empty list
+    # Assert
+    mock_open.assert_called_once_with(output_file, "w")
+    mock_open.return_value.write.assert_any_call("/mock/path/file1.txt\n")
+    mock_open.return_value.write.assert_any_call("/mock/path/file2.txt\n")

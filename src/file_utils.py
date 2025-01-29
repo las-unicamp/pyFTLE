@@ -1,5 +1,4 @@
-import glob
-import os
+from pathlib import Path
 
 
 def find_files_with_pattern(root_dir: str, pattern: str) -> list[str]:
@@ -9,18 +8,27 @@ def find_files_with_pattern(root_dir: str, pattern: str) -> list[str]:
 
     Args:
         root_dir (str): The root directory to start the search.
-        pattern (str): The file extension or pattern to match (e.g., "*.txt", "*.csv").
+        pattern (str): The pattern to match in filenames.
 
     Returns:
         list[str]: A sorted list of full file paths that match the pattern.
     """
-    # Ensure the root directory exists
-    if not os.path.exists(root_dir):
-        raise ValueError(f"The directory {root_dir} does not exist.")
+    root_path = Path(root_dir)
 
-    # Use glob to recursively find files matching the pattern
-    search_pattern = os.path.join(root_dir, "**", pattern)
-    matching_files = glob.glob(search_pattern, recursive=True)
+    # Search recursively for files containing the pattern
+    matching_files = sorted(str(file) for file in root_path.rglob(f"*{pattern}*"))
 
-    # Sort the list of files
-    return sorted(matching_files)
+    return matching_files
+
+
+def write_list_to_txt(file_list: list[str], output_file: str):
+    """
+    Writes a list of file paths to a text file.
+
+    Args:
+        file_list (list[str]): List of file paths.
+        output_file (str): Output text file path.
+    """
+    with open(output_file, "w") as f:
+        for file_path in file_list:
+            f.write(file_path + "\n")
