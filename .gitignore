@@ -9,3 +9,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Code-generated files
+*.mat
+*.txt
