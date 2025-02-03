@@ -6,8 +6,7 @@ import pandas as pd
 
 from src.file_utils import (
     find_files_with_pattern,
-    get_grid_files_list,
-    get_velocity_files_list,
+    get_files_list,
     write_list_to_txt,
 )
 
@@ -44,7 +43,7 @@ class TestFileUtils(unittest.TestCase):
 
     @patch("os.path.exists")
     @patch("pandas.read_csv")
-    def test_get_velocity_files_list_exists(self, mock_read_csv, mock_exists):
+    def test_get_files_list_exists(self, mock_read_csv, mock_exists):
         # Mock
         mock_exists.return_value = True
         mock_read_csv.return_value = pd.DataFrame(
@@ -52,7 +51,7 @@ class TestFileUtils(unittest.TestCase):
         )  # Mocking data without headers
 
         # Test
-        result = get_velocity_files_list("velocity_file.csv")
+        result = get_files_list("velocity_file.csv")
 
         # Verify
         self.assertEqual(result, ["file1.txt", "file2.txt", "file3.txt"])  # Flat list
@@ -60,39 +59,13 @@ class TestFileUtils(unittest.TestCase):
         mock_read_csv.assert_called_once_with("velocity_file.csv", header=None)
 
     @patch("os.path.exists")
-    def test_get_velocity_files_list_not_exists(self, mock_exists):
+    def test_get_files_list_not_exists(self, mock_exists):
         # Mock
         mock_exists.return_value = False
 
         # Test and verify exception
         with self.assertRaises(FileNotFoundError):
-            get_velocity_files_list("non_existent_file.csv")
-
-    @patch("os.path.exists")
-    @patch("pandas.read_csv")
-    def test_get_grid_files_list_exists(self, mock_read_csv, mock_exists):
-        # Mock
-        mock_exists.return_value = True
-        mock_read_csv.return_value = pd.DataFrame(
-            {0: ["file4.txt", "file5.txt", "file6.txt"]}
-        )  # Mocking data without headers
-
-        # Test
-        result = get_grid_files_list("grid_file.csv")
-
-        # Verify
-        self.assertEqual(result, ["file4.txt", "file5.txt", "file6.txt"])  # Flat list
-        mock_exists.assert_called_once_with("grid_file.csv")
-        mock_read_csv.assert_called_once_with("grid_file.csv", header=None)
-
-    @patch("os.path.exists")
-    def test_get_grid_files_list_not_exists(self, mock_exists):
-        # Mock
-        mock_exists.return_value = False
-
-        # Test and verify exception
-        with self.assertRaises(FileNotFoundError):
-            get_grid_files_list("non_existent_file.csv")
+            get_files_list("non_existent_file.csv")
 
 
 if __name__ == "__main__":

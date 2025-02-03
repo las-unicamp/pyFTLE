@@ -37,35 +37,19 @@ def write_list_to_txt(file_list: list[str], output_file: str):
             f.write(file_path + "\n")
 
 
-def get_velocity_files_list(file_path: str) -> pd.DataFrame:
+def get_files_list(file_path: str) -> pd.DataFrame:
     """
-    Reads a velocity file and returns its content as a pandas DataFrame.
+    Reads a file containing a list of paths to velocity, grid or particle files,
+    then returns its content as a Pandas DataFrame.
 
     Args:
-        file_path (str): Path to the velocity file.
+        file_path (str): Path to the file that holds the list.
 
     Returns:
-        pd.DataFrame: DataFrame containing the velocity data.
+        pd.DataFrame: DataFrame containing list of files.
     """
     if os.path.exists(file_path):
-        velocity_data = pd.read_csv(file_path, header=None)
-        return velocity_data.iloc[:, 0].tolist()
+        data = pd.read_csv(file_path, header=None)
+        return data.iloc[:, 0].tolist()
     else:
-        raise FileNotFoundError(f"Velocity file not found at {file_path}")
-
-
-def get_grid_files_list(file_path: str) -> pd.DataFrame:
-    """
-    Reads a grid file and returns its content as a pandas DataFrame.
-
-    Args:
-        file_path (str): Path to the grid file.
-
-    Returns:
-        pd.DataFrame: DataFrame containing the grid data.
-    """
-    if os.path.exists(file_path):
-        grid_data = pd.read_csv(file_path, header=None)
-        return grid_data.iloc[:, 0].tolist()
-    else:
-        raise FileNotFoundError(f"Grid file not found at {file_path}")
+        raise FileNotFoundError(f"File not found at {file_path}")
