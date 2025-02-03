@@ -18,10 +18,6 @@ def velocity_interpolation(
     velocity_data = read_velocity_data(velocity_file_name)
     grid_data = read_coordinates(grid_file_name)
 
-    print("grid_data shape:", grid_data.shape)
-    print("velocity_data shape:", velocity_data.shape)
-    print("new_points shape:", new_points.shape)
-
     # Perform interpolation
     u_interp = griddata(
         (grid_data[:, 0], grid_data[:, 1]),
