@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import numpy as np
 import pytest
 from scipy.interpolate import griddata
@@ -25,26 +23,13 @@ def mock_new_points():
     return np.array([[0.25, 0.25], [0.5, 0.5], [0.0, 0.5]], dtype=np.float32)
 
 
-@patch("src.interpolate.read_velocity_data")
-@patch("src.interpolate.read_coordinates")
-def test_velocity_interpolation(
-    mock_read_coordinates,
-    mock_read_velocity_data,
-    mock_velocity_data,
-    mock_coordinates,
-    mock_new_points,
-):
+def test_velocity_interpolation(mock_velocity_data, mock_coordinates, mock_new_points):
     """
     Test velocity_interpolation with mock data.
     """
-
-    # Mock return values of the file reading functions
-    mock_read_velocity_data.return_value = mock_velocity_data
-    mock_read_coordinates.return_value = mock_coordinates
-
     # Call function
     result = velocity_interpolation(
-        "mock_velocity.mat", "mock_grid.mat", mock_new_points
+        mock_velocity_data, mock_coordinates, mock_new_points
     )
 
     # Manually interpolate expected values using griddata
@@ -72,20 +57,13 @@ def test_velocity_interpolation(
     # Assert values
     np.testing.assert_allclose(result, expected, atol=1e-6)
 
-    # Ensure file reading functions were called once
-    mock_read_velocity_data.assert_called_once_with("mock_velocity.mat")
-    mock_read_coordinates.assert_called_once_with("mock_grid.mat")
-
 
 def test_velocity_interpolation_empty_grid(mock_new_points):
     """
-    Test velocity_interpolation with an empty grid (should return zeros).
+    Test velocity_interpolation with an empty grid (should return an error).
     """
-    with (
-        patch("src.interpolate.read_velocity_data", return_value=np.empty((0, 2))),
-        patch("src.interpolate.read_coordinates", return_value=np.empty((0, 2))),
-    ):
-        with pytest.raises(ValueError, match="No points given"):
-            velocity_interpolation(
-                "empty_velocity.mat", "empty_grid.mat", mock_new_points
-            )
+    empty_velocities = np.empty((0, 2))
+    empty_coordinates = np.empty((0, 2))
+
+    with pytest.raises(ValueError, match="No points given"):
+        velocity_interpolation(empty_velocities, empty_coordinates, mock_new_points)
