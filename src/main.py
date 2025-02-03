@@ -18,6 +18,7 @@ def main():
     # Load the lists for the velocity and grid files
     snapshot_files = get_files_list(args.list_velocity_files)
     grid_files = get_files_list(args.list_grid_files)
+    particle_files = get_files_list(args.list_particle_files)
 
     validate_input_lists(snapshot_files, grid_files)
 

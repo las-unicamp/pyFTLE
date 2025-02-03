@@ -19,7 +19,7 @@ class MyProgramArgs:
     # input parameters
     list_velocity_files: str
     list_grid_files: str
-    particles_filename: str
+    list_particle_files: str
     snapshot_timestep: float
     flow_map_period: float
 
@@ -67,13 +67,14 @@ parser.add_argument(
     "reader for the desired grid file format.",
 )
 parser.add_argument(
-    "--particles_filename",
+    "--list_particle_files",
     type=str,
-    default="particles.mat",
-    help="Name of file containing the particles coordinates in MATLAB format. The "
-    "headers must be `left`, `right`, `top` and `bottom`. Each value must be an "
-    "array of shape [n_particles, 2], representing the coordinates x and y of "
-    "the particles.",
+    required=True,
+    help="Text file containing a list (columnwise) of paths to particle files. "
+    "Each file must contain headers `left`, `right`, `top` and `bottom` to "
+    "help identify the group of particles to evaluate the Cauchy-Green deformation "
+    "tensor. The user must guarantee that there exist a proper implementation of the "
+    "reader for the desired grid file format.",
 )
 parser.add_argument(
     "--snapshot_timestep",
