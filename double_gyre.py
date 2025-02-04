@@ -109,7 +109,7 @@ if __name__ == "__main__":
         "left": coordinates_left,
         "right": coordinates_right,
     }
-    filename = os.path.join("./", "particles.mat")
+    filename = os.path.join(output_dir, "particles.mat")
     savemat(filename, particles)
     print(f"Saved {filename}")
 
