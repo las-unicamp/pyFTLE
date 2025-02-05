@@ -3,6 +3,7 @@ from typing import List
 
 from tqdm import tqdm
 
+from src.cauchy_green import compute_flow_map_jacobian
 from src.file_readers import (
     read_coordinates,
     read_seed_particles_coordinates,
@@ -80,6 +81,8 @@ def main():
         )
 
         progress_bar.update(1)
+
+    jacobian = compute_flow_map_jacobian(current_position)
 
     progress_bar.close()
 
