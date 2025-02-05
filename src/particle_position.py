@@ -45,4 +45,13 @@ class PositionDict:
         return cls(reconstructed)
 
     def __repr__(self):
-        return f"PositionDict({self.data})"
+        """
+        String representation of the PositionDict object.
+        Uses numpy array formatting to handle large arrays.
+        """
+        formatted_items = [
+            f"    '{key}': "
+            + np.array2string(value, threshold=5).replace("\n", "\n           ")
+            for key, value in self.data.items()
+        ]
+        return "PositionDict({\n" + ",\n".join(formatted_items) + "\n})"
