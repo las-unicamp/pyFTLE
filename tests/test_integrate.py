@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
+from src.dtos import NeighboringParticles
 from src.integrate import (
     AdamsBashforth2Integrator,
     EulerIntegrator,
@@ -21,12 +22,26 @@ def mock_interpolator():
 
 @pytest.fixture
 def initial_conditions():
-    return PositionDict({"x": np.array([1.0, 2.0]), "y": np.array([3.0, 4.0])})
+    return PositionDict(
+        NeighboringParticles(
+            left=np.array([[1.0, 2.0], [3.0, 4.0]]),
+            right=np.array([[5.0, 6.0], [7.0, 8.0]]),
+            top=np.array([[9.0, 10.0], [11.0, 12.0]]),
+            bottom=np.array([[13.0, 14.0], [15.0, 16.0]]),
+        )
+    )
 
 
 @pytest.fixture
 def previous_conditions():
-    return PositionDict({"x": np.array([0.9, 1.9]), "y": np.array([2.9, 3.9])})
+    return PositionDict(
+        NeighboringParticles(
+            left=np.array([[0.9, 1.8], [3.0, 3.8]]),
+            right=np.array([[4.8, 5.8], [6.9, 7.8]]),
+            top=np.array([[8.8, 9.9], [10.8, 11.9]]),
+            bottom=np.array([[12.8, 13.9], [14.8, 15.9]]),
+        )
+    )
 
 
 def test_euler_integrator(mock_interpolator, initial_conditions):
@@ -36,12 +51,20 @@ def test_euler_integrator(mock_interpolator, initial_conditions):
 
     assert isinstance(result, PositionDict)
     assert np.allclose(
-        result.data["x"],
-        initial_conditions.data["x"] + h * initial_conditions.data["x"] * 0.1,
+        result.data.top,
+        initial_conditions.data.top + h * initial_conditions.data.top * 0.1,
     )
     assert np.allclose(
-        result.data["y"],
-        initial_conditions.data["y"] + h * initial_conditions.data["y"] * 0.1,
+        result.data.bottom,
+        initial_conditions.data.bottom + h * initial_conditions.data.bottom * 0.1,
+    )
+    assert np.allclose(
+        result.data.left,
+        initial_conditions.data.left + h * initial_conditions.data.left * 0.1,
+    )
+    assert np.allclose(
+        result.data.right,
+        initial_conditions.data.right + h * initial_conditions.data.right * 0.1,
     )
 
 
@@ -51,8 +74,10 @@ def test_runge_kutta4_integrator(mock_interpolator, initial_conditions):
     result = integrator.integrate(h, initial_conditions, mock_interpolator)
 
     assert isinstance(result, PositionDict)
-    assert np.all(np.isfinite(result.data["x"]))
-    assert np.all(np.isfinite(result.data["y"]))
+    assert np.all(np.isfinite(result.data.top))
+    assert np.all(np.isfinite(result.data.bottom))
+    assert np.all(np.isfinite(result.data.left))
+    assert np.all(np.isfinite(result.data.right))
 
 
 def test_adams_bashforth2_integrator(
@@ -65,5 +90,7 @@ def test_adams_bashforth2_integrator(
     )
 
     assert isinstance(result, PositionDict)
-    assert np.all(np.isfinite(result.data["x"]))
-    assert np.all(np.isfinite(result.data["y"]))
+    assert np.all(np.isfinite(result.data.top))
+    assert np.all(np.isfinite(result.data.bottom))
+    assert np.all(np.isfinite(result.data.left))
+    assert np.all(np.isfinite(result.data.right))

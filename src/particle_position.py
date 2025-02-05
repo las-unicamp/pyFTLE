@@ -4,7 +4,7 @@ from src.dtos import NeighboringParticles
 
 
 class PositionDict:
-    """Operator overloading for NeighboringParticles TypedDict"""
+    """Operator overloading for NeighboringParticles dataclass"""
 
     def __init__(self, data: NeighboringParticles):
         self.data: NeighboringParticles = data
@@ -13,35 +13,55 @@ class PositionDict:
         """Element-wise addition with another PositionDict or a scalar/array."""
         if isinstance(other, PositionDict):
             return PositionDict(
-                {key: self.data[key] + other.data[key] for key in self.data}
-            )  # type: ignore
+                NeighboringParticles(
+                    left=self.data.left + other.data.left,
+                    right=self.data.right + other.data.right,
+                    top=self.data.top + other.data.top,
+                    bottom=self.data.bottom + other.data.bottom,
+                )
+            )
         elif isinstance(other, (int, float, np.ndarray)):
             return PositionDict(
-                {key: value + other for key, value in self.data.items()}
-            )  # type: ignore
+                NeighboringParticles(
+                    left=self.data.left + other,
+                    right=self.data.right + other,
+                    top=self.data.top + other,
+                    bottom=self.data.bottom + other,
+                )
+            )
         raise TypeError(f"Unsupported type {type(other)} for addition.")
 
     def __mul__(self, other):
         """Element-wise multiplication with a scalar/array."""
         if isinstance(other, (int, float, np.ndarray)):
             return PositionDict(
-                {key: value * other for key, value in self.data.items()}
-            )  # type: ignore
+                NeighboringParticles(
+                    left=self.data.left * other,
+                    right=self.data.right * other,
+                    top=self.data.top * other,
+                    bottom=self.data.bottom * other,
+                )
+            )
         raise TypeError(f"Unsupported type {type(other)} for multiplication.")
 
     def to_array(self) -> np.ndarray:
-        """Flatten and concatenate dictionary values into a single NumPy array."""
-        return np.concatenate([self.data[key] for key in self.data])
+        """Flatten and concatenate dataclass values into a single NumPy array."""
+        return np.concatenate(
+            [self.data.left, self.data.right, self.data.top, self.data.bottom]
+        )
 
     @classmethod
     def from_array(cls, array: np.ndarray, template: NeighboringParticles):
         """Reconstruct PositionDict from a NumPy array using a template."""
-        reconstructed: NeighboringParticles = {}
-        start = 0
-        for key, value in template.items():
-            size = value.shape[0]  # Maintain shape (Nx2)
-            reconstructed[key] = array[start : start + size].reshape(value.shape)
-            start += size
+        size = template.top.shape[0]
+        left = array[:size].reshape(template.left.shape)
+        right = array[size : size * 2].reshape(template.right.shape)
+        top = array[size * 2 : size * 3].reshape(template.top.shape)
+        bottom = array[size * 3 :].reshape(template.bottom.shape)
+
+        reconstructed = NeighboringParticles(
+            left=left, right=right, top=top, bottom=bottom
+        )
         return cls(reconstructed)
 
     def __repr__(self):
@@ -51,7 +71,13 @@ class PositionDict:
         """
         formatted_items = [
             f"    '{key}': "
-            + np.array2string(value, threshold=5).replace("\n", "\n           ")
-            for key, value in self.data.items()
+            + np.array2string(getattr(self.data, key), threshold=5).replace(
+                "\n", "\n           "
+            )
+            for key in ["left", "right", "top", "bottom"]
         ]
         return "PositionDict({\n" + ",\n".join(formatted_items) + "\n})"
+
+    def __len__(self):
+        """Returns the number of particles, based on the 'top' array."""
+        return self.data.top.shape[0]

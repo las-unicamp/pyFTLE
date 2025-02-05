@@ -58,10 +58,10 @@ def read_seed_particles_coordinates(file_path: str) -> NeighboringParticles:
         are arrays of shape [n_particles, 2].
     """
     data = loadmat(file_path)
-    neighboring_particles: NeighboringParticles = {
-        "top": data["top"],
-        "bottom": data["bottom"],
-        "left": data["left"],
-        "right": data["right"],
-    }
+    neighboring_particles = NeighboringParticles(
+        top=data["top"],
+        bottom=data["bottom"],
+        left=data["left"],
+        right=data["right"],
+    )
     return neighboring_particles

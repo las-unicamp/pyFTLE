@@ -101,18 +101,22 @@ def mock_seed_particle_file(tmp_path):
 
 
 def test_read_seed_particles_coordinates(mock_seed_particle_file):
-    expected: NeighboringParticles = {
-        "top": np.array([[1.0, 2.0], [3.0, 4.0]]),
-        "bottom": np.array([[5.0, 6.0], [7.0, 8.0]]),
-        "left": np.array([[9.0, 10.0], [11.0, 12.0]]),
-        "right": np.array([[13.0, 14.0], [15.0, 16.0]]),
-    }
+    expected = NeighboringParticles(
+        top=np.array([[1.0, 2.0], [3.0, 4.0]]),
+        bottom=np.array([[5.0, 6.0], [7.0, 8.0]]),
+        left=np.array([[9.0, 10.0], [11.0, 12.0]]),
+        right=np.array([[13.0, 14.0], [15.0, 16.0]]),
+    )
     result = read_seed_particles_coordinates(mock_seed_particle_file)
 
+    # Convert the dataclass to a dictionary using vars()
+    expected_dict = vars(expected)
+    result_dict = vars(result)
+
     # Check that all keys exist and values match the expected arrays
-    assert set(result.keys()) == set(expected.keys())
-    for key in expected.keys():
-        np.testing.assert_array_equal(result[key], expected[key])
+    assert set(result_dict.keys()) == set(expected_dict.keys())
+    for key in expected_dict.keys():
+        np.testing.assert_array_equal(result_dict[key], expected_dict[key])
 
 
 def test_read_seed_particles_coordinates_caching(mock_seed_particle_file, mocker):
