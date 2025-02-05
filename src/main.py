@@ -15,9 +15,13 @@ from src.interpolate import CubicInterpolatorStrategy
 from src.particle_position import PositionDict
 
 
-def validate_input_lists(velocity_list: List[str], grid_list: List[str]) -> None:
+def validate_input_lists(
+    velocity_list: List[str], grid_list: List[str], particle_list: List[str]
+) -> None:
     if len(grid_list) > 1:  # if not a single grid file
         assert len(velocity_list) == len(grid_list)
+    if len(particle_list) > 1:  # if not a single particle file
+        assert len(velocity_list) == len(particle_list)
 
 
 def main():
@@ -26,7 +30,7 @@ def main():
     grid_files = get_files_list(args.list_grid_files)
     particle_files = get_files_list(args.list_particle_files)
 
-    validate_input_lists(snapshot_files, grid_files)
+    validate_input_lists(snapshot_files, grid_files, particle_files)
 
     num_snapshots_in_flow_map_period = (
         int(args.flow_map_period / args.snapshot_timestep) + 1
