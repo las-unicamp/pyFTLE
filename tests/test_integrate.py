@@ -36,12 +36,12 @@ def test_euler_integrator(mock_interpolator, initial_conditions):
 
     assert isinstance(result, PositionDict)
     assert np.allclose(
-        result.position["x"],
-        initial_conditions.position["x"] + h * initial_conditions.position["x"] * 0.1,
+        result.data["x"],
+        initial_conditions.data["x"] + h * initial_conditions.data["x"] * 0.1,
     )
     assert np.allclose(
-        result.position["y"],
-        initial_conditions.position["y"] + h * initial_conditions.position["y"] * 0.1,
+        result.data["y"],
+        initial_conditions.data["y"] + h * initial_conditions.data["y"] * 0.1,
     )
 
 
@@ -51,8 +51,8 @@ def test_runge_kutta4_integrator(mock_interpolator, initial_conditions):
     result = integrator.integrate(h, initial_conditions, mock_interpolator)
 
     assert isinstance(result, PositionDict)
-    assert np.all(np.isfinite(result.position["x"]))
-    assert np.all(np.isfinite(result.position["y"]))
+    assert np.all(np.isfinite(result.data["x"]))
+    assert np.all(np.isfinite(result.data["y"]))
 
 
 def test_adams_bashforth2_integrator(
@@ -65,5 +65,5 @@ def test_adams_bashforth2_integrator(
     )
 
     assert isinstance(result, PositionDict)
-    assert np.all(np.isfinite(result.position["x"]))
-    assert np.all(np.isfinite(result.position["y"]))
+    assert np.all(np.isfinite(result.data["x"]))
+    assert np.all(np.isfinite(result.data["y"]))

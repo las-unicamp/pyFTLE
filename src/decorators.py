@@ -64,6 +64,6 @@ def format_position_dict(func: F) -> F:
             )
 
         # Convert result back to PositionDict
-        return PositionDict.from_array(result_array, y_n.position)
+        return PositionDict.from_array(result_array, y_n.data)
 
     return wrapper  # type: ignore

@@ -6,18 +6,18 @@ from src.dtos import NeighboringParticles
 class PositionDict:
     """Operator overloading for NeighboringParticles TypedDict"""
 
-    def __init__(self, position: NeighboringParticles):
-        self.position: NeighboringParticles = position
+    def __init__(self, data: NeighboringParticles):
+        self.data: NeighboringParticles = data
 
     def __add__(self, other):
         """Element-wise addition with another PositionDict or a scalar/array."""
         if isinstance(other, PositionDict):
             return PositionDict(
-                {key: self.position[key] + other.position[key] for key in self.position}
+                {key: self.data[key] + other.data[key] for key in self.data}
             )  # type: ignore
         elif isinstance(other, (int, float, np.ndarray)):
             return PositionDict(
-                {key: value + other for key, value in self.position.items()}
+                {key: value + other for key, value in self.data.items()}
             )  # type: ignore
         raise TypeError(f"Unsupported type {type(other)} for addition.")
 
@@ -25,13 +25,13 @@ class PositionDict:
         """Element-wise multiplication with a scalar/array."""
         if isinstance(other, (int, float, np.ndarray)):
             return PositionDict(
-                {key: value * other for key, value in self.position.items()}
+                {key: value * other for key, value in self.data.items()}
             )  # type: ignore
         raise TypeError(f"Unsupported type {type(other)} for multiplication.")
 
     def to_array(self) -> np.ndarray:
         """Flatten and concatenate dictionary values into a single NumPy array."""
-        return np.concatenate([self.position[key] for key in self.position])
+        return np.concatenate([self.data[key] for key in self.data])
 
     @classmethod
     def from_array(cls, array: np.ndarray, template: NeighboringParticles):
@@ -45,4 +45,4 @@ class PositionDict:
         return cls(reconstructed)
 
     def __repr__(self):
-        return f"PositionDict({self.position})"
+        return f"PositionDict({self.data})"
