@@ -10,9 +10,17 @@ class NeighboringParticles:
     top: ArrayFloat32Nx2
     bottom: ArrayFloat32Nx2
 
-    delta_top_bottom: ArrayFloat32Nx2 = field(init=False)
-    delta_right_left: ArrayFloat32Nx2 = field(init=False)
+    initial_delta_top_bottom: ArrayFloat32Nx2 = field(init=False)
+    initial_delta_right_left: ArrayFloat32Nx2 = field(init=False)
 
     def __post_init__(self) -> None:
-        self.delta_top_bottom = self.top - self.bottom
-        self.delta_right_left = self.right - self.left
+        self.initial_delta_top_bottom = self.top - self.bottom
+        self.initial_delta_right_left = self.right - self.left
+
+    @property
+    def delta_top_bottom(self) -> ArrayFloat32Nx2:
+        return self.top - self.bottom
+
+    @property
+    def delta_right_left(self) -> ArrayFloat32Nx2:
+        return self.right - self.left
