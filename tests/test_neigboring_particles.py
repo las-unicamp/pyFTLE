@@ -73,3 +73,42 @@ def test_independence_of_initial_deltas(sample_particles):
     np.testing.assert_array_equal(
         sample_particles.initial_delta_right_left, original_initial_delta_right_left
     )
+
+
+def test_initial_centroid(sample_particles):
+    """Tests if the initial centroid is correctly computed."""
+    expected_centroid = (
+        sample_particles.left
+        + sample_particles.right
+        + sample_particles.top
+        + sample_particles.bottom
+    ) / 4.0
+    np.testing.assert_array_equal(sample_particles.initial_centroid, expected_centroid)
+
+
+def test_dynamic_centroid(sample_particles):
+    """Tests if centroid property dynamically reflects updated values."""
+    assert np.all(
+        sample_particles.centroid
+        == (
+            sample_particles.left
+            + sample_particles.right
+            + sample_particles.top
+            + sample_particles.bottom
+        )
+        / 4.0
+    )
+
+    # Modify attributes
+    sample_particles.left = np.array([[0.2, 0.2]], dtype=np.float32)
+    sample_particles.right = np.array([[1.2, 0.2]], dtype=np.float32)
+    sample_particles.top = np.array([[0.7, 1.3]], dtype=np.float32)
+    sample_particles.bottom = np.array([[0.7, 0.1]], dtype=np.float32)
+
+    expected_centroid = (
+        sample_particles.left
+        + sample_particles.right
+        + sample_particles.top
+        + sample_particles.bottom
+    ) / 4.0
+    np.testing.assert_array_equal(sample_particles.centroid, expected_centroid)
