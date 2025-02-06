@@ -5,6 +5,7 @@ from scipy.io import savemat
 from tqdm import tqdm
 
 from src.cauchy_green import compute_flow_map_jacobian
+from src.decorators import timeit
 from src.file_readers import (
     read_coordinates,
     read_seed_particles_coordinates,
@@ -27,6 +28,7 @@ def validate_input_lists(
         assert len(velocity_list) == len(particle_list)
 
 
+@timeit
 def main():
     # Load the lists for the velocity and grid files
     snapshot_files = get_files_list(args.list_velocity_files)
