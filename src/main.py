@@ -10,6 +10,7 @@ from src.file_readers import (
     read_velocity_data,
 )
 from src.file_utils import get_files_list
+from src.ftle import compute_ftle
 from src.hyperparameters import args
 from src.integrate import EulerIntegrator
 from src.interpolate import CubicInterpolatorStrategy
@@ -83,6 +84,8 @@ def main():
         progress_bar.update(1)
 
     jacobian = compute_flow_map_jacobian(current_position)
+    map_period = (num_snapshots_in_flow_map_period - 1) * args.snapshot_timestep
+    ftle_field = compute_ftle(jacobian, map_period)
 
     progress_bar.close()
 
