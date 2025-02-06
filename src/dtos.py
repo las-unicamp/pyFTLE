@@ -14,9 +14,9 @@ class NeighboringParticles:
     initial_delta_right_left: ArrayFloat32Nx2 = field(init=False)
 
     def __post_init__(self) -> None:
-        self.initial_delta_top_bottom = self.top - self.bottom
-        self.initial_delta_right_left = self.right - self.left
-        self.initial_centroid = (self.left + self.right + self.top + self.bottom) / 4.0
+        object.__setattr__(self, "initial_delta_top_bottom", self.delta_top_bottom)
+        object.__setattr__(self, "initial_delta_right_left", self.delta_right_left)
+        object.__setattr__(self, "initial_centroid", self.centroid)
 
     @property
     def delta_top_bottom(self) -> ArrayFloat32Nx2:
