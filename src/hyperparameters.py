@@ -22,6 +22,7 @@ class MyProgramArgs:
     list_particle_files: str
     snapshot_timestep: float
     flow_map_period: float
+    integrator: str
 
 
 parser = configargparse.ArgumentParser()
@@ -88,6 +89,13 @@ parser.add_argument(
     required=True,
     help="Approximate period of integration to evaluate the flow map. This value "
     "will be devided by the `snapshot_timestep` to get the number of snapshots.",
+)
+parser.add_argument(
+    "--integrator",
+    type=str,
+    choices=["rk4", "euler", "ab2"],
+    help="Select the time-stepping method to integrate the particles in time. "
+    "default='euler'",
 )
 
 

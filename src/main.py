@@ -12,7 +12,7 @@ from src.file_readers import (
 from src.file_utils import get_files_list
 from src.ftle import compute_ftle
 from src.hyperparameters import args
-from src.integrate import EulerIntegrator
+from src.integrate import get_integrator
 from src.interpolate import CubicInterpolatorStrategy
 from src.particle_position import PositionDict
 
@@ -65,7 +65,7 @@ def main():
     particle_file = particles_files[start_index]
 
     current_position = PositionDict(read_seed_particles_coordinates(particle_file))
-    integrator = EulerIntegrator()
+    integrator = get_integrator(args.integrator)
 
     for snapshot_file, grid_file in zip(snapshot_files_period, grid_files_period):
         tqdm.write(f"Snapshot: {snapshot_file}, Grid: {grid_file}")

@@ -8,6 +8,7 @@ from src.integrate import (
     AdamsBashforth2Integrator,
     EulerIntegrator,
     RungeKutta4Integrator,
+    get_integrator,
 )
 from src.interpolate import InterpolationStrategy
 from src.particle_position import PositionDict
@@ -94,3 +95,26 @@ def test_adams_bashforth2_integrator(
     assert np.all(np.isfinite(result.data.bottom))
     assert np.all(np.isfinite(result.data.left))
     assert np.all(np.isfinite(result.data.right))
+
+
+def test_get_integrator():
+    # Test valid integrator names
+    assert isinstance(get_integrator("ab2"), AdamsBashforth2Integrator)
+    assert isinstance(get_integrator("euler"), EulerIntegrator)
+    assert isinstance(get_integrator("rk4"), RungeKutta4Integrator)
+
+    # Test case insensitivity
+    assert isinstance(get_integrator("AB2"), AdamsBashforth2Integrator)
+    assert isinstance(get_integrator("EULER"), EulerIntegrator)
+    assert isinstance(get_integrator("rK4"), RungeKutta4Integrator)
+
+    # Test invalid input
+    with pytest.raises(ValueError, match="Invalid integrator name 'invalid'.*"):
+        get_integrator("invalid")
+
+    with pytest.raises(ValueError, match="Invalid integrator name ''.*"):
+        get_integrator("")
+
+
+if __name__ == "__main__":
+    pytest.main()

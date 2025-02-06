@@ -125,3 +125,23 @@ class RungeKutta4Integrator:
 
         # Update the solution using the weighted average of the slopes
         return y_n + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+
+
+def get_integrator(integrator_name: str) -> IntegratorStrategy:
+    """Factory to create IntegratorStrategy instances"""
+
+    integrator_name = integrator_name.lower()  # Normalize input to lowercase
+
+    integrator_map = {
+        "ab2": AdamsBashforth2Integrator,
+        "euler": EulerIntegrator,
+        "rk4": RungeKutta4Integrator,
+    }
+
+    if integrator_name not in integrator_map:
+        raise ValueError(
+            f"Invalid integrator name '{integrator_name}'. "
+            f"Choose from {list(integrator_map.keys())}."
+        )
+
+    return integrator_map[integrator_name]()

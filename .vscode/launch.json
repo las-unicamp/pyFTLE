@@ -24,6 +24,7 @@
                 "--list_particle_files=inputs_particle.txt",
                 "--snapshot_timestep=0.01",
                 "--flow_map_period=1.0",
+                "--integrator=euler",
             ],
             "purpose": [
                 "debug-in-terminal"
