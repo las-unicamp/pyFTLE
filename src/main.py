@@ -1,6 +1,7 @@
 import itertools
 from typing import List
 
+from scipy.io import savemat
 from tqdm import tqdm
 
 from src.cauchy_green import compute_flow_map_jacobian
@@ -86,6 +87,15 @@ def main():
     jacobian = compute_flow_map_jacobian(current_position)
     map_period = (num_snapshots_in_flow_map_period - 1) * args.snapshot_timestep
     ftle_field = compute_ftle(jacobian, map_period)
+
+    savemat(
+        "outputs/double_gyre",
+        {
+            "ftle": ftle_field,
+            "coordinate_x": current_position.data.centroid[:, 0],
+            "coordinate_y": current_position.data.centroid[:, 1],
+        },
+    )
 
     progress_bar.close()
 
