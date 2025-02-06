@@ -50,8 +50,8 @@ if __name__ == "__main__":
         coords, velocity = double_gyre(nx=100, ny=50, t=t)
 
         data_dict = {
-            "coordinate_x": coords[:, 0],
-            "coordinate_y": coords[:, 1],
+            "coordinate_x": coords[:, 0],  # optional (for moving grids)
+            "coordinate_y": coords[:, 1],  # optional (for moving grids)
             "velocity_x": velocity[:, 0],
             "velocity_y": velocity[:, 1],
         }
