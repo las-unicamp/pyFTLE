@@ -37,69 +37,66 @@ def main():
 
     validate_input_lists(snapshot_files, grid_files, particle_files)
 
+    num_snapshots_total = len(snapshot_files)
     num_snapshots_in_flow_map_period = (
         int(args.flow_map_period / args.snapshot_timestep) + 1
     )
 
-    progress_bar = tqdm(
-        total=num_snapshots_in_flow_map_period,
+    for i in tqdm(
+        range(num_snapshots_total - num_snapshots_in_flow_map_period + 1),
+        desc="Total Progress",
         leave=True,
-        desc="Progress",
-    )
-
-    start_index = 0  # Example: Start from index 2
-
-    snapshot_files_period = snapshot_files[
-        start_index : start_index + num_snapshots_in_flow_map_period
-    ]
-    # Repeat the first grid file if there's only one, otherwise slice normally
-    grid_files_period = list(
-        itertools.islice(
-            itertools.cycle(grid_files),
-            start_index,
-            start_index + num_snapshots_in_flow_map_period,
+    ):
+        snapshot_files_period = snapshot_files[i : i + num_snapshots_in_flow_map_period]
+        # Repeat the first grid file if there's only one, otherwise slice normally
+        grid_files_period = list(
+            itertools.islice(
+                itertools.cycle(grid_files),
+                i,
+                i + num_snapshots_in_flow_map_period,
+            )
         )
-    )
-    # Repeat the first seed file if there's only one, otherwise slice normally
-    particles_files = list(
-        itertools.islice(itertools.cycle(particle_files), len(snapshot_files))
-    )
-
-    particle_file = particles_files[start_index]
-
-    current_position = PositionDict(read_seed_particles_coordinates(particle_file))
-    integrator = get_integrator(args.integrator)
-
-    for snapshot_file, grid_file in zip(snapshot_files_period, grid_files_period):
-        tqdm.write(f"Snapshot: {snapshot_file}, Grid: {grid_file}")
-
-        velocities = read_velocity_data(snapshot_file)
-        coordinates = read_coordinates(grid_file)
-
-        interpolator = CubicInterpolatorStrategy(
-            coordinates, velocities[:, 0], velocities[:, 1]
+        # Repeat the first seed file if there's only one, otherwise slice normally
+        particles_files = list(
+            itertools.islice(itertools.cycle(particle_files), num_snapshots_total)
         )
 
-        current_position = integrator.integrate(
-            args.snapshot_timestep, current_position, interpolator
+        particle_file = particles_files[i]
+
+        current_position = PositionDict(read_seed_particles_coordinates(particle_file))
+        integrator = get_integrator(args.integrator)
+
+        for snapshot_file, grid_file in tqdm(
+            zip(snapshot_files_period, grid_files_period),
+            desc="Single FTLE Progress",
+            leave=True,
+            total=num_snapshots_in_flow_map_period,
+        ):
+            tqdm.write(f"Snapshot: {snapshot_file}, Grid: {grid_file}")
+
+            velocities = read_velocity_data(snapshot_file)
+            coordinates = read_coordinates(grid_file)
+
+            interpolator = CubicInterpolatorStrategy(
+                coordinates, velocities[:, 0], velocities[:, 1]
+            )
+
+            current_position = integrator.integrate(
+                args.snapshot_timestep, current_position, interpolator
+            )
+
+        jacobian = compute_flow_map_jacobian(current_position)
+        map_period = (num_snapshots_in_flow_map_period - 1) * args.snapshot_timestep
+        ftle_field = compute_ftle(jacobian, map_period)
+
+        savemat(
+            "outputs/double_gyre",
+            {
+                "ftle": ftle_field,
+                "coordinate_x": current_position.data.centroid[:, 0],
+                "coordinate_y": current_position.data.centroid[:, 1],
+            },
         )
-
-        progress_bar.update(1)
-
-    jacobian = compute_flow_map_jacobian(current_position)
-    map_period = (num_snapshots_in_flow_map_period - 1) * args.snapshot_timestep
-    ftle_field = compute_ftle(jacobian, map_period)
-
-    savemat(
-        "outputs/double_gyre",
-        {
-            "ftle": ftle_field,
-            "coordinate_x": current_position.data.centroid[:, 0],
-            "coordinate_y": current_position.data.centroid[:, 1],
-        },
-    )
-
-    progress_bar.close()
 
     # for i, (snapshot, grid) in enumerate(
     #     itertools.zip_longest(
