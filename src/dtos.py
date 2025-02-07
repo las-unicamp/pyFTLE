@@ -12,6 +12,7 @@ class NeighboringParticles:
 
     initial_delta_top_bottom: ArrayFloat32Nx2 = field(init=False)
     initial_delta_right_left: ArrayFloat32Nx2 = field(init=False)
+    initial_centroid: ArrayFloat32Nx2 = field(init=False)
 
     def __post_init__(self) -> None:
         self.initial_delta_top_bottom = self.top - self.bottom
