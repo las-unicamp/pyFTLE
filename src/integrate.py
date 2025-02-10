@@ -1,28 +1,28 @@
 from typing import Protocol, overload
 
-from src.decorators import format_position_dict
+from src.dtos import NeighboringParticles
 from src.interpolate import InterpolationStrategy
-from src.particle_position import PositionDict
 
 
 class IntegratorStrategy(Protocol):
     @overload
     def integrate(
-        self, h: float, y_n: PositionDict, interpolator: InterpolationStrategy
-    ) -> PositionDict:
+        self,
+        h: float,
+        particles: NeighboringParticles,
+        interpolator: InterpolationStrategy,
+    ) -> None:
         """
         Perform a single integration step (Euler, Runge-Kutta).
+        WARNING: This method performs in-place mutations of the particle positions.
 
         Args:
             h (float): Step size for integration.
-            y_n (PositionDict): Dictionary of arrays containing the solution values
-                (positions) at the current step.
+            particles (NeighboringParticles): Dataclass instance containing the
+                coordinates of the particles at the current step.
             interpolator (InterpolationStrategy):
                 An instance of an interpolation strategy that computes the velocity
-                (derivative) given the position values.
-
-        Returns:
-            PositionDict: The updated solution values after one integration step.
+                given the position values.
         """
         ...
 
@@ -30,29 +30,34 @@ class IntegratorStrategy(Protocol):
     def integrate(
         self,
         h: float,
-        y_n: PositionDict,
-        y_np1: PositionDict,
+        particles: NeighboringParticles,
+        particles_previous: NeighboringParticles,
         interpolator: InterpolationStrategy,
-    ) -> PositionDict:
+    ) -> None:
         """
         Perform a single integration step (Adams-Bashforth 2).
+        WARNING: This method performs in-place mutations of the particle positions.
+
+        y_{n+2} = y_{n+1} + h * [3/2 * f(t_{n+1}, y_{n+1}) - 1/2 * f(t_{n}, y_{n})]
+
+        Here we use the convention:
+        - n+2 → Future timestep, to be be stored in `particles` after integration
+        - n+1 → Current timestep, obtained from `particles`
+        - n   → Previous timestep, obtained from `particles_previous`
 
         Args:
             h (float): Step size for integration.
-            y_n (PositionDict): Dictionary of arrays containing the solution values
-                (i.e, positions) at the current step.
-            y_np1 (PositionDict): Dictionary of arrays containing the solution values
-                (i.e, positions) at the next step.
+            particles (NeighboringParticles): Dataclass instance containing the
+                coordinates of the particles at the current step.
+            particles_previous (NeighboringParticles): Dataclass instance containing
+                the coordinates of the particles at the previous step.
             interpolator (InterpolationStrategy):
                 An instance of an interpolation strategy that computes the velocity
                 (derivative) given the position values.
-
-        Returns:
-            PositionDict: The updated solution values after one integration step.
         """
         ...
 
-    def integrate(self, *args, **kwargs) -> PositionDict:
+    def integrate(self, *args, **kwargs) -> None:
         """Actual implementation to be overridden by subclasses."""
         pass
 
@@ -65,18 +70,25 @@ class AdamsBashforth2Integrator:
     The Adams-Bashforth method is an explicit multistep method that uses the
     values of the function (velocity) at the current and previous steps to
     approximate the solution.
+
+    y_{n+2} = y_{n+1} + h * [3/2 * f(t_{n+1}, y_{n+1}) - 1/2 * f(t_{n}, y_{n})]
+
+    Here we use the convention:
+    - n+2 → Future timestep, to be be stored in `particles` after integration
+    - n+1 → Current timestep, obtained from `particles`
+    - n   → Previous timestep, obtained from `particles_previous`
     """
 
-    @format_position_dict
     def integrate(
         self,
         h: float,
-        y_n: PositionDict,
-        y_np1: PositionDict,
+        particles: NeighboringParticles,
+        particles_previous: NeighboringParticles,
         interpolator: InterpolationStrategy,
-    ) -> PositionDict:
-        return y_np1 + h * (
-            1.5 * interpolator.interpolate(y_np1) - 0.5 * interpolator.interpolate(y_n)
+    ) -> None:
+        particles.positions += h * (
+            1.5 * interpolator.interpolate(particles.positions)
+            - 0.5 * interpolator.interpolate(particles_previous.positions)
         )
 
 
@@ -90,14 +102,13 @@ class EulerIntegrator:
     point in time.
     """
 
-    @format_position_dict
     def integrate(
         self,
         h: float,
-        y_n: PositionDict,
+        particles: NeighboringParticles,
         interpolator: InterpolationStrategy,
-    ) -> PositionDict:
-        return y_n + h * interpolator.interpolate(y_n)
+    ) -> None:
+        particles.positions += h * interpolator.interpolate(particles.positions)
 
 
 class RungeKutta4Integrator:
@@ -110,21 +121,20 @@ class RungeKutta4Integrator:
     higher-order accuracy than the Euler or Adams-Bashforth methods.
     """
 
-    @format_position_dict
     def integrate(
         self,
         h: float,
-        y_n: PositionDict,
+        particles: NeighboringParticles,
         interpolator: InterpolationStrategy,
-    ) -> PositionDict:
+    ) -> None:
         # Compute the four slopes (k1, k2, k3, k4)
-        k1 = interpolator.interpolate(y_n)
-        k2 = interpolator.interpolate(y_n + 0.5 * h * k1)
-        k3 = interpolator.interpolate(y_n + 0.5 * h * k2)
-        k4 = interpolator.interpolate(y_n + h * k3)
+        k1 = interpolator.interpolate(particles.positions)
+        k2 = interpolator.interpolate(particles.positions + 0.5 * h * k1)
+        k3 = interpolator.interpolate(particles.positions + 0.5 * h * k2)
+        k4 = interpolator.interpolate(particles.positions + h * k3)
 
-        # Update the solution using the weighted average of the slopes
-        return y_n + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+        # Update the solution in-place using the weighted average of the slopes
+        particles.positions += (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
 
 
 def get_integrator(integrator_name: str) -> IntegratorStrategy:

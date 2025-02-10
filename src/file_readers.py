@@ -45,23 +45,21 @@ def read_coordinates(file_path: str) -> ArrayFloat32Nx2:
 @cache_last_n_files(num_cached_files=2)
 def read_seed_particles_coordinates(file_path: str) -> NeighboringParticles:
     """
-    Reads seeded particle coordinates from a MATLAB file and returns a dictionary
-    (NeighboringParticles) whose keys identify the 4 neighboring particles as
-    "left", "right", "top" and "bottom". The key values are coordinate arrays
-    of shape [n_particles, 2].
+    Reads seeded particle coordinates from a MATLAB file containing `left`, `right`
+    `top` and `bottom` keys to identify the 4 neighboring particles. Then, returns
+    a NeighboringParticles object that holds the coordinate array and other
+    useful attributes.
 
     Args:
         file_path (str): Path to the MATLAB file.
 
     Returns:
-        NeighboringParticles: Dictionary of neighboring particles, whose values
-        are arrays of shape [n_particles, 2].
+        NeighboringParticles: Dataclass of neighboring particles.
     """
     data = loadmat(file_path)
-    neighboring_particles = NeighboringParticles(
-        top=data["top"],
-        bottom=data["bottom"],
-        left=data["left"],
-        right=data["right"],
+    positions = np.stack(
+        [data["left"], data["right"], data["top"], data["bottom"]], axis=1
     )
-    return neighboring_particles
+    positions = positions.reshape(-1, 2, order="F")  # Convert (N, 4, 2) → (4*N, 2)
+
+    return NeighboringParticles(positions=positions)

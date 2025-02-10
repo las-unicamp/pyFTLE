@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from scipy.io import loadmat, savemat
 
-from src.dtos import NeighboringParticles
 from src.file_readers import (
     read_coordinates,
     read_seed_particles_coordinates,
@@ -101,22 +100,28 @@ def mock_seed_particle_file(tmp_path):
 
 
 def test_read_seed_particles_coordinates(mock_seed_particle_file):
-    expected = NeighboringParticles(
-        top=np.array([[1.0, 2.0], [3.0, 4.0]]),
-        bottom=np.array([[5.0, 6.0], [7.0, 8.0]]),
-        left=np.array([[9.0, 10.0], [11.0, 12.0]]),
-        right=np.array([[13.0, 14.0], [15.0, 16.0]]),
-    )
     result = read_seed_particles_coordinates(mock_seed_particle_file)
 
-    # Convert the dataclass to a dictionary using vars()
-    expected_dict = vars(expected)
-    result_dict = vars(result)
+    # Expected output after reshaping to (4*N, 2)
+    expected_positions = np.array(
+        [
+            # Left
+            [9.0, 10.0],
+            [11.0, 12.0],
+            # Right
+            [13.0, 14.0],
+            [15.0, 16.0],
+            # Top
+            [1.0, 2.0],
+            [3.0, 4.0],
+            # Bottom
+            [5.0, 6.0],
+            [7.0, 8.0],
+        ]
+    )
 
-    # Check that all keys exist and values match the expected arrays
-    assert set(result_dict.keys()) == set(expected_dict.keys())
-    for key in expected_dict.keys():
-        np.testing.assert_array_equal(result_dict[key], expected_dict[key])
+    # Ensure positions match
+    np.testing.assert_array_equal(result.positions, expected_positions)
 
 
 def test_read_seed_particles_coordinates_caching(mock_seed_particle_file, mocker):

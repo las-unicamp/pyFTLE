@@ -1,4 +1,5 @@
 import itertools
+import os
 from typing import List
 
 from scipy.io import savemat
@@ -16,7 +17,6 @@ from src.ftle import compute_ftle
 from src.hyperparameters import args
 from src.integrate import get_integrator
 from src.interpolate import CubicInterpolatorStrategy
-from src.particle_position import PositionDict
 
 
 def validate_input_lists(
@@ -63,7 +63,7 @@ def main():
 
         particle_file = particles_files[i]
 
-        current_position = PositionDict(read_seed_particles_coordinates(particle_file))
+        particles = read_seed_particles_coordinates(particle_file)
         integrator = get_integrator(args.integrator)
 
         for snapshot_file, grid_file in tqdm(
@@ -81,20 +81,18 @@ def main():
                 coordinates, velocities[:, 0], velocities[:, 1]
             )
 
-            current_position = integrator.integrate(
-                args.snapshot_timestep, current_position, interpolator
-            )
+            integrator.integrate(args.snapshot_timestep, particles, interpolator)
 
-        jacobian = compute_flow_map_jacobian(current_position)
+        jacobian = compute_flow_map_jacobian(particles)
         map_period = (num_snapshots_in_flow_map_period - 1) * args.snapshot_timestep
         ftle_field = compute_ftle(jacobian, map_period)
 
+        output_dir = "outputs/vawt_naca0018"
+        filename = os.path.join(output_dir, f"ftle{i:04d}.mat")
         savemat(
-            "outputs/double_gyre",
+            filename,
             {
                 "ftle": ftle_field,
-                "coordinate_x": current_position.data.centroid[:, 0],
-                "coordinate_y": current_position.data.centroid[:, 1],
             },
         )
 
