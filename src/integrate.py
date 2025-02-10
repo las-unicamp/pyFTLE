@@ -1,7 +1,7 @@
 from typing import Protocol, overload
 
-from src.dtos import NeighboringParticles
 from src.interpolate import InterpolationStrategy
+from src.particles import NeighboringParticles
 
 
 class IntegratorStrategy(Protocol):

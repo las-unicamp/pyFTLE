@@ -2,8 +2,8 @@ import numpy as np
 from scipy.io import loadmat
 
 from src.caching import cache_last_n_files
-from src.dtos import NeighboringParticles
 from src.my_types import ArrayFloat32Nx2
+from src.particles import NeighboringParticles
 
 
 @cache_last_n_files(num_cached_files=2)

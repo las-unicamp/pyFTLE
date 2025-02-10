@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from src.dtos import NeighboringParticles
 from src.integrate import (
     AdamsBashforth2Integrator,
     EulerIntegrator,
@@ -11,6 +10,7 @@ from src.integrate import (
     get_integrator,
 )
 from src.interpolate import InterpolationStrategy
+from src.particles import NeighboringParticles
 
 
 @pytest.fixture

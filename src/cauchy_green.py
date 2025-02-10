@@ -1,7 +1,7 @@
 import numpy as np
 
-from src.dtos import NeighboringParticles
 from src.my_types import ArrayFloat32Nx2x2
+from src.particles import NeighboringParticles
 
 
 def compute_flow_map_jacobian(particles: NeighboringParticles) -> ArrayFloat32Nx2x2:

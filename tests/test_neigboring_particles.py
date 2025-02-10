@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from src.dtos import NeighboringParticles
+from src.particles import NeighboringParticles
 
 
 @pytest.fixture
