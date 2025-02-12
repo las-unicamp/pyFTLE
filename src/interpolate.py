@@ -50,13 +50,12 @@ class CubicInterpolatorStrategy:
         velocities_u: ArrayFloat32N,
         velocities_v: ArrayFloat32N,
     ):
-        self.interpolator_u = CloughTocher2DInterpolator(points, velocities_u)
-        self.interpolator_v = CloughTocher2DInterpolator(points, velocities_v)
+        velocities = velocities_u + 1j * velocities_v
+        self.interpolator = CloughTocher2DInterpolator(points, velocities)
 
     def interpolate(self, new_points: ArrayFloat32Nx2) -> ArrayFloat32Nx2:
-        u_interpolated = self.interpolator_u(new_points)
-        v_interpolated = self.interpolator_v(new_points)
-        return np.column_stack((u_interpolated, v_interpolated))
+        interp_velocities = self.interpolator(new_points)
+        return np.column_stack((interp_velocities.real, interp_velocities.imag))
 
 
 class LinearInterpolatorStrategy:
@@ -77,13 +76,12 @@ class LinearInterpolatorStrategy:
         velocities_u: ArrayFloat32N,
         velocities_v: ArrayFloat32N,
     ):
-        self.interpolator_u = LinearNDInterpolator(points, velocities_u)
-        self.interpolator_v = LinearNDInterpolator(points, velocities_v)
+        velocities = velocities_u + 1j * velocities_v
+        self.interpolator = LinearNDInterpolator(points, velocities)
 
     def interpolate(self, new_points: ArrayFloat32Nx2) -> ArrayFloat32Nx2:
-        u_interpolated = self.interpolator_u(new_points)
-        v_interpolated = self.interpolator_v(new_points)
-        return np.column_stack((u_interpolated, v_interpolated))
+        interp_velocities = self.interpolator(new_points)
+        return np.column_stack((interp_velocities.real, interp_velocities.imag))
 
 
 class NearestNeighborInterpolatorStrategy:
@@ -104,13 +102,12 @@ class NearestNeighborInterpolatorStrategy:
         velocities_u: ArrayFloat32N,
         velocities_v: ArrayFloat32N,
     ):
-        self.interpolator_u = NearestNDInterpolator(points, velocities_u)
-        self.interpolator_v = NearestNDInterpolator(points, velocities_v)
+        velocities = velocities_u + 1j * velocities_v
+        self.interpolator = NearestNDInterpolator(points, velocities)
 
     def interpolate(self, new_points: ArrayFloat32Nx2) -> ArrayFloat32Nx2:
-        u_interpolated = self.interpolator_u(new_points)
-        v_interpolated = self.interpolator_v(new_points)
-        return np.column_stack((u_interpolated, v_interpolated))
+        interp_velocities = self.interpolator(new_points)
+        return np.column_stack((interp_velocities.real, interp_velocities.imag))
 
 
 class GridInterpolatorStrategy:
@@ -126,13 +123,12 @@ class GridInterpolatorStrategy:
     """
 
     def __init__(self, grid_x, grid_y, velocities_u, velocities_v):
-        self.interpolator_u = RegularGridInterpolator((grid_x, grid_y), velocities_u)
-        self.interpolator_v = RegularGridInterpolator((grid_x, grid_y), velocities_v)
+        velocities = velocities_u + 1j * velocities_v
+        self.interpolator = RegularGridInterpolator((grid_x, grid_y), velocities)
 
     def interpolate(self, new_points: ArrayFloat32Nx2) -> ArrayFloat32Nx2:
-        u_interpolated = self.interpolator_u(new_points)
-        v_interpolated = self.interpolator_v(new_points)
-        return np.column_stack((u_interpolated, v_interpolated))
+        interp_velocities = self.interpolator(new_points)
+        return np.column_stack((interp_velocities.real, interp_velocities.imag))
 
 
 @cache_last_n_files(num_cached_files=2)
