@@ -36,7 +36,6 @@ def mock_coordinate_file(tmp_path):
     return file_path
 
 
-# Test without caching
 def test_read_velocity_data(mock_velocity_file):
     expected = np.array([[1.0, 4.0], [2.0, 5.0], [3.0, 6.0]])
     result = read_velocity_data(mock_velocity_file)
@@ -49,41 +48,6 @@ def test_read_coordinates(mock_coordinate_file):
     result = read_coordinates(mock_coordinate_file)
     assert result.shape == (3, 2)
     np.testing.assert_array_equal(result, expected)
-
-
-# Test with caching
-def test_velocity_data_caching(mock_velocity_file, mocker):
-    # Patch loadmat in the src.file_readers namespace
-    mocked_loadmat = mocker.patch("src.file_readers.loadmat", wraps=loadmat)
-
-    # Call the function twice with the same file
-    result1 = read_velocity_data(mock_velocity_file)
-    result2 = read_velocity_data(mock_velocity_file)
-
-    # Verify the results are the same
-    np.testing.assert_array_equal(result1, result2)
-
-    # Ensure loadmat is only called once (second call used the cache)
-    mocked_loadmat.assert_called_once_with(mock_velocity_file)
-
-
-def test_coordinates_caching(mock_coordinate_file, mocker):
-    # Patch loadmat in the src.file_readers namespace
-    mocked_loadmat = mocker.patch("src.file_readers.loadmat", wraps=loadmat)
-
-    # Call the function twice with the same file
-    result1 = read_coordinates(mock_coordinate_file)
-    result2 = read_coordinates(mock_coordinate_file)
-
-    # Verify the results are the same
-    np.testing.assert_array_equal(result1, result2)
-
-    # Ensure loadmat is only called once (subsequent calls used the cache)
-    read_coordinates(mock_coordinate_file)
-    read_coordinates(mock_coordinate_file)
-    read_coordinates(mock_coordinate_file)
-    read_coordinates(mock_coordinate_file)
-    mocked_loadmat.assert_called_once_with(mock_coordinate_file)
 
 
 @pytest.fixture

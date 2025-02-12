@@ -6,7 +6,6 @@ from src.my_types import ArrayFloat32Nx2
 from src.particles import NeighboringParticles
 
 
-@cache_last_n_files(num_cached_files=2)
 def read_velocity_data(file_path: str) -> ArrayFloat32Nx2:
     """
     Reads velocity data from a MATLAB file and returns it as a numpy array
@@ -24,7 +23,6 @@ def read_velocity_data(file_path: str) -> ArrayFloat32Nx2:
     return np.column_stack((velocity_x, velocity_y))
 
 
-@cache_last_n_files(num_cached_files=2)
 def read_coordinates(file_path: str) -> ArrayFloat32Nx2:
     """
     Reads coordinate data from a MATLAB file and returns it as a numpy array

@@ -8,15 +8,13 @@ from tqdm import tqdm
 from src.cauchy_green import compute_flow_map_jacobian
 from src.decorators import timeit
 from src.file_readers import (
-    read_coordinates,
     read_seed_particles_coordinates,
-    read_velocity_data,
 )
 from src.file_utils import get_files_list
 from src.ftle import compute_ftle
 from src.hyperparameters import args
 from src.integrate import get_integrator
-from src.interpolate import CubicInterpolatorStrategy
+from src.interpolate import create_interpolator
 
 
 def validate_input_lists(
@@ -83,12 +81,7 @@ def main():
         ):
             tqdm.write(f"Snapshot: {snapshot_file}, Grid: {grid_file}")
 
-            velocities = read_velocity_data(snapshot_file)
-            coordinates = read_coordinates(grid_file)
-
-            interpolator = CubicInterpolatorStrategy(
-                coordinates, velocities[:, 0], velocities[:, 1]
-            )
+            interpolator = create_interpolator(snapshot_file, grid_file)
 
             integrator.integrate(args.snapshot_timestep, particles, interpolator)
 
