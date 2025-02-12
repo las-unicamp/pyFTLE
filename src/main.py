@@ -39,8 +39,17 @@ def main():
 
     num_snapshots_total = len(snapshot_files)
     num_snapshots_in_flow_map_period = (
-        int(args.flow_map_period / args.snapshot_timestep) + 1
+        int(args.flow_map_period / abs(args.snapshot_timestep)) + 1
     )
+
+    is_backward = args.snapshot_timestep < 0
+    if is_backward:
+        snapshot_files.reverse()
+        grid_files.reverse()
+        particle_files.reverse()
+        print("Running backward-time FTLE")
+    else:
+        print("Running forward-time FTLE")
 
     for i in tqdm(
         range(num_snapshots_total - num_snapshots_in_flow_map_period + 1),
@@ -84,7 +93,9 @@ def main():
             integrator.integrate(args.snapshot_timestep, particles, interpolator)
 
         jacobian = compute_flow_map_jacobian(particles)
-        map_period = (num_snapshots_in_flow_map_period - 1) * args.snapshot_timestep
+        map_period = (num_snapshots_in_flow_map_period - 1) * abs(
+            args.snapshot_timestep
+        )
         ftle_field = compute_ftle(jacobian, map_period)
 
         output_dir = "outputs/vawt_naca0018"
@@ -95,16 +106,6 @@ def main():
                 "ftle": ftle_field,
             },
         )
-
-    # for i, (snapshot, grid) in enumerate(
-    #     itertools.zip_longest(
-    #         snapshot_files, grid_files * len(snapshot_files), fillvalue=grid_files[0]
-    #     )
-    # ):
-    #     particles = read_seed_particles_coordinates(args.particles_filename)
-    #     print(f"Snapshot: {snapshot}, Grid: {grid}")
-
-    #     progress_bar.update(1)
 
 
 if __name__ == "__main__":

@@ -81,7 +81,8 @@ parser.add_argument(
     "--snapshot_timestep",
     type=float,
     required=True,
-    help="Timestep between snapshots.",
+    help="Timestep between snapshots. If positive, the forward-time FTLE field "
+    "is computed. If negative, then the backward-time FTLE is computed.",
 )
 parser.add_argument(
     "--flow_map_period",
