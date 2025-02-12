@@ -5,6 +5,7 @@ import pytest
 
 from src.integrate import (
     AdamsBashforth2Integrator,
+    AdaptiveIntegrator,
     EulerIntegrator,
     RungeKutta4Integrator,
     get_integrator,
@@ -53,7 +54,7 @@ def previous_conditions():
             [14.8, 15.9],  # Bottom neighbors
         ]
     )
-    return NeighboringParticles(positions=positions)
+    return positions
 
 
 def test_euler_integrator(mock_interpolator, initial_conditions):
@@ -88,12 +89,12 @@ def test_adams_bashforth2_integrator(
 
 def test_get_integrator():
     # Test valid integrator names
-    assert isinstance(get_integrator("ab2"), AdamsBashforth2Integrator)
+    assert isinstance(get_integrator("ab2"), AdaptiveIntegrator)
     assert isinstance(get_integrator("euler"), EulerIntegrator)
     assert isinstance(get_integrator("rk4"), RungeKutta4Integrator)
 
     # Test case insensitivity
-    assert isinstance(get_integrator("AB2"), AdamsBashforth2Integrator)
+    assert isinstance(get_integrator("AB2"), AdaptiveIntegrator)
     assert isinstance(get_integrator("EULER"), EulerIntegrator)
     assert isinstance(get_integrator("rK4"), RungeKutta4Integrator)
 

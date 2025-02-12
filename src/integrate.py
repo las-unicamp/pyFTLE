@@ -1,6 +1,7 @@
 from typing import Protocol, overload
 
 from src.interpolate import InterpolationStrategy
+from src.my_types import ArrayFloat32N4x2
 from src.particles import NeighboringParticles
 
 
@@ -31,7 +32,7 @@ class IntegratorStrategy(Protocol):
         self,
         h: float,
         particles: NeighboringParticles,
-        particles_previous: NeighboringParticles,
+        particles_previous: ArrayFloat32N4x2,
         interpolator: InterpolationStrategy,
     ) -> None:
         """
@@ -49,8 +50,10 @@ class IntegratorStrategy(Protocol):
             h (float): Step size for integration.
             particles (NeighboringParticles): Dataclass instance containing the
                 coordinates of the particles at the current step.
-            particles_previous (NeighboringParticles): Dataclass instance containing
-                the coordinates of the particles at the previous step.
+            particles_previous (ArrayFloat32N4x2): Array containing the coordinates
+            of the particles at the previous step. The array has a flattened
+            representation with shape (4*N, 2), where N is the number of final
+            FTLE points (i.e, the centroid of each particles group)
             interpolator (InterpolationStrategy):
                 An instance of an interpolation strategy that computes the velocity
                 (derivative) given the position values.
@@ -83,12 +86,12 @@ class AdamsBashforth2Integrator:
         self,
         h: float,
         particles: NeighboringParticles,
-        particles_previous: NeighboringParticles,
+        particles_previous: ArrayFloat32N4x2,
         interpolator: InterpolationStrategy,
     ) -> None:
         particles.positions += h * (
             1.5 * interpolator.interpolate(particles.positions)
-            - 0.5 * interpolator.interpolate(particles_previous.positions)
+            - 0.5 * interpolator.interpolate(particles_previous)
         )
 
 
@@ -109,6 +112,33 @@ class EulerIntegrator:
         interpolator: InterpolationStrategy,
     ) -> None:
         particles.positions += h * interpolator.interpolate(particles.positions)
+
+
+class AdaptiveIntegrator:
+    """
+    Adaptive integrator that starts with Euler integration for the first step
+    and switches to Adams-Bashforth 2 for subsequent steps.
+    """
+
+    def __init__(self):
+        self.euler = EulerIntegrator()
+        self.ab2 = AdamsBashforth2Integrator()
+        self.particles_previous = None
+
+    def integrate(
+        self,
+        h: float,
+        particles: NeighboringParticles,
+        interpolator: InterpolationStrategy,
+    ) -> None:
+        if self.particles_previous is None:
+            # First step: Use Euler and store the first step result
+            self.euler.integrate(h, particles, interpolator)
+            self.particles_previous = particles.positions.copy()
+        else:
+            # Subsequent steps: Use Adams-Bashforth 2
+            self.ab2.integrate(h, particles, self.particles_previous, interpolator)
+            self.particles_previous = particles.positions.copy()
 
 
 class RungeKutta4Integrator:
@@ -143,7 +173,7 @@ def get_integrator(integrator_name: str) -> IntegratorStrategy:
     integrator_name = integrator_name.lower()  # Normalize input to lowercase
 
     integrator_map = {
-        "ab2": AdamsBashforth2Integrator,
+        "ab2": AdaptiveIntegrator,  # Uses Euler for the first step, then AB2
         "euler": EulerIntegrator,
         "rk4": RungeKutta4Integrator,
     }
