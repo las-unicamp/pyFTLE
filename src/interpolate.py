@@ -155,25 +155,26 @@ def create_interpolator(snapshot_file: str, grid_file: str, strategy: str = "cub
     velocities = read_velocity_data(snapshot_file)
     coordinates = read_coordinates(grid_file)
 
-    if strategy == "cubic":
-        return CubicInterpolatorStrategy(
-            coordinates, velocities[:, 0], velocities[:, 1]
-        )
-    elif strategy == "linear":
-        return LinearInterpolatorStrategy(
-            coordinates, velocities[:, 0], velocities[:, 1]
-        )
-    elif strategy == "nearest":
-        return NearestNeighborInterpolatorStrategy(
-            coordinates, velocities[:, 0], velocities[:, 1]
-        )
-    elif strategy == "grid":
-        grid_x, grid_y = np.unique(coordinates[:, 0]), np.unique(coordinates[:, 1])
-        return GridInterpolatorStrategy(
-            grid_x,
-            grid_y,
-            velocities[:, 0].reshape(len(grid_x), len(grid_y)),
-            velocities[:, 1].reshape(len(grid_x), len(grid_y)),
-        )
-    else:
-        raise ValueError(f"Unknown interpolation strategy: {strategy}")
+    match strategy:
+        case "cubic":
+            return CubicInterpolatorStrategy(
+                coordinates, velocities[:, 0], velocities[:, 1]
+            )
+        case "linear":
+            return LinearInterpolatorStrategy(
+                coordinates, velocities[:, 0], velocities[:, 1]
+            )
+        case "nearest":
+            return NearestNeighborInterpolatorStrategy(
+                coordinates, velocities[:, 0], velocities[:, 1]
+            )
+        case "grid":
+            grid_x, grid_y = np.unique(coordinates[:, 0]), np.unique(coordinates[:, 1])
+            return GridInterpolatorStrategy(
+                grid_x,
+                grid_y,
+                velocities[:, 0].reshape(len(grid_x), len(grid_y)),
+                velocities[:, 1].reshape(len(grid_x), len(grid_y)),
+            )
+        case _:
+            raise ValueError(f"Unknown interpolation strategy: {strategy}")
