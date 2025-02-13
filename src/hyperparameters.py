@@ -23,6 +23,7 @@ class MyProgramArgs:
     snapshot_timestep: float
     flow_map_period: float
     integrator: str
+    interpolator: str
 
 
 parser = configargparse.ArgumentParser()
@@ -97,6 +98,13 @@ parser.add_argument(
     choices=["rk4", "euler", "ab2"],
     help="Select the time-stepping method to integrate the particles in time. "
     "default='euler'",
+)
+parser.add_argument(
+    "--interpolator",
+    type=str,
+    choices=["cubic", "linear", "nearest", "grid"],
+    help="Select interpolator strategy to evaluate the particle velocity at "
+    "their current location. default='cubic'",
 )
 
 

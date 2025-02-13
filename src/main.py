@@ -81,7 +81,9 @@ def main():
         ):
             tqdm.write(f"Snapshot: {snapshot_file}, Grid: {grid_file}")
 
-            interpolator = create_interpolator(snapshot_file, grid_file)
+            interpolator = create_interpolator(
+                snapshot_file, grid_file, args.interpolator
+            )
 
             integrator.integrate(args.snapshot_timestep, particles, interpolator)
 

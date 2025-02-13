@@ -25,6 +25,7 @@
                 "--snapshot_timestep=0.01",
                 "--flow_map_period=1.0",
                 "--integrator=euler",
+                "--interpolator=cubic",
             ],
             "purpose": [
                 "debug-in-terminal"
