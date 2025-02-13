@@ -5,7 +5,6 @@ import pytest
 
 from src.integrate import (
     AdamsBashforth2Integrator,
-    AdaptiveIntegrator,
     EulerIntegrator,
     RungeKutta4Integrator,
     get_integrator,
@@ -39,24 +38,6 @@ def initial_conditions():
     return NeighboringParticles(positions=positions)
 
 
-@pytest.fixture
-def previous_conditions():
-    # Create a positions array with shape (4 * N, 2)
-    positions = np.array(
-        [
-            [0.9, 1.8],
-            [3.0, 3.8],  # Left neighbors
-            [4.8, 5.8],
-            [6.9, 7.8],  # Right neighbors
-            [8.8, 9.9],
-            [10.8, 11.9],  # Top neighbors
-            [12.8, 13.9],
-            [14.8, 15.9],  # Bottom neighbors
-        ]
-    )
-    return positions
-
-
 def test_euler_integrator(mock_interpolator, initial_conditions):
     integrator = EulerIntegrator()
     h = 0.1
@@ -77,24 +58,22 @@ def test_runge_kutta4_integrator(mock_interpolator, initial_conditions):
     assert np.all(np.isfinite(initial_conditions.positions))
 
 
-def test_adams_bashforth2_integrator(
-    mock_interpolator, initial_conditions, previous_conditions
-):
+def test_adams_bashforth2_integrator(mock_interpolator, initial_conditions):
     integrator = AdamsBashforth2Integrator()
     h = 0.1
-    integrator.integrate(h, initial_conditions, previous_conditions, mock_interpolator)
+    integrator.integrate(h, initial_conditions, mock_interpolator)
 
     assert np.all(np.isfinite(initial_conditions.positions))
 
 
 def test_get_integrator():
     # Test valid integrator names
-    assert isinstance(get_integrator("ab2"), AdaptiveIntegrator)
+    assert isinstance(get_integrator("ab2"), AdamsBashforth2Integrator)
     assert isinstance(get_integrator("euler"), EulerIntegrator)
     assert isinstance(get_integrator("rk4"), RungeKutta4Integrator)
 
     # Test case insensitivity
-    assert isinstance(get_integrator("AB2"), AdaptiveIntegrator)
+    assert isinstance(get_integrator("AB2"), AdamsBashforth2Integrator)
     assert isinstance(get_integrator("EULER"), EulerIntegrator)
     assert isinstance(get_integrator("rK4"), RungeKutta4Integrator)
 
