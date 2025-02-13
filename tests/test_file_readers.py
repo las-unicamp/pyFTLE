@@ -3,9 +3,9 @@ import pytest
 from scipy.io import loadmat, savemat
 
 from src.file_readers import (
-    read_coordinates,
+    CoordinateDataReader,
+    VelocityDataReader,
     read_seed_particles_coordinates,
-    read_velocity_data,
 )
 
 
@@ -37,15 +37,19 @@ def mock_coordinate_file(tmp_path):
 
 
 def test_read_velocity_data(mock_velocity_file):
+    # Using the new VelocityDataReader class
+    reader = VelocityDataReader()
     expected = np.array([[1.0, 4.0], [2.0, 5.0], [3.0, 6.0]])
-    result = read_velocity_data(mock_velocity_file)
+    result = reader.read_flatten(mock_velocity_file)
     assert result.shape == (3, 2)
     np.testing.assert_array_equal(result, expected)
 
 
 def test_read_coordinates(mock_coordinate_file):
+    # Using the new CoordinateDataReader class
+    reader = CoordinateDataReader()
     expected = np.array([[7.0, 10.0], [8.0, 11.0], [9.0, 12.0]])
-    result = read_coordinates(mock_coordinate_file)
+    result = reader.read_flatten(mock_coordinate_file)
     assert result.shape == (3, 2)
     np.testing.assert_array_equal(result, expected)
 

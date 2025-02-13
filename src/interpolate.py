@@ -9,8 +9,13 @@ from scipy.interpolate import (
 )
 
 from src.caching import cache_last_n_files
-from src.file_readers import read_coordinates, read_velocity_data
-from src.my_types import ArrayFloat32N, ArrayFloat32Nx2
+from src.file_readers import CoordinateDataReader, VelocityDataReader
+from src.metrics import Metrics
+from src.my_types import (
+    ArrayFloat32MxN,
+    ArrayFloat32N,
+    ArrayFloat32Nx2,
+)
 
 
 class InterpolationStrategy(Protocol):
@@ -131,50 +136,69 @@ class GridInterpolatorStrategy:
         return np.column_stack((interp_velocities.real, interp_velocities.imag))
 
 
-@cache_last_n_files(num_cached_files=2)
-def create_interpolator(snapshot_file: str, grid_file: str, strategy: str = "cubic"):
-    """
-    Reads velocity and coordinate data from the given files and creates an interpolator
-    based on the selected strategy.
 
-    Supported strategies:
-    - "cubic": Clough-Tocher interpolation (default, high-quality but slow).
-    - "linear": Linear interpolation (faster, but less smooth).
-    - "nearest": Nearest-neighbor interpolation (fastest, but lowest quality).
-    - "grid": Grid-based interpolation (fastest for structured grids).
 
-    Args:
-        snapshot_file (str): Path to the velocity data file.
-        grid_file (str): Path to the coordinate data file.
-        strategy (str): Interpolation strategy to use ("cubic", "linear", "nearest",
-        "grid").
+class InterpolatorFactory:
+    def __init__(
+        self,
+        coordinate_reader: CoordinateDataReader,
+        velocity_reader: VelocityDataReader,
+    ):
+        self.coordinate_reader = coordinate_reader
+        self.velocity_reader = velocity_reader
 
-    Returns:
-        (InterpolationStrategy): The selected interpolator object.
-    """
-    velocities = read_velocity_data(snapshot_file)
-    coordinates = read_coordinates(grid_file)
+    @cache_last_n_files(num_cached_files=2)
+    def create_interpolator(
+        self, snapshot_file: str, grid_file: str, strategy: str = "cubic"
+    ):
+        """
+        Reads velocity and coordinate data from the given files and creates an
+        interpolator based on the selected strategy.
 
-    match strategy:
-        case "cubic":
-            return CubicInterpolatorStrategy(
-                coordinates, velocities[:, 0], velocities[:, 1]
-            )
-        case "linear":
-            return LinearInterpolatorStrategy(
-                coordinates, velocities[:, 0], velocities[:, 1]
-            )
-        case "nearest":
-            return NearestNeighborInterpolatorStrategy(
-                coordinates, velocities[:, 0], velocities[:, 1]
-            )
-        case "grid":
-            grid_x, grid_y = np.unique(coordinates[:, 0]), np.unique(coordinates[:, 1])
-            return GridInterpolatorStrategy(
-                grid_x,
-                grid_y,
-                velocities[:, 0].reshape(len(grid_x), len(grid_y)),
-                velocities[:, 1].reshape(len(grid_x), len(grid_y)),
-            )
-        case _:
-            raise ValueError(f"Unknown interpolation strategy: {strategy}")
+        Supported strategies:
+        - "cubic": Clough-Tocher interpolation (default, high-quality but slow).
+        - "linear": Linear interpolation (faster, but less smooth).
+        - "nearest": Nearest-neighbor interpolation (fastest, but lowest quality).
+        - "grid": Grid-based interpolation (fastest for structured grids).
+
+        Args:
+            snapshot_file (str): Path to the velocity data file.
+            grid_file (str): Path to the coordinate data file.
+            strategy (str): Interpolation strategy to use ("cubic", "linear",
+            "nearest", "grid").
+
+        Returns:
+            (InterpolationStrategy): The selected interpolator object.
+        """
+        flatten = strategy != "grid"
+
+        # Choose the appropriate method dynamically
+        read_velocity = getattr(
+            self.velocity_reader, "read_flatten" if flatten else "read_raw"
+        )
+        read_coordinates = getattr(
+            self.coordinate_reader, "read_flatten" if flatten else "read_raw"
+        )
+
+        velocities = read_velocity(snapshot_file)
+        coordinates = read_coordinates(grid_file)
+
+        match strategy:
+            case "cubic":
+                return CubicInterpolatorStrategy(
+                    coordinates, velocities[:, 0], velocities[:, 1]
+                )
+            case "linear":
+                return LinearInterpolatorStrategy(
+                    coordinates, velocities[:, 0], velocities[:, 1]
+                )
+            case "nearest":
+                return NearestNeighborInterpolatorStrategy(
+                    coordinates, velocities[:, 0], velocities[:, 1]
+                )
+            case "grid":
+                return GridInterpolatorStrategy(
+                    coordinates, velocities[0], velocities[1]
+                )
+            case _:
+                raise ValueError(f"Unknown interpolation strategy: {strategy}")
