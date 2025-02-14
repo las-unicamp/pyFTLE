@@ -1,3 +1,4 @@
+# ruff: noqa: N806
 from typing import Protocol
 
 import numpy as np
@@ -10,7 +11,6 @@ from scipy.interpolate import (
 
 from src.caching import cache_last_n_files
 from src.file_readers import CoordinateDataReader, VelocityDataReader
-from src.metrics import Metrics
 from src.my_types import (
     ArrayFloat32MxN,
     ArrayFloat32N,
@@ -127,15 +127,30 @@ class GridInterpolatorStrategy:
     - Requires careful handling of grid spacing and boundaries.
     """
 
-    def __init__(self, grid_x, grid_y, velocities_u, velocities_v):
-        velocities = velocities_u + 1j * velocities_v
-        self.interpolator = RegularGridInterpolator((grid_x, grid_y), velocities)
+    def __init__(
+        self,
+        x: ArrayFloat32MxN,
+        y: ArrayFloat32MxN,
+        velocity_u: ArrayFloat32MxN,
+        velocity_v: ArrayFloat32MxN,
+    ):
+        grid_shape = x.shape
+        grid_x = np.linspace(np.min(x), np.max(x), grid_shape[0])
+        grid_y = np.linspace(np.min(y), np.max(y), grid_shape[1])
+
+        self.interpolator_u = RegularGridInterpolator(
+            (grid_x, grid_y), velocity_u, bounds_error=False, fill_value=None
+        )
+        self.interpolator_v = RegularGridInterpolator(
+            (grid_x, grid_y), velocity_v, bounds_error=False, fill_value=None
+        )
 
     def interpolate(self, new_points: ArrayFloat32Nx2) -> ArrayFloat32Nx2:
-        interp_velocities = self.interpolator(new_points)
-        return np.column_stack((interp_velocities.real, interp_velocities.imag))
+        """Interpolates velocity field at given Cartesian points."""
+        u_interp = self.interpolator_u(new_points)
+        v_interp = self.interpolator_v(new_points)
 
-
+        return np.column_stack((u_interp, v_interp))
 
 
 class InterpolatorFactory:
@@ -198,7 +213,7 @@ class InterpolatorFactory:
                 )
             case "grid":
                 return GridInterpolatorStrategy(
-                    coordinates, velocities[0], velocities[1]
+                    coordinates[0], coordinates[1], velocities[0], velocities[1]
                 )
             case _:
                 raise ValueError(f"Unknown interpolation strategy: {strategy}")
