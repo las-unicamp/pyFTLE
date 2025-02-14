@@ -13,7 +13,6 @@ class MyProgramArgs:
     config_filepath: any
 
     # logger parameters
-    logging_root: str
     experiment_name: str
 
     # input parameters
@@ -39,9 +38,6 @@ parser.add(
 
 
 # logger parameters
-parser.add_argument(
-    "--logging_root", type=str, default="./logs", help="Root for logging"
-)
 parser.add_argument(
     "--experiment_name",
     type=str,

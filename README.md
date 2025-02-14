@@ -29,8 +29,6 @@ Currently, the package supports MATLAB file formats for input data. However, add
 ### **Requirements**
 - Python 3.12+
 
-> ⚠️ **macOS and Windows users:** CUDA-enabled builds are only supported on Linux. To use the package on macOS or Windows, refer to the [UV-PyTorch integration guide](https://docs.astral.sh/uv/guides/integration/pytorch/#using-a-pytorch-index).
-
 ### **Using UV (Recommended)**
 
 [UV](https://docs.astral.sh/uv/) is a modern Python package and project manager that simplifies dependency management.
@@ -78,7 +76,6 @@ python main.py -c config.yaml
 
 | Parameter               | Type    | Description                                                                                   |
 | ----------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `--logging_root`        | `str`   | Directory for storing logs (default: `./logs`).                                               |
 | `--experiment_name`     | `str`   | Name of the subdirectory for logs and checkpoints.                                            |
 | `--list_velocity_files` | `str`   | Path to a text file listing velocity data files.                                              |
 | `--list_grid_files`     | `str`   | Path to a text file listing grid files.                                                       |
