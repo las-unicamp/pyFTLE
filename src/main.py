@@ -1,7 +1,6 @@
 import itertools
 import multiprocessing
 import os
-import time
 from typing import List
 
 from scipy.io import savemat
@@ -59,7 +58,6 @@ class SnapshotProcessor:
         for snapshot_file, grid_file in zip(self.snapshot_files, self.grid_files):
             tqdm_bar.set_description(f"FTLE {self.index:04d}: {snapshot_file}")
             tqdm_bar.update()
-            time.sleep(0.5)  # Simulating processing time
 
             interpolator = interpolator_factory.create_interpolator(
                 snapshot_file, grid_file, args.interpolator
