@@ -1,6 +1,7 @@
 import itertools
 import multiprocessing
 import os
+import time
 from typing import List
 
 from scipy.io import savemat
@@ -29,24 +30,34 @@ class SnapshotProcessor:
         snapshot_files: List[str],
         grid_files: List[str],
         particle_file: str,
-        tqdm_position: int,
-        queue,
+        tqdm_position_queue,
+        progress_dict,
     ):
         self.index = index
         self.snapshot_files = snapshot_files
         self.grid_files = grid_files
         self.particle_file = particle_file
-        self.tqdm_position = tqdm_position
-        self.queue = queue
+        self.progress_dict = progress_dict
+        self.tqdm_position_queue = tqdm_position_queue
+        self.tqdm_position = None  # Will be assigned dynamically
         self.output_dir = f"outputs/{args.experiment_name}"
 
     def run(self):
         """Processes a single snapshot period."""
+        self.tqdm_position = self.tqdm_position_queue.get()
+
+        # Force clean ghost tqdm_bar bars before starting a new one
+        if hasattr(self, "tqdm_bar"):
+            self.tqdm_bar.clear()
+            self.tqdm_bar.close()
+
         tqdm_bar = tqdm(
             total=len(self.snapshot_files),
             desc=f"FTLE {self.index:04d}",
             position=self.tqdm_position,
             leave=False,
+            dynamic_ncols=True,
+            mininterval=0.5,
         )
 
         particles = read_seed_particles_coordinates(self.particle_file)
@@ -57,7 +68,7 @@ class SnapshotProcessor:
 
         for snapshot_file, grid_file in zip(self.snapshot_files, self.grid_files):
             tqdm_bar.set_description(f"FTLE {self.index:04d}: {snapshot_file}")
-            tqdm_bar.update()
+            tqdm_bar.update(1)
 
             interpolator = interpolator_factory.create_interpolator(
                 snapshot_file, grid_file, args.interpolator
@@ -65,8 +76,11 @@ class SnapshotProcessor:
             integrator.integrate(args.snapshot_timestep, particles, interpolator)
 
         self._compute_and_save_ftle(particles)
+
+        tqdm_bar.clear()
         tqdm_bar.close()
-        self.queue.put(1)  # Notify the main process
+        self.progress_dict[self.index] = True  # Notify progress monitor
+        self.tqdm_position_queue.put(self.tqdm_position)
 
     def _compute_and_save_ftle(self, particles):
         """Computes FTLE and saves the results."""
@@ -115,10 +129,15 @@ class FTLEComputationManager:
             print("Running forward-time FTLE")
 
     def run(self):
-        """Runs the FTLE computation using multiprocessing."""
+        """Runs FTLE computation using multiprocessing with shared progress tracking."""
         pool = multiprocessing.Pool(processes=self.num_processes)
         manager = multiprocessing.Manager()
-        queue = manager.Queue()
+        progress_dict = manager.dict()
+        tqdm_position_queue = manager.Queue()
+
+        # Initialize available tqdm positions (from 1 to num_processes)
+        for i in range(1, self.num_processes + 1):
+            tqdm_position_queue.put(i)
 
         tqdm_outer = tqdm(
             total=self.num_snapshots_total - self.num_snapshots_in_flow_map_period + 1,
@@ -147,31 +166,36 @@ class FTLEComputationManager:
                 )
             )[i]
 
-            tqdm_position = (i % self.num_processes) + 1
+            progress_dict[i] = False  # Mark as incomplete
 
             processor = SnapshotProcessor(
                 i,
                 snapshot_files_period,
                 grid_files_period,
                 particle_file,
-                tqdm_position,
-                queue,
+                tqdm_position_queue,
+                progress_dict,
             )
             tasks.append(pool.apply_async(processor.run))
 
-        self._monitor_progress(tasks, queue, tqdm_outer)
+        self._monitor_progress(tasks, progress_dict, tqdm_outer)
 
         pool.close()
         pool.join()
         tqdm_outer.close()
 
-    def _monitor_progress(self, tasks, queue, tqdm_outer):
+    def _monitor_progress(self, tasks, tqdm_dict, tqdm_outer):
         """Monitors the completion of parallel tasks and updates the progress bar."""
         completed = 0
         while completed < len(tasks):
-            queue.get()  # Wait for a task to finish
-            tqdm_outer.update()
-            completed += 1
+            completed = sum(1 for v in tqdm_dict.values() if v)  # Count completed tasks
+            tqdm_outer.update(completed - tqdm_outer.n)  # Increment new completions
+            tqdm_outer.refresh()
+            time.sleep(2.0)  # Prevents excessive polling, keeping CPU usage low
+
+            # OBS: the computations inside the loop runs asynchronously, thus
+            # time.sleep will not held the computations. The present method just
+            # waits for notifications of completed tasks.
 
 
 @timeit
