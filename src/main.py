@@ -38,7 +38,7 @@ class SnapshotProcessor:
         self.particle_file = particle_file
         self.tqdm_position = tqdm_position
         self.queue = queue
-        self.output_dir = "outputs/vawt_naca0018"
+        self.output_dir = f"outputs/{args.experiment_name}"
 
     def run(self):
         """Processes a single snapshot period."""
@@ -73,6 +73,8 @@ class SnapshotProcessor:
         jacobian = compute_flow_map_jacobian(particles)
         map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
         ftle_field = compute_ftle(jacobian, map_period)
+
+        os.makedirs(self.output_dir, exist_ok=True)
 
         filename = os.path.join(self.output_dir, f"ftle{self.index:04d}.mat")
         savemat(filename, {"ftle": ftle_field})

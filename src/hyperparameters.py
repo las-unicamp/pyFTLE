@@ -43,8 +43,7 @@ parser.add_argument(
     "--experiment_name",
     type=str,
     required=True,
-    help="Name of subdirectory in logging_root where summaries and checkpoints"
-    "will be saved.",
+    help="Name of subdirectory in root_dir/outputs/ where the outputs will be saved",
 )
 
 
