@@ -93,7 +93,7 @@ class FTLEComputationManager:
         self.num_snapshots_in_flow_map_period = (
             int(args.flow_map_period / abs(args.snapshot_timestep)) + 1
         )
-        self.num_processes = 4  # Adjust the number of processes
+        self.num_processes = args.num_processes
 
         self._handle_time_direction()
 

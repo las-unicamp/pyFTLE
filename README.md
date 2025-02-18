@@ -65,7 +65,8 @@ python main.py --experiment_name "my_experiment" \
                --snapshot_timestep 0.1 \
                --flow_map_period 5.0 \
                --integrator "rk4" \
-               --interpolator "cubic"
+               --interpolator "cubic" \
+               --num_processes 4
 ```
 
 Alternatively, use a configuration file:
@@ -85,6 +86,7 @@ python main.py -c config.yaml
 | `--flow_map_period`     | `float` | Integration period for computing the flow map.                                                |
 | `--integrator`          | `str`   | Time-stepping method (`rk4`, `euler`, `ab2`).                                                 |
 | `--interpolator`        | `str`   | Interpolation method (`cubic`, `linear`, `nearest`, `grid`).                                  |
+| `--num_processes`       | `int`   | Number of workers in the multiprocessing pool. Each worker computs the FTLE of a snapshot.    |
 
 
 ### **File Requirements**

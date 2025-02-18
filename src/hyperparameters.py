@@ -23,6 +23,7 @@ class MyProgramArgs:
     flow_map_period: float
     integrator: str
     interpolator: str
+    num_processes: int
 
 
 parser = configargparse.ArgumentParser()
@@ -101,6 +102,13 @@ parser.add_argument(
     choices=["cubic", "linear", "nearest", "grid"],
     help="Select interpolator strategy to evaluate the particle velocity at "
     "their current location. default='cubic'",
+)
+parser.add_argument(
+    "--num_processes",
+    type=int,
+    default=1,
+    help="Number of workers in the multiprocessing pool. Each worker will compute "
+    "the FTLE field of a given snapshot. default=1 (no parallelization)",
 )
 
 
