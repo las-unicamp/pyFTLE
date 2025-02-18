@@ -1,18 +1,18 @@
-# **pyLCS: A Python Package for Computing Finite-Time Lyapunov Exponents**
+# **pyFTLE: A Python Package for Computing Finite-Time Lyapunov Exponents**
 
-`pyLCS` computes hyperbolic Lagrangian Coherent Structures (LCS) from velocity flow field data using Finite-Time Lyapunov Exponents (FTLE).
+`pyFTLE` computes hyperbolic Lagrangian Coherent Structures (LCS) from velocity flow field data using Finite-Time Lyapunov Exponents (FTLE).
 
 ---
 
 ## **Overview**
 
 <div align="center">
-  <img src="https://github.com/las-unicamp/pyLCS/blob/main/.github/integration.gif" width="45%" />
-  <img src="https://github.com/las-unicamp/pyLCS/blob/main/.github/ftle.gif" width="45%" />
+  <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/integration.gif" width="45%" />
+  <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/ftle.gif" width="45%" />
 </div>
 
 
-pyLCS provides a robust and modular implementation for computing FTLE fields. It tracks particle positions over time by interpolating a given velocity field and integrating their motion. After a specified integration period, the flow map Jacobian is computed, and the largest eigenvalue of the Cauchy-Green deformation tensor determines the FTLE field.
+pyFTLE provides a robust and modular implementation for computing FTLE fields. It tracks particle positions over time by interpolating a given velocity field and integrating their motion. After a specified integration period, the flow map Jacobian is computed, and the largest eigenvalue of the Cauchy-Green deformation tensor determines the FTLE field.
 
 ### **Key Features**
 - Customizable particle integration strategies.
@@ -36,8 +36,8 @@ Currently, the package supports MATLAB file formats for input data. However, add
 #### **Installation Steps:**
 1. Clone the repository:
    ```bash
-   git clone https://github.com/las-unicamp/pyLCS.git
-   cd pyLCS
+   git clone https://github.com/las-unicamp/pyFTLE.git
+   cd pyFTLE
    ```
 2. Install dependencies using UV:
    ```bash
@@ -100,7 +100,7 @@ python main.py -c config.yaml
 - The particle files must include the headers: `left`, `right`, `top`, and `bottom`, as illustrated in the accompanying figure. These headers define the positions of four neighboring particles surrounding a central location, where the FTLE is computed.
 
 <div align="center">
-  <img src="https://github.com/las-unicamp/pyLCS/blob/main/.github/particles.png" alt="Paticles Group Image" style="width: 50%; margin-right: 20px;">
+  <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/particles.png" alt="Paticles Group Image" style="width: 50%; margin-right: 20px;">
 </div>
 
 > **NOTE:** The current implementation supports MATLAB file formats with the mentioned file requirements. However, the user can implement their own readers to accept files with different data structure.
@@ -121,5 +121,5 @@ This project is licensed under the **MIT License**.
 
 ---
 
-For bug reports, feature requests, or contributions, please open an issue or submit a pull request on [GitHub](https://github.com/las-unicamp/pyLCS).
+For bug reports, feature requests, or contributions, please open an issue or submit a pull request on [GitHub](https://github.com/las-unicamp/pyFTLE).
 
