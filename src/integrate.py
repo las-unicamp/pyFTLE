@@ -1,5 +1,7 @@
 from typing import Protocol
 
+from numba import njit
+
 from src.interpolate import InterpolationStrategy
 from src.particles import NeighboringParticles
 
@@ -24,6 +26,11 @@ class IntegratorStrategy(Protocol):
                 given the position values.
         """
         ...
+
+
+@njit
+def adams_bashforth_2_step(h, current_velocity, previous_velocity):
+    return h * (1.5 * current_velocity - 0.5 * previous_velocity)
 
 
 class AdamsBashforth2Integrator:
@@ -56,15 +63,20 @@ class AdamsBashforth2Integrator:
 
         if self.previous_velocity is None:
             # First step: fallback to Euler method
-            particles.positions += h * current_velocity
+            particles.positions += euler_step(h, current_velocity)
         else:
             # Adams-Bashforth 2-step method
-            particles.positions += h * (
-                1.5 * current_velocity - 0.5 * self.previous_velocity
+            particles.positions += adams_bashforth_2_step(
+                h, current_velocity, self.previous_velocity
             )
 
         # Store current velocity for the next step
         self.previous_velocity = current_velocity
+
+
+@njit
+def euler_step(h, current_velocity):
+    return h * current_velocity
 
 
 class EulerIntegrator:
@@ -83,7 +95,13 @@ class EulerIntegrator:
         particles: NeighboringParticles,
         interpolator: InterpolationStrategy,
     ) -> None:
-        particles.positions += h * interpolator.interpolate(particles.positions)
+        current_velocity = interpolator.interpolate(particles.positions)
+        particles.positions += euler_step(h, current_velocity)
+
+
+@njit
+def runge_kutta_4_step(h, k1, k2, k3, k4):
+    return (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
 
 
 class RungeKutta4Integrator:
@@ -109,7 +127,7 @@ class RungeKutta4Integrator:
         k4 = interpolator.interpolate(particles.positions + h * k3)
 
         # Update the solution in-place using the weighted average of the slopes
-        particles.positions += (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+        particles.positions += runge_kutta_4_step(h, k1, k2, k3, k4)
 
 
 def get_integrator(integrator_name: str) -> IntegratorStrategy:
