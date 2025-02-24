@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from scipy.io import loadmat, savemat
+from scipy.io import savemat
 
 from src.file_readers import (
     CoordinateDataReader,
@@ -90,22 +90,3 @@ def test_read_seed_particles_coordinates(mock_seed_particle_file):
 
     # Ensure positions match
     np.testing.assert_array_equal(result.positions, expected_positions)
-
-
-def test_read_seed_particles_coordinates_caching(mock_seed_particle_file, mocker):
-    # Patch loadmat in the src.file_readers namespace
-    mocked_loadmat = mocker.patch("src.file_readers.loadmat", wraps=loadmat)
-
-    # Call the function twice with the same file
-    result1 = read_seed_particles_coordinates(mock_seed_particle_file)
-    result2 = read_seed_particles_coordinates(mock_seed_particle_file)
-
-    # Verify the results are the same
-    np.testing.assert_array_equal(result1, result2)
-
-    # Ensure loadmat is only called once (subsequent calls used the cache)
-    read_seed_particles_coordinates(mock_seed_particle_file)
-    read_seed_particles_coordinates(mock_seed_particle_file)
-    read_seed_particles_coordinates(mock_seed_particle_file)
-    read_seed_particles_coordinates(mock_seed_particle_file)
-    mocked_loadmat.assert_called_once_with(mock_seed_particle_file)

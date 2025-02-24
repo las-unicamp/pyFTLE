@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.io import loadmat
 
-from src.caching import cache_last_n_files
 from src.my_types import ArrayFloat32MxN, ArrayFloat32Nx2
 from src.particles import NeighboringParticles
 
@@ -74,7 +73,6 @@ class CoordinateDataReader:
         return np.column_stack((coordinate_x, coordinate_y))
 
 
-@cache_last_n_files(num_cached_files=2)
 def read_seed_particles_coordinates(file_path: str) -> NeighboringParticles:
     """
     Reads seeded particle coordinates from a MATLAB file containing `left`, `right`
