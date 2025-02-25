@@ -32,12 +32,14 @@ class SnapshotProcessor:
         particle_file: str,
         tqdm_position_queue,
         progress_dict,
+        interpolator_factory: InterpolatorFactory,
     ):
         self.index = index
         self.snapshot_files = snapshot_files
         self.grid_files = grid_files
         self.particle_file = particle_file
         self.progress_dict = progress_dict
+        self.interpolator_factory = interpolator_factory
         self.tqdm_position_queue = tqdm_position_queue
         self.tqdm_position = None  # Will be assigned dynamically
         self.output_dir = f"outputs/{args.experiment_name}"
@@ -62,15 +64,12 @@ class SnapshotProcessor:
 
         particles = read_seed_particles_coordinates(self.particle_file)
         integrator = get_integrator(args.integrator)
-        velocity_reader = VelocityDataReader()
-        coordinate_reader = CoordinateDataReader()
-        interpolator_factory = InterpolatorFactory(coordinate_reader, velocity_reader)
 
         for snapshot_file, grid_file in zip(self.snapshot_files, self.grid_files):
             tqdm_bar.set_description(f"FTLE {self.index:04d}: {snapshot_file}")
             tqdm_bar.update(1)
 
-            interpolator = interpolator_factory.create_interpolator(
+            interpolator = self.interpolator_factory.create_interpolator(
                 snapshot_file, grid_file, args.interpolator
             )
             integrator.integrate(args.snapshot_timestep, particles, interpolator)
@@ -146,6 +145,10 @@ class FTLEComputationManager:
             leave=True,
         )
 
+        interpolator_factory = InterpolatorFactory(
+            CoordinateDataReader(), VelocityDataReader()
+        )
+
         tasks = []
         for i in range(
             self.num_snapshots_total - self.num_snapshots_in_flow_map_period + 1
@@ -175,6 +178,7 @@ class FTLEComputationManager:
                 particle_file,
                 tqdm_position_queue,
                 progress_dict,
+                interpolator_factory,
             )
             tasks.append(pool.apply_async(processor.run))
 
