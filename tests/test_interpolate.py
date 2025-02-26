@@ -87,32 +87,5 @@ def test_create_interpolator(mock_read_velocity, mock_read_coordinates):
         assert np.isfinite(interpolated_values).all()
 
 
-def test_caching():
-    with (
-        patch(
-            "src.file_readers.CoordinateDataReader.read_flatten"
-        ) as mock_read_coordinates,
-        patch("src.file_readers.VelocityDataReader.read_flatten") as mock_read_velocity,
-    ):
-        points, velocities = generate_mock_data()
-        mock_read_coordinates.return_value = points
-        mock_read_velocity.return_value = velocities
-
-        factory = InterpolatorFactory(CoordinateDataReader(), VelocityDataReader())
-        interpolator_1 = factory.create_interpolator(
-            "dummy_snapshot.mat", "dummy_grid.mat", "cubic"
-        )
-        interpolator_2 = factory.create_interpolator(
-            "dummy_snapshot.mat", "dummy_grid.mat", "cubic"
-        )
-
-        assert interpolator_1 is interpolator_2  # Should return cached instance
-
-        interpolator_3 = factory.create_interpolator(
-            "dummy_snapshot3.mat", "dummy_grid.mat", "cubic"
-        )
-        assert interpolator_1 is not interpolator_3  # Should create a new instance
-
-
 if __name__ == "__main__":
     pytest.main()

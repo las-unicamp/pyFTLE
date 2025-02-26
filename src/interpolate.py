@@ -9,7 +9,6 @@ from scipy.interpolate import (
     RegularGridInterpolator,
 )
 
-from src.caching import cache_last_n_files
 from src.file_readers import CoordinateDataReader, VelocityDataReader
 from src.my_types import (
     ArrayFloat32MxN,
@@ -162,7 +161,6 @@ class InterpolatorFactory:
         self.coordinate_reader = coordinate_reader
         self.velocity_reader = velocity_reader
 
-    @cache_last_n_files(num_cached_files=2)
     def create_interpolator(
         self, snapshot_file: str, grid_file: str, strategy: str = "cubic"
     ):
