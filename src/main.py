@@ -1,96 +1,18 @@
 import itertools
 import multiprocessing
-import os
 import time
-from typing import List
 
-from scipy.io import savemat
 from tqdm import tqdm
 
-from src.cauchy_green import compute_flow_map_jacobian
 from src.decorators import timeit
 from src.file_readers import (
     CoordinateDataReader,
     VelocityDataReader,
-    read_seed_particles_coordinates,
 )
 from src.file_utils import get_files_list
-from src.ftle import compute_ftle
 from src.hyperparameters import args
-from src.integrate import get_integrator
 from src.interpolate import InterpolatorFactory
-
-
-class SnapshotProcessor:
-    """Handles the computation of FTLE for a single snapshot period."""
-
-    def __init__(
-        self,
-        index: int,
-        snapshot_files: List[str],
-        grid_files: List[str],
-        particle_file: str,
-        tqdm_position_queue,
-        progress_dict,
-        interpolator_factory: InterpolatorFactory,
-    ):
-        self.index = index
-        self.snapshot_files = snapshot_files
-        self.grid_files = grid_files
-        self.particle_file = particle_file
-        self.progress_dict = progress_dict
-        self.interpolator_factory = interpolator_factory
-        self.tqdm_position_queue = tqdm_position_queue
-        self.tqdm_position = None  # Will be assigned dynamically
-        self.output_dir = f"outputs/{args.experiment_name}"
-
-    def run(self):
-        """Processes a single snapshot period."""
-        self.tqdm_position = self.tqdm_position_queue.get()
-
-        # Force clean ghost tqdm_bar bars before starting a new one
-        if hasattr(self, "tqdm_bar"):
-            self.tqdm_bar.clear()
-            self.tqdm_bar.close()
-
-        tqdm_bar = tqdm(
-            total=len(self.snapshot_files),
-            desc=f"FTLE {self.index:04d}",
-            position=self.tqdm_position,
-            leave=False,
-            dynamic_ncols=True,
-            mininterval=0.5,
-        )
-
-        particles = read_seed_particles_coordinates(self.particle_file)
-        integrator = get_integrator(args.integrator)
-
-        for snapshot_file, grid_file in zip(self.snapshot_files, self.grid_files):
-            tqdm_bar.set_description(f"FTLE {self.index:04d}: {snapshot_file}")
-            tqdm_bar.update(1)
-
-            interpolator = self.interpolator_factory.create_interpolator(
-                snapshot_file, grid_file, args.interpolator
-            )
-            integrator.integrate(args.snapshot_timestep, particles, interpolator)
-
-        self._compute_and_save_ftle(particles)
-
-        tqdm_bar.clear()
-        tqdm_bar.close()
-        self.progress_dict[self.index] = True  # Notify progress monitor
-        self.tqdm_position_queue.put(self.tqdm_position)
-
-    def _compute_and_save_ftle(self, particles):
-        """Computes FTLE and saves the results."""
-        jacobian = compute_flow_map_jacobian(particles)
-        map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
-        ftle_field = compute_ftle(jacobian, map_period)
-
-        os.makedirs(self.output_dir, exist_ok=True)
-
-        filename = os.path.join(self.output_dir, f"ftle{self.index:04d}.mat")
-        savemat(filename, {"ftle": ftle_field})
+from src.process import SnapshotProcessor
 
 
 class FTLEComputationManager:
