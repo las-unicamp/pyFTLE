@@ -3,12 +3,13 @@ name = "pyFTLE"
 version = "0.2.0"
 description = "Python package to compute Finite Time Lyapunov Exponents (FTLE)."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "configargparse>=1.7",
     "matplotlib>=3.10.0",
     "numba>=0.61.0",
     "pandas>=2.2.3",
+    "pytest-cov>=6.0.0",
     "scipy>=1.15.1",
     "tqdm>=4.67.1",
 ]
@@ -20,4 +21,10 @@ dev = [
     "pytest-mock>=3.14.0",
     "pytest>=8.3.4",
     "ruff>=0.8.3",
+    "scipy-stubs>=1.15.2.0",
+    "pandas-stubs>=2.2.3.241126",
+    "types-tqdm>=4.67.0.20241221",
+    "pyright>=1.1.395",
+    "gitlint>=0.19.1",
+    "typos>=1.29.10",
 ]

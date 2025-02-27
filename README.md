@@ -27,7 +27,7 @@ Currently, the package supports MATLAB file formats for input data. However, add
 ## **Installation**
 
 ### **Requirements**
-- Python 3.12+
+- Python 3.10+
 
 ### **Using UV (Recommended)**
 

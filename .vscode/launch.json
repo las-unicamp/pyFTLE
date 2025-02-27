@@ -16,17 +16,17 @@
             },
             "args": [
                 // # logger parameters
-                "--experiment_name=exemple",
+                "--experiment_name=example",
                 //
                 // # input parameters
                 "--list_velocity_files=inputs_velocity.txt",
                 "--list_grid_files=inputs_grid.txt",
                 "--list_particle_files=inputs_particle.txt",
-                "--snapshot_timestep=0.01",
-                "--flow_map_period=1.0",
-                "--integrator=euler",
+                "--snapshot_timestep=-0.12271846303061551",
+                "--flow_map_period=5.0",
+                "--integrator=rk4",
                 "--interpolator=cubic",
-                "--num_processes=4"
+                "--num_processes=6"
             ],
             "purpose": [
                 "debug-in-terminal"

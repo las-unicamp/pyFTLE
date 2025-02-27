@@ -1,0 +1,14 @@
+[general]
+# Ignore rules, reference them by id or name (comma-separated)
+ignore=title-trailing-punctuation, T3, body-is-missing
+
+# Enable specific community contributed rules
+contrib=contrib-title-conventional-commits
+
+### Configuring rules ###
+
+[title-max-length]
+line-length=80
+
+[title-min-length]
+min-length=5

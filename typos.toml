@@ -1,0 +1,9 @@
+[default]
+files = ["src/", "tests/"]
+
+[files]
+extend-exclude = [".git/", ".tox/", ".venv/", "docs/", "joss-paper/"]
+
+[default.extend-identifiers]
+LinearNDInterpolator = "LinearNDInterpolator"
+NearestNDInterpolator = "NearestNDInterpolator"
