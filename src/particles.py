@@ -1,18 +1,18 @@
 from dataclasses import dataclass, field
 
-import numba as nb
 import numpy as np
+from numba import njit  # type: ignore
 
-from src.my_types import ArrayFloat32N4x2, ArrayFloat32Nx2
+from src.my_types import ArrayFloat64N4x2, ArrayFloat64Nx2
 
 
 @dataclass
 class NeighboringParticles:
-    positions: ArrayFloat32N4x2  # Shape (4*N, 2)
+    positions: ArrayFloat64N4x2  # Shape (4*N, 2)
 
-    initial_delta_top_bottom: ArrayFloat32Nx2 = field(init=False)
-    initial_delta_right_left: ArrayFloat32Nx2 = field(init=False)
-    initial_centroid: ArrayFloat32Nx2 = field(init=False)
+    initial_delta_top_bottom: ArrayFloat64Nx2 = field(init=False)
+    initial_delta_right_left: ArrayFloat64Nx2 = field(init=False)
+    initial_centroid: ArrayFloat64Nx2 = field(init=False)
 
     def __post_init__(self) -> None:
         assert (
@@ -32,61 +32,61 @@ class NeighboringParticles:
         return self.positions.shape[0] // 4
 
     @property
-    def delta_top_bottom(self) -> ArrayFloat32Nx2:
+    def delta_top_bottom(self) -> ArrayFloat64Nx2:
         """Compute the vector difference between the top and bottom neighbors."""
         return compute_delta_top_bottom(self.positions, len(self))
 
     @property
-    def delta_right_left(self) -> ArrayFloat32Nx2:
+    def delta_right_left(self) -> ArrayFloat64Nx2:
         """Compute the vector difference between the right and left neighbors."""
         return compute_delta_right_left(self.positions, len(self))
 
     @property
-    def centroid(self) -> ArrayFloat32Nx2:
+    def centroid(self) -> ArrayFloat64Nx2:
         """Compute the centroid of the four neighboring positions."""
         return compute_centroid(self.positions, len(self))
 
 
-@nb.njit
+@njit
 def compute_initial_delta_top_bottom(
-    positions: ArrayFloat32N4x2, n_particles: int
-) -> ArrayFloat32Nx2:
+    positions: ArrayFloat64N4x2, n_particles: int
+) -> ArrayFloat64Nx2:
     """Compute the initial difference between top and bottom neighbors."""
     top = positions[2 * n_particles : 3 * n_particles]
     bottom = positions[3 * n_particles :]
     return top - bottom
 
 
-@nb.njit
+@njit
 def compute_initial_delta_right_left(
-    positions: ArrayFloat32N4x2, n_particles: int
-) -> ArrayFloat32Nx2:
+    positions: ArrayFloat64N4x2, n_particles: int
+) -> ArrayFloat64Nx2:
     """Compute the initial difference between right and left neighbors."""
     right = positions[n_particles : 2 * n_particles]
     left = positions[:n_particles]
     return right - left
 
 
-@nb.njit
+@njit
 def compute_delta_top_bottom(
-    positions: ArrayFloat32N4x2, n_particles: int
-) -> ArrayFloat32Nx2:
+    positions: ArrayFloat64N4x2, n_particles: int
+) -> ArrayFloat64Nx2:
     """Compute the vector difference between the top and bottom neighbors."""
     return positions[2 * n_particles : 3 * n_particles] - positions[3 * n_particles :]
 
 
-@nb.njit
+@njit
 def compute_delta_right_left(
-    positions: ArrayFloat32N4x2, n_particles: int
-) -> ArrayFloat32Nx2:
+    positions: ArrayFloat64N4x2, n_particles: int
+) -> ArrayFloat64Nx2:
     """Compute the vector difference between the right and left neighbors."""
     return positions[n_particles : 2 * n_particles] - positions[:n_particles]
 
 
-@nb.njit
-def compute_centroid(positions: ArrayFloat32N4x2, n_particles: int) -> ArrayFloat32Nx2:
+@njit
+def compute_centroid(positions: ArrayFloat64N4x2, n_particles: int) -> ArrayFloat64Nx2:
     """Compute the centroid of the four neighboring positions."""
-    centroid = np.zeros((n_particles, 2), dtype=np.float32)
+    centroid = np.zeros((n_particles, 2), dtype=np.float64)
     for i in range(n_particles):
         for j in range(2):
             centroid[i, j] = (

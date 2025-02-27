@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import List
 
 import pandas as pd
 
@@ -24,7 +25,7 @@ def find_files_with_pattern(root_dir: str, pattern: str) -> list[str]:
     return matching_files
 
 
-def write_list_to_txt(file_list: list[str], output_file: str):
+def write_list_to_txt(file_list: list[str], output_file: str) -> None:
     """
     Writes a list of file paths to a text file.
 
@@ -37,19 +38,19 @@ def write_list_to_txt(file_list: list[str], output_file: str):
             f.write(file_path + "\n")
 
 
-def get_files_list(file_path: str) -> pd.DataFrame:
+def get_files_list(file_path: str) -> List[str]:
     """
     Reads a file containing a list of paths to velocity, grid or particle files,
-    then returns its content as a Pandas DataFrame.
+    then returns its content as a list of strings.
 
     Args:
         file_path (str): Path to the file that holds the list.
 
     Returns:
-        pd.DataFrame: DataFrame containing list of files.
+        List[str]: List containing paths of the files.
     """
     if os.path.exists(file_path):
-        data = pd.read_csv(file_path, header=None)
-        return data.iloc[:, 0].tolist()
+        data = pd.read_csv(file_path, header=None, dtype=str)  # type: ignore
+        return data.iloc[:, 0].tolist()  # type: ignore
     else:
         raise FileNotFoundError(f"File not found at {file_path}")

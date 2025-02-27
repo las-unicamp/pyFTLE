@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     print(f"Timestep: {times[1] - times[0]}")
 
-    # Save grid file test loading it separetely
+    # Save grid file test loading it separately
     data_dict = {
         "coordinate_x": coords[:, 0],
         "coordinate_y": coords[:, 1],

@@ -92,7 +92,7 @@ python main.py -c config.yaml
 ### **File Requirements**
 
 - The `list_velocity_files` must be a `.txt` file with the path to the velocity files. Make sure the listed files are ordered according to their simulation time (ascending order).
- 
+
 - The `list_grid_files` and `list_particle_files` must also be `.txt` files. For moving bodies, you can have multiple files (same number as the number of velocity files), but if the mesh grid is fixed, then you can have a single item in both `list_grid_files` and `list_particle_files` lists.
 
 - The current implementation supports MATLAB file formats. The MATLAB velocity file should contain columns labeled `velocity_x` and `velocity_y`. The grid file should include `coordinate_x` and `coordinate_y` headers.
@@ -100,7 +100,7 @@ python main.py -c config.yaml
 - The particle files must include the headers: `left`, `right`, `top`, and `bottom`, as illustrated in the accompanying figure. These headers define the positions of four neighboring particles surrounding a central location, where the FTLE is computed.
 
 <div align="center">
-  <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/particles.png" alt="Paticles Group Image" style="width: 50%; margin-right: 20px;">
+  <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/particles.png" alt="Particles Group Image" style="width: 50%; margin-right: 20px;">
 </div>
 
 > **NOTE:** The current implementation supports MATLAB file formats with the mentioned file requirements. However, the user can implement their own readers to accept files with different data structure.
@@ -122,4 +122,3 @@ This project is licensed under the **MIT License**.
 ---
 
 For bug reports, feature requests, or contributions, please open an issue or submit a pull request on [GitHub](https://github.com/las-unicamp/pyFTLE).
-

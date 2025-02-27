@@ -56,7 +56,9 @@ class TestFileUtils(unittest.TestCase):
         # Verify
         self.assertEqual(result, ["file1.txt", "file2.txt", "file3.txt"])  # Flat list
         mock_exists.assert_called_once_with("velocity_file.csv")
-        mock_read_csv.assert_called_once_with("velocity_file.csv", header=None)
+        mock_read_csv.assert_called_once_with(
+            "velocity_file.csv", header=None, dtype=str
+        )
 
     @patch("os.path.exists")
     def test_get_files_list_not_exists(self, mock_exists):

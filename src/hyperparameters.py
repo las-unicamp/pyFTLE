@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-import configargparse
+import configargparse  # type: ignore
 
 
 @dataclass
@@ -9,8 +9,6 @@ class MyProgramArgs:
     This is a helper to provide typehints of the arguments.
     All possible arguments must be declared in this dataclass.
     """
-
-    config_filepath: any
 
     # logger parameters
     experiment_name: str
@@ -27,15 +25,6 @@ class MyProgramArgs:
 
 
 parser = configargparse.ArgumentParser()
-
-
-parser.add(
-    "-c",
-    "--config_filepath",
-    required=False,
-    is_config_file=True,
-    help="Path to config file.",
-)
 
 
 # logger parameters
@@ -86,7 +75,7 @@ parser.add_argument(
     type=float,
     required=True,
     help="Approximate period of integration to evaluate the flow map. This value "
-    "will be devided by the `snapshot_timestep` to get the number of snapshots.",
+    "will be divided by the `snapshot_timestep` to get the number of snapshots.",
 )
 parser.add_argument(
     "--integrator",
@@ -111,4 +100,4 @@ parser.add_argument(
 )
 
 
-args = MyProgramArgs(**vars(parser.parse_args()))
+args = MyProgramArgs(**vars(parser.parse_args()))  # type: ignore

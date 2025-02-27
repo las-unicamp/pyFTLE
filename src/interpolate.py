@@ -11,17 +11,17 @@ from scipy.interpolate import (
 
 from src.file_readers import CoordinateDataReader, VelocityDataReader
 from src.my_types import (
-    ArrayFloat32MxN,
-    ArrayFloat32N,
-    ArrayFloat32Nx2,
+    ArrayFloat64MxN,
+    ArrayFloat64N,
+    ArrayFloat64Nx2,
 )
 
 
 class InterpolationStrategy(Protocol):
     def interpolate(
         self,
-        new_points: ArrayFloat32Nx2,
-    ) -> ArrayFloat32Nx2:
+        new_points: ArrayFloat64Nx2,
+    ) -> ArrayFloat64Nx2:
         """Implements the interpolation strategy."""
         ...
 
@@ -50,14 +50,14 @@ class CubicInterpolatorStrategy:
 
     def __init__(
         self,
-        points: ArrayFloat32Nx2,
-        velocities_u: ArrayFloat32N,
-        velocities_v: ArrayFloat32N,
+        points: ArrayFloat64Nx2,
+        velocities_u: ArrayFloat64N,
+        velocities_v: ArrayFloat64N,
     ):
         velocities = velocities_u + 1j * velocities_v
         self.interpolator = CloughTocher2DInterpolator(points, velocities)
 
-    def interpolate(self, new_points: ArrayFloat32Nx2) -> ArrayFloat32Nx2:
+    def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
         interp_velocities = self.interpolator(new_points)
         return np.column_stack((interp_velocities.real, interp_velocities.imag))
 
@@ -76,14 +76,14 @@ class LinearInterpolatorStrategy:
 
     def __init__(
         self,
-        points: ArrayFloat32Nx2,
-        velocities_u: ArrayFloat32N,
-        velocities_v: ArrayFloat32N,
+        points: ArrayFloat64Nx2,
+        velocities_u: ArrayFloat64N,
+        velocities_v: ArrayFloat64N,
     ):
         velocities = velocities_u + 1j * velocities_v
         self.interpolator = LinearNDInterpolator(points, velocities)
 
-    def interpolate(self, new_points: ArrayFloat32Nx2) -> ArrayFloat32Nx2:
+    def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
         interp_velocities = self.interpolator(new_points)
         return np.column_stack((interp_velocities.real, interp_velocities.imag))
 
@@ -102,14 +102,14 @@ class NearestNeighborInterpolatorStrategy:
 
     def __init__(
         self,
-        points: ArrayFloat32Nx2,
-        velocities_u: ArrayFloat32N,
-        velocities_v: ArrayFloat32N,
+        points: ArrayFloat64Nx2,
+        velocities_u: ArrayFloat64N,
+        velocities_v: ArrayFloat64N,
     ):
         velocities = velocities_u + 1j * velocities_v
         self.interpolator = NearestNDInterpolator(points, velocities)
 
-    def interpolate(self, new_points: ArrayFloat32Nx2) -> ArrayFloat32Nx2:
+    def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
         interp_velocities = self.interpolator(new_points)
         return np.column_stack((interp_velocities.real, interp_velocities.imag))
 
@@ -128,10 +128,10 @@ class GridInterpolatorStrategy:
 
     def __init__(
         self,
-        x: ArrayFloat32MxN,
-        y: ArrayFloat32MxN,
-        velocity_u: ArrayFloat32MxN,
-        velocity_v: ArrayFloat32MxN,
+        x: ArrayFloat64MxN,
+        y: ArrayFloat64MxN,
+        velocity_u: ArrayFloat64MxN,
+        velocity_v: ArrayFloat64MxN,
     ):
         grid_shape = x.shape
         grid_x = np.linspace(np.min(x), np.max(x), grid_shape[0])
@@ -144,7 +144,7 @@ class GridInterpolatorStrategy:
             (grid_x, grid_y), velocity_v, bounds_error=False, fill_value=None
         )
 
-    def interpolate(self, new_points: ArrayFloat32Nx2) -> ArrayFloat32Nx2:
+    def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
         """Interpolates velocity field at given Cartesian points."""
         u_interp = self.interpolator_u(new_points)
         v_interp = self.interpolator_v(new_points)
@@ -163,7 +163,7 @@ class InterpolatorFactory:
 
     def create_interpolator(
         self, snapshot_file: str, grid_file: str, strategy: str = "cubic"
-    ):
+    ) -> InterpolationStrategy:
         """
         Reads velocity and coordinate data from the given files and creates an
         interpolator based on the selected strategy.

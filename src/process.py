@@ -1,8 +1,9 @@
 import os
-from multiprocessing import Queue
 from multiprocessing.managers import DictProxy
+from queue import Queue
 from typing import List
 
+import numpy as np
 from scipy.io import savemat
 from tqdm import tqdm
 
@@ -14,6 +15,7 @@ from src.ftle import compute_ftle
 from src.hyperparameters import args
 from src.integrate import get_integrator
 from src.interpolate import InterpolatorFactory
+from src.particles import NeighboringParticles
 
 
 class SnapshotProcessor:
@@ -25,28 +27,23 @@ class SnapshotProcessor:
         snapshot_files: List[str],
         grid_files: List[str],
         particle_file: str,
-        tqdm_position_queue: Queue,
-        progress_dict: DictProxy,
+        tqdm_position_queue: Queue[int],
+        progress_dict: DictProxy,  # type: ignore
         interpolator_factory: InterpolatorFactory,
     ):
         self.index = index
         self.snapshot_files = snapshot_files
         self.grid_files = grid_files
         self.particle_file = particle_file
-        self.progress_dict = progress_dict
+        self.progress_dict: DictProxy[int, bool] = progress_dict
         self.interpolator_factory = interpolator_factory
         self.tqdm_position_queue = tqdm_position_queue
         self.tqdm_position = None  # Will be assigned dynamically
         self.output_dir = f"outputs/{args.experiment_name}"
 
-    def run(self):
+    def run(self) -> None:
         """Processes a single snapshot period."""
         self.tqdm_position = self.tqdm_position_queue.get()
-
-        # Force clean ghost tqdm_bar bars before starting a new one
-        if hasattr(self, "tqdm_bar"):
-            self.tqdm_bar.clear()
-            self.tqdm_bar.close()
 
         tqdm_bar = tqdm(
             total=len(self.snapshot_files),
@@ -76,11 +73,12 @@ class SnapshotProcessor:
         self.progress_dict[self.index] = True  # Notify progress monitor
         self.tqdm_position_queue.put(self.tqdm_position)
 
-    def _compute_and_save_ftle(self, particles):
+    def _compute_and_save_ftle(self, particles: NeighboringParticles) -> None:
         """Computes FTLE and saves the results."""
         jacobian = compute_flow_map_jacobian(particles)
         map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
         ftle_field = compute_ftle(jacobian, map_period)
+        ftle_field = np.array(ftle_field)  # enforce type compatibility in savemat
 
         os.makedirs(self.output_dir, exist_ok=True)
 

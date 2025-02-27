@@ -1,6 +1,9 @@
 import itertools
 import multiprocessing
 import time
+from multiprocessing.managers import DictProxy
+from multiprocessing.pool import ApplyResult
+from typing import Any, Dict, List, cast
 
 from tqdm import tqdm
 
@@ -19,9 +22,9 @@ class FTLEComputationManager:
     """Manages the distribution of snapshot processing tasks."""
 
     def __init__(self):
-        self.snapshot_files = get_files_list(args.list_velocity_files)
-        self.grid_files = get_files_list(args.list_grid_files)
-        self.particle_files = get_files_list(args.list_particle_files)
+        self.snapshot_files: List[str] = get_files_list(args.list_velocity_files)
+        self.grid_files: List[str] = get_files_list(args.list_grid_files)
+        self.particle_files: List[str] = get_files_list(args.list_particle_files)
         self._validate_input_lists()
 
         self.num_snapshots_total = len(self.snapshot_files)
@@ -49,11 +52,13 @@ class FTLEComputationManager:
         else:
             print("Running forward-time FTLE")
 
-    def run(self):
+    def run(self) -> None:
         """Runs FTLE computation using multiprocessing with shared progress tracking."""
         pool = multiprocessing.Pool(processes=self.num_processes)
         manager = multiprocessing.Manager()
-        progress_dict = manager.dict()
+        progress_dict: DictProxy[int, bool] = manager.dict()
+        progress_dict_typed: Dict[int, bool] = cast(Dict[int, bool], progress_dict)
+
         tqdm_position_queue = manager.Queue()
 
         # Initialize available tqdm positions (from 1 to num_processes)
@@ -71,7 +76,7 @@ class FTLEComputationManager:
             CoordinateDataReader(), VelocityDataReader()
         )
 
-        tasks = []
+        tasks: List[ApplyResult[None]] = []
         for i in range(
             self.num_snapshots_total - self.num_snapshots_in_flow_map_period + 1
         ):
@@ -104,13 +109,18 @@ class FTLEComputationManager:
             )
             tasks.append(pool.apply_async(processor.run))
 
-        self._monitor_progress(tasks, progress_dict, tqdm_outer)
+        self._monitor_progress(tasks, progress_dict_typed, tqdm_outer)
 
         pool.close()
         pool.join()
         tqdm_outer.close()
 
-    def _monitor_progress(self, tasks, tqdm_dict, tqdm_outer):
+    def _monitor_progress(
+        self,
+        tasks: List[ApplyResult[None]],
+        tqdm_dict: Dict[int, bool],
+        tqdm_outer: Any,
+    ) -> None:
         """Monitors the completion of parallel tasks and updates the progress bar."""
         completed = 0
         while completed < len(tasks):
