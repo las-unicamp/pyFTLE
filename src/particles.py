@@ -15,9 +15,9 @@ class NeighboringParticles:
     initial_centroid: ArrayFloat64Nx2 = field(init=False)
 
     def __post_init__(self) -> None:
-        assert (
-            self.positions.shape[0] % 4 == 0
-        ), "positions.shape[0] must be multiple of 4"
+        assert self.positions.shape[0] % 4 == 0, (
+            "positions.shape[0] must be multiple of 4"
+        )
 
         n_particles = self.positions.shape[0] // 4
         self.initial_delta_top_bottom = compute_initial_delta_top_bottom(

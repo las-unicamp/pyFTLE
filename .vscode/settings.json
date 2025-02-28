@@ -1,8 +1,4 @@
 {
-    "python.analysis.typeCheckingMode": "strict",
-    "python.analysis.extraPaths": [
-        "src"
-    ],
     "python.envFile": "${workspaceFolder}/.env",
     "[python]": {
         "editor.formatOnSave": true,
@@ -13,10 +9,9 @@
         "editor.defaultFormatter": "charliermarsh.ruff"
     },
     "ruff.configuration": ".ruff.toml",
-    "ruff.lint.args": [
-        "--config=.ruff.toml"
-    ],
-    "ruff.format.args": [
-        "--config=.ruff.toml"
+    "ruff.path": [
+        "uv",
+        "run",
+        "ruff"
     ]
 }
