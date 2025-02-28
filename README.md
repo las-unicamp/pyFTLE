@@ -1,6 +1,7 @@
 # **pyFTLE: A Python Package for Computing Finite-Time Lyapunov Exponents**
 
-[![Python Code Quality](https://github.com/las-unicamp/pyFTLE/actions/workflows/code-quality.yaml/badge.svg)](https://github.com/las-unicamp/pyFTLE/actions/workflows/code-quality.yaml)
+[![Python Code Quality](https://github.com/las-unicamp/pyFTLE/actions/workflows/tests.yaml/badge.svg)](https://github.com/las-unicamp/pyFTLE/actions/workflows/tests.yaml)
+[![Python Code Quality](https://github.com/las-unicamp/pyFTLE/actions/workflows/code-style.yaml/badge.svg)](https://github.com/las-unicamp/pyFTLE/actions/workflows/code-style.yaml)
 
 `pyFTLE` computes hyperbolic Lagrangian Coherent Structures (LCS) from velocity flow field data using Finite-Time Lyapunov Exponents (FTLE).
 
