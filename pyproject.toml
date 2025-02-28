@@ -17,7 +17,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "nptyping>=2.5.0",
-    "pre-commit>=4.0.1",
     "pytest-mock>=3.14.0",
     "pytest>=8.3.4",
     "ruff>=0.9.9",
@@ -25,6 +24,5 @@ dev = [
     "pandas-stubs>=2.2.3.241126",
     "types-tqdm>=4.67.0.20241221",
     "pyright>=1.1.395",
-    "gitlint>=0.19.1",
     "typos>=1.29.10",
 ]
