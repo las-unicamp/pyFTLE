@@ -72,9 +72,9 @@ python main.py --experiment_name "my_experiment" \
                --num_processes 4
 ```
 
-Alternatively, use a configuration file:
+Alternatively, use a configuration file (running the command from the root directory):
 ```bash
-python main.py -c config.yaml
+PYTHONPATH=${PWD} uv run python src/main.py -c config.yaml
 ```
 
 ### **Required Parameters**

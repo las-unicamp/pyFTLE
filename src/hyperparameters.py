@@ -27,6 +27,14 @@ class MyProgramArgs:
 parser = configargparse.ArgumentParser()
 
 
+# YAML configuration
+parser.add_argument(
+    "-c",
+    "--config",
+    is_config_file=True,
+    help="Path to configuration file in YAML format",
+)
+
 # logger parameters
 parser.add_argument(
     "--experiment_name",
@@ -99,5 +107,7 @@ parser.add_argument(
     "the FTLE field of a given snapshot. default=1 (no parallelization)",
 )
 
+raw_args = vars(parser.parse_args())
+raw_args.pop("config", None)
 
-args = MyProgramArgs(**vars(parser.parse_args()))  # type: ignore
+args = MyProgramArgs(**raw_args)
