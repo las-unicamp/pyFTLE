@@ -46,6 +46,11 @@ Currently, the package supports MATLAB file formats for input data. However, add
    ```bash
    uv sync
    ```
+3. Install src/ directory as an "editable" package within .venv to overcome import issues:
+   ```bash
+   uv pip install -e '.[dev,test]' --verbose
+   ```
+   This will make src directory a first-class citizen in the Python environment, which uv respects.
 
 ---
 
@@ -113,6 +118,17 @@ PYTHONPATH=${PWD} uv run python src/main.py -c config.yaml
 ## **License**
 
 This project is licensed under the **MIT License**.
+
+---
+
+## **Contributing**
+
+When contributing to this repository, please make sure to keep the code well tested.
+
+To run the entire test suit, we recommend the following approach:
+```bash
+PYTHONPATH=${PWD} uv run python -m pytest
+```
 
 ---
 

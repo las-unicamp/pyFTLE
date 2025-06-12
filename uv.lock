@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11'",
@@ -634,53 +635,52 @@ wheels = [
 [[package]]
 name = "pyftle"
 version = "0.2.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "configargparse" },
     { name = "matplotlib" },
     { name = "numba" },
     { name = "pandas" },
-    { name = "pytest-cov" },
     { name = "scipy" },
     { name = "tqdm" },
 ]
 
-[package.dev-dependencies]
+[package.optional-dependencies]
 dev = [
     { name = "nptyping" },
     { name = "pandas-stubs" },
     { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-mock" },
     { name = "ruff" },
     { name = "scipy-stubs" },
     { name = "types-tqdm" },
     { name = "typos" },
+]
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "configargparse", specifier = ">=1.7" },
     { name = "matplotlib", specifier = ">=3.10.0" },
+    { name = "nptyping", marker = "extra == 'dev'", specifier = ">=2.5.0" },
     { name = "numba", specifier = ">=0.61.0" },
     { name = "pandas", specifier = ">=2.2.3" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pandas-stubs", marker = "extra == 'dev'", specifier = ">=2.2.3.241126" },
+    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.395" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.4" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.0.0" },
+    { name = "pytest-mock", marker = "extra == 'test'", specifier = ">=3.14.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9.9" },
     { name = "scipy", specifier = ">=1.15.1" },
+    { name = "scipy-stubs", marker = "extra == 'dev'", specifier = ">=1.15.2.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
+    { name = "types-tqdm", marker = "extra == 'dev'", specifier = ">=4.67.0.20241221" },
+    { name = "typos", marker = "extra == 'dev'", specifier = ">=1.29.10" },
 ]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "nptyping", specifier = ">=2.5.0" },
-    { name = "pandas-stubs", specifier = ">=2.2.3.241126" },
-    { name = "pyright", specifier = ">=1.1.395" },
-    { name = "pytest", specifier = ">=8.3.4" },
-    { name = "pytest-mock", specifier = ">=3.14.0" },
-    { name = "ruff", specifier = ">=0.9.9" },
-    { name = "scipy-stubs", specifier = ">=1.15.2.0" },
-    { name = "types-tqdm", specifier = ">=4.67.0.20241221" },
-    { name = "typos", specifier = ">=1.29.10" },
-]
+provides-extras = ["dev", "test"]
 
 [[package]]
 name = "pyparsing"
@@ -913,7 +913,7 @@ name = "tqdm"
 version = "4.67.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "platform_system == 'Windows'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737 }
 wheels = [

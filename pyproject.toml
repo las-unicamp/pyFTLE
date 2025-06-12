@@ -9,16 +9,13 @@ dependencies = [
     "matplotlib>=3.10.0",
     "numba>=0.61.0",
     "pandas>=2.2.3",
-    "pytest-cov>=6.0.0",
     "scipy>=1.15.1",
     "tqdm>=4.67.1",
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "nptyping>=2.5.0",
-    "pytest-mock>=3.14.0",
-    "pytest>=8.3.4",
     "ruff>=0.9.9",
     "scipy-stubs>=1.15.2.0",
     "pandas-stubs>=2.2.3.241126",
@@ -26,3 +23,19 @@ dev = [
     "pyright>=1.1.395",
     "typos>=1.29.10",
 ]
+test = [
+    "pytest>=8.3.4",
+    "pytest-mock>=3.14.0",
+    "pytest-cov>=6.0.0",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
