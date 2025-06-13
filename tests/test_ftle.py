@@ -7,7 +7,7 @@ from src.ftle import compute_ftle
 def test_compute_ftle():
     # Define a small test case
     flow_map_jacobian = np.array(
-        [[[[2.0, 0.0], [0.0, 1.0]]], [[[1.5, 0.5], [0.5, 1.5]]]], dtype=np.float32
+        [[[[2.0, 0.0], [0.0, 1.0]]], [[[1.5, 0.5], [0.5, 1.5]]]], dtype=np.float64
     ).reshape(2, 2, 2)
 
     map_period = 1.0  # Example period
