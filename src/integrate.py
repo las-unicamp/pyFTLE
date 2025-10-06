@@ -3,7 +3,7 @@ from typing import Protocol
 from numba import njit  # type: ignore
 
 from src.interpolate import InterpolationStrategy
-from src.my_types import ArrayFloat64Nx2
+from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
 from src.particles import NeighboringParticles
 
 
@@ -31,8 +31,10 @@ class IntegratorStrategy(Protocol):
 
 @njit
 def adams_bashforth_2_step(
-    h: float, current_velocity: ArrayFloat64Nx2, previous_velocity: ArrayFloat64Nx2
-) -> ArrayFloat64Nx2:
+    h: float,
+    current_velocity: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    previous_velocity: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
     return h * (1.5 * current_velocity - 0.5 * previous_velocity)
 
 
@@ -78,7 +80,9 @@ class AdamsBashforth2Integrator:
 
 
 @njit
-def euler_step(h: float, current_velocity: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
+def euler_step(
+    h: float, current_velocity: ArrayFloat64Nx2 | ArrayFloat64Nx3
+) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
     return h * current_velocity
 
 
@@ -105,11 +109,11 @@ class EulerIntegrator:
 @njit
 def runge_kutta_4_step(
     h: float,
-    k1: ArrayFloat64Nx2,
-    k2: ArrayFloat64Nx2,
-    k3: ArrayFloat64Nx2,
-    k4: ArrayFloat64Nx2,
-) -> ArrayFloat64Nx2:
+    k1: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    k2: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    k3: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    k4: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
     return (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
 
 

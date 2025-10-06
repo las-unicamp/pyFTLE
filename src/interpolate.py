@@ -9,19 +9,20 @@ from scipy.interpolate import (
     RegularGridInterpolator,
 )
 
-from src.file_readers import CoordinateDataReader, VelocityDataReader
+from src.file_readers import CoordinateMatReader, VelocityReader
 from src.my_types import (
-    ArrayFloat64MxN,
-    ArrayFloat64N,
+    Array2xMxN,
+    Array3xMxN,
     ArrayFloat64Nx2,
+    ArrayFloat64Nx3,
 )
 
 
 class InterpolationStrategy(Protocol):
     def interpolate(
         self,
-        new_points: ArrayFloat64Nx2,
-    ) -> ArrayFloat64Nx2:
+        new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Implements the interpolation strategy."""
         ...
 
@@ -43,23 +44,28 @@ class CubicInterpolatorStrategy:
     points : NDArray
         Array of shape `(n_points, 2)` representing the coordinates.
     velocities_u : NDArray
-        Array of shape `(n_points,)` representing the u-velocity values.
-    velocities_v : NDArray
-        Array of shape `(n_points,)` representing the v-velocity values.
+        Array of shape `(n_points, 2)` representing the velocities values.
     """
 
     def __init__(
         self,
-        points: ArrayFloat64Nx2,
-        velocities_u: ArrayFloat64N,
-        velocities_v: ArrayFloat64N,
+        points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
     ):
-        velocities = velocities_u + 1j * velocities_v
-        self.interpolator = CloughTocher2DInterpolator(points, velocities)
+        velocities_cmplx = velocities[:, 0] + 1j * velocities[:, 1]
+        self.interpolator = CloughTocher2DInterpolator(points, velocities_cmplx)
+        if points.shape[1] == 3:
+            self.interpolator_z = CloughTocher2DInterpolator(points, velocities[:, 2])
 
     def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
         interp_velocities = self.interpolator(new_points)
-        return np.column_stack((interp_velocities.real, interp_velocities.imag))
+        if new_points.shape[1] == 2:
+            return np.column_stack((interp_velocities.real, interp_velocities.imag))
+        else:
+            interp_velocities_z = self.interpolator_z(new_points)
+            return np.column_stack(
+                (interp_velocities.real, interp_velocities.imag, interp_velocities_z)
+            )
 
 
 class LinearInterpolatorStrategy:
@@ -76,16 +82,29 @@ class LinearInterpolatorStrategy:
 
     def __init__(
         self,
-        points: ArrayFloat64Nx2,
-        velocities_u: ArrayFloat64N,
-        velocities_v: ArrayFloat64N,
+        points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
     ):
-        velocities = velocities_u + 1j * velocities_v
-        self.interpolator = LinearNDInterpolator(points, velocities)
+        velocities_cmplx = velocities[:, 0] + 1j * velocities[:, 1]
+        self.interpolator = LinearNDInterpolator(points, velocities_cmplx)
 
-    def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
+        if points.shape[1] == 3:
+            self.interpolator_z = LinearNDInterpolator(
+                points, velocities[:, 2], fill_value=0.0
+            )
+
+    def interpolate(
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
+    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         interp_velocities = self.interpolator(new_points)
-        return np.column_stack((interp_velocities.real, interp_velocities.imag))
+
+        if new_points.shape[1] == 2:
+            return np.column_stack((interp_velocities.real, interp_velocities.imag))
+        else:
+            interp_velocities_z = self.interpolator_z(new_points)
+            return np.column_stack(
+                (interp_velocities.real, interp_velocities.imag, interp_velocities_z)
+            )
 
 
 class NearestNeighborInterpolatorStrategy:
@@ -102,16 +121,25 @@ class NearestNeighborInterpolatorStrategy:
 
     def __init__(
         self,
-        points: ArrayFloat64Nx2,
-        velocities_u: ArrayFloat64N,
-        velocities_v: ArrayFloat64N,
+        points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
     ):
-        velocities = velocities_u + 1j * velocities_v
-        self.interpolator = NearestNDInterpolator(points, velocities)
+        velocities_cmplx = velocities[:, 0] + 1j * velocities[:, 1]
+        self.interpolator = NearestNDInterpolator(points, velocities_cmplx)
+        if points.shape[1] == 3:
+            self.interpolator_z = NearestNDInterpolator(points, velocities[:, 2])
 
-    def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
+    def interpolate(
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
+    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         interp_velocities = self.interpolator(new_points)
-        return np.column_stack((interp_velocities.real, interp_velocities.imag))
+        if new_points.shape[1] == 2:
+            return np.column_stack((interp_velocities.real, interp_velocities.imag))
+        else:
+            interp_velocities_z = self.interpolator_z(new_points)
+            return np.column_stack(
+                (interp_velocities.real, interp_velocities.imag, interp_velocities_z)
+            )
 
 
 class GridInterpolatorStrategy:
@@ -128,35 +156,73 @@ class GridInterpolatorStrategy:
 
     def __init__(
         self,
-        x: ArrayFloat64MxN,
-        y: ArrayFloat64MxN,
-        velocity_u: ArrayFloat64MxN,
-        velocity_v: ArrayFloat64MxN,
+        coordinates: Array3xMxN | Array2xMxN,
+        velocities: Array3xMxN | Array2xMxN,
     ):
-        grid_shape = x.shape
-        grid_x = np.linspace(np.min(x), np.max(x), grid_shape[0])
-        grid_y = np.linspace(np.min(y), np.max(y), grid_shape[1])
+        grid_shape = coordinates[0].shape
 
-        self.interpolator_u = RegularGridInterpolator(
-            (grid_x, grid_y), velocity_u, bounds_error=False, fill_value=None
+        grid_x = np.linspace(
+            np.min(coordinates[0]),
+            np.max(coordinates[0]),
+            grid_shape[0],
         )
-        self.interpolator_v = RegularGridInterpolator(
-            (grid_x, grid_y), velocity_v, bounds_error=False, fill_value=None
+        grid_y = np.linspace(
+            np.min(coordinates[1]),
+            np.max(coordinates[1]),
+            grid_shape[1],
         )
 
-    def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
+        if len(grid_shape) == 2:
+            self.interpolator_u = RegularGridInterpolator(
+                (grid_x, grid_y), velocities[0], bounds_error=False, fill_value=None
+            )
+            self.interpolator_v = RegularGridInterpolator(
+                (grid_x, grid_y), velocities[1], bounds_error=False, fill_value=None
+            )
+        else:
+            grid_z = np.linspace(
+                np.min(coordinates[2]),
+                np.max(coordinates[2]),
+                grid_shape[2],
+            )
+
+            self.interpolator_u = RegularGridInterpolator(
+                (grid_x, grid_y, grid_z),
+                velocities[0],
+                bounds_error=False,
+                fill_value=0.0,
+            )
+            self.interpolator_v = RegularGridInterpolator(
+                (grid_x, grid_y, grid_z),
+                velocities[1],
+                bounds_error=False,
+                fill_value=0.0,
+            )
+            self.interpolator_z = RegularGridInterpolator(
+                (grid_x, grid_y, grid_z),
+                velocities[2],
+                bounds_error=False,
+                fill_value=0.0,
+            )
+
+    def interpolate(
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
+    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Interpolates velocity field at given Cartesian points."""
         u_interp = self.interpolator_u(new_points)
         v_interp = self.interpolator_v(new_points)
-
-        return np.column_stack((u_interp, v_interp))
+        if new_points.shape[1] == 3:
+            w_interp = self.interpolator_z(new_points)
+            return np.column_stack((u_interp, v_interp, w_interp))
+        else:
+            return np.column_stack((u_interp, v_interp))
 
 
 class InterpolatorFactory:
     def __init__(
         self,
-        coordinate_reader: CoordinateDataReader,
-        velocity_reader: VelocityDataReader,
+        coordinate_reader: CoordinateMatReader,
+        velocity_reader: VelocityReader,
     ):
         self.coordinate_reader = coordinate_reader
         self.velocity_reader = velocity_reader
@@ -199,19 +265,26 @@ class InterpolatorFactory:
         match strategy:
             case "cubic":
                 return CubicInterpolatorStrategy(
-                    coordinates, velocities[:, 0], velocities[:, 1]
+                    coordinates,
+                    velocities,
                 )
+
             case "linear":
                 return LinearInterpolatorStrategy(
-                    coordinates, velocities[:, 0], velocities[:, 1]
+                    coordinates,
+                    velocities,
                 )
+
             case "nearest":
                 return NearestNeighborInterpolatorStrategy(
-                    coordinates, velocities[:, 0], velocities[:, 1]
+                    coordinates,
+                    velocities,
                 )
+
             case "grid":
                 return GridInterpolatorStrategy(
-                    coordinates[0], coordinates[1], velocities[0], velocities[1]
+                    coordinates,
+                    velocities,
                 )
             case _:
                 raise ValueError(f"Unknown interpolation strategy: {strategy}")

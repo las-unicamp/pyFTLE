@@ -9,8 +9,8 @@ from tqdm import tqdm
 
 from src.decorators import timeit
 from src.file_readers import (
-    CoordinateDataReader,
-    VelocityDataReader,
+    CoordinateMatReader,
+    VelocityMatReader,
 )
 from src.file_utils import get_files_list
 from src.hyperparameters import args
@@ -73,7 +73,7 @@ class FTLEComputationManager:
         )
 
         interpolator_factory = InterpolatorFactory(
-            CoordinateDataReader(), VelocityDataReader()
+            CoordinateMatReader(), VelocityMatReader()
         )
 
         tasks: List[ApplyResult[None]] = []

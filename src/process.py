@@ -4,14 +4,19 @@ from queue import Queue
 from typing import List
 
 import numpy as np
+from pyevtk.hl import gridToVTK
+from scipy.interpolate import griddata
 from scipy.io import savemat
 from tqdm import tqdm
 
-from src.cauchy_green import compute_flow_map_jacobian
+from src.cauchy_green import (
+    compute_flow_map_jacobian_2x2,
+    compute_flow_map_jacobian_3x3,
+)
 from src.file_readers import (
     read_seed_particles_coordinates,
 )
-from src.ftle import compute_ftle
+from src.ftle import compute_ftle_2x2, compute_ftle_3x3
 from src.hyperparameters import args
 from src.integrate import get_integrator
 from src.interpolate import InterpolatorFactory
@@ -75,12 +80,51 @@ class SnapshotProcessor:
 
     def _compute_and_save_ftle(self, particles: NeighboringParticles) -> None:
         """Computes FTLE and saves the results."""
-        jacobian = compute_flow_map_jacobian(particles)
-        map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
-        ftle_field = compute_ftle(jacobian, map_period)
-        ftle_field = np.array(ftle_field)  # enforce type compatibility in savemat
 
-        os.makedirs(self.output_dir, exist_ok=True)
+        if particles.num_neighbors == 4:
+            jacobian = compute_flow_map_jacobian_2x2(particles)
+            map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
+            ftle_field = compute_ftle_2x2(jacobian, map_period)
+            ftle_field = np.array(ftle_field)  # enforce type compatibility in savemat
 
-        filename = os.path.join(self.output_dir, f"ftle{self.index:04d}.mat")
-        savemat(filename, {"ftle": ftle_field})
+            # writer aqui
+            centroid = particles.initial_centroid
+            x = centroid[:, 0].squeeze()
+            y = centroid[:, 1].squeeze()
+            nx = 800
+            ny = 400
+
+            xi = np.linspace(x.min(), x.max(), nx)
+            yi = np.linspace(y.min(), y.max(), ny)
+            xx, yy = np.meshgrid(xi, yi, indexing="ij")
+            ftle_field = ftle_field.squeeze()
+            ftle_grid = griddata(centroid, ftle_field, (xx, yy), method="linear")
+            os.makedirs(self.output_dir, exist_ok=True)
+
+            filename = os.path.join(self.output_dir, f"ftle{self.index:04d}")
+            gridToVTK(
+                filename,
+                xi,
+                yi,
+                np.array([0.0]),
+                pointData={"ftle": ftle_grid.astype(np.float32).reshape((nx, ny, 1))},
+            )
+
+        else:
+            jacobian = compute_flow_map_jacobian_3x3(particles)
+            map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
+
+            ftle_field = compute_ftle_3x3(jacobian, map_period)
+            ftle_field = np.array(ftle_field)  # enforce type compatibility in savemat
+            centroid = particles.initial_centroid
+            x = centroid[:, 0].squeeze()
+            y = centroid[:, 1].squeeze()
+            z = centroid[:, 2].squeeze()
+
+            ftle_field = ftle_field.squeeze()
+
+            os.makedirs(self.output_dir, exist_ok=True)
+
+            filename = os.path.join(self.output_dir, f"ftle{self.index:04d}")
+            data = {"ftle": ftle_field, "x": x, "y": y, "z": z}
+            savemat(filename, data)
