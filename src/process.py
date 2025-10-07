@@ -1,14 +1,10 @@
-import os
 from multiprocessing.managers import DictProxy
 from queue import Queue
 from typing import List
 
-import numpy as np
-from pyevtk.hl import gridToVTK
-from scipy.interpolate import griddata
-from scipy.io import savemat
 from tqdm import tqdm
 
+from file_writers import FTLEWriter
 from src.cauchy_green import (
     compute_flow_map_jacobian_2x2,
     compute_flow_map_jacobian_3x3,
@@ -35,6 +31,7 @@ class SnapshotProcessor:
         tqdm_position_queue: Queue[int],
         progress_dict: DictProxy,  # type: ignore
         interpolator_factory: InterpolatorFactory,
+        output_writer: FTLEWriter,
     ):
         self.index = index
         self.snapshot_files = snapshot_files
@@ -44,7 +41,7 @@ class SnapshotProcessor:
         self.interpolator_factory = interpolator_factory
         self.tqdm_position_queue = tqdm_position_queue
         self.tqdm_position = None  # Will be assigned dynamically
-        self.output_dir = f"outputs/{args.experiment_name}"
+        self.output_writer = output_writer
 
     def run(self) -> None:
         """Processes a single snapshot period."""
@@ -85,46 +82,11 @@ class SnapshotProcessor:
             jacobian = compute_flow_map_jacobian_2x2(particles)
             map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
             ftle_field = compute_ftle_2x2(jacobian, map_period)
-            ftle_field = np.array(ftle_field)  # enforce type compatibility in savemat
-
-            # writer aqui
-            centroid = particles.initial_centroid
-            x = centroid[:, 0].squeeze()
-            y = centroid[:, 1].squeeze()
-            nx = 800
-            ny = 400
-
-            xi = np.linspace(x.min(), x.max(), nx)
-            yi = np.linspace(y.min(), y.max(), ny)
-            xx, yy = np.meshgrid(xi, yi, indexing="ij")
-            ftle_field = ftle_field.squeeze()
-            ftle_grid = griddata(centroid, ftle_field, (xx, yy), method="linear")
-            os.makedirs(self.output_dir, exist_ok=True)
-
-            filename = os.path.join(self.output_dir, f"ftle{self.index:04d}")
-            gridToVTK(
-                filename,
-                xi,
-                yi,
-                np.array([0.0]),
-                pointData={"ftle": ftle_grid.astype(np.float32).reshape((nx, ny, 1))},
-            )
 
         else:
             jacobian = compute_flow_map_jacobian_3x3(particles)
             map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
-
             ftle_field = compute_ftle_3x3(jacobian, map_period)
-            ftle_field = np.array(ftle_field)  # enforce type compatibility in savemat
-            centroid = particles.initial_centroid
-            x = centroid[:, 0].squeeze()
-            y = centroid[:, 1].squeeze()
-            z = centroid[:, 2].squeeze()
 
-            ftle_field = ftle_field.squeeze()
-
-            os.makedirs(self.output_dir, exist_ok=True)
-
-            filename = os.path.join(self.output_dir, f"ftle{self.index:04d}")
-            data = {"ftle": ftle_field, "x": x, "y": y, "z": z}
-            savemat(filename, data)
+        filename = f"ftle{self.index:04d}"
+        self.output_writer.write(filename, ftle_field, particles.initial_centroid)

@@ -1,5 +1,6 @@
 import itertools
 import multiprocessing
+import os
 import time
 from multiprocessing.managers import DictProxy
 from multiprocessing.pool import ApplyResult
@@ -13,6 +14,7 @@ from src.file_readers import (
     VelocityMatReader,
 )
 from src.file_utils import get_files_list
+from src.file_writers import create_writer
 from src.hyperparameters import args
 from src.interpolate import InterpolatorFactory
 from src.process import SnapshotProcessor
@@ -76,6 +78,15 @@ class FTLEComputationManager:
             CoordinateMatReader(), VelocityMatReader()
         )
 
+        is_map_period_invalid = (
+            self.num_snapshots_total <= self.num_snapshots_in_flow_map_period + 1
+        )
+        if is_map_period_invalid:
+            raise ValueError("Flow map period is too big")
+
+        output_dir = os.path.join("outputs", args.experiment_name)
+        writer = create_writer(args.output_format, output_dir, args.grid_shape)
+
         tasks: List[ApplyResult[None]] = []
         for i in range(
             self.num_snapshots_total - self.num_snapshots_in_flow_map_period + 1
@@ -106,6 +117,7 @@ class FTLEComputationManager:
                 tqdm_position_queue,
                 progress_dict,
                 interpolator_factory,
+                writer,
             )
             tasks.append(pool.apply_async(processor.run))
 

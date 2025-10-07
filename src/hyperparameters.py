@@ -23,8 +23,19 @@ class MyProgramArgs:
     interpolator: str
     num_processes: int
 
+    # configuration
+    output_format: str
+    grid_shape: tuple[int, ...]
+
 
 parser = configargparse.ArgumentParser()
+
+
+def parse_tuple(value: str):
+    """
+    Convert a string of integers separated by commas into a tuple of integers
+    """
+    return tuple(map(int, value.split(",")))
 
 
 # YAML configuration
@@ -105,6 +116,20 @@ parser.add_argument(
     default=1,
     help="Number of workers in the multiprocessing pool. Each worker will compute "
     "the FTLE field of a given snapshot. default=1 (no parallelization)",
+)
+
+parser.add_argument(
+    "--output_format",
+    type=str,
+    choices=["mat", "vtk"],
+    help="Select output file format. default='mat'",
+)
+parser.add_argument(
+    "--grid_shape",
+    type=parse_tuple,
+    help="Leverage grid structure of data to efficiently save output files. "
+    "Must be passed as a tuple of integers, e.g., --grid_shape 10,10,10 "
+    "Leave empty for unstructured point distribution (default).",
 )
 
 raw_args = vars(parser.parse_args())
