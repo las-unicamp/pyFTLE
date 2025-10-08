@@ -1,6 +1,3 @@
-[default]
-files = ["src/", "tests/"]
-
 [files]
 extend-exclude = [".git/", ".tox/", ".venv/", "docs/", "joss-paper/"]
 
