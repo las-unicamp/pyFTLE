@@ -15,7 +15,7 @@ class MyProgramArgs:
 
     # input parameters
     list_velocity_files: str
-    list_grid_files: str
+    list_coordinate_files: str
     list_particle_files: str
     snapshot_timestep: float
     flow_map_period: float
@@ -65,12 +65,12 @@ parser.add_argument(
     "reader for the desired velocity file format.",
 )
 parser.add_argument(
-    "--list_grid_files",
+    "--list_coordinate_files",
     type=str,
     required=True,
-    help="Text file containing a list (columnwise) of paths to grid files. "
+    help="Text file containing a list (columnwise) of paths to coordinate files. "
     "The user must guarantee that there exist a proper implementation of the "
-    "reader for the desired grid file format.",
+    "reader for the desired file format.",
 )
 parser.add_argument(
     "--list_particle_files",
@@ -80,7 +80,7 @@ parser.add_argument(
     "Each file must contain headers `left`, `right`, `top` and `bottom` to "
     "help identify the group of particles to evaluate the Cauchy-Green deformation "
     "tensor. The user must guarantee that there exist a proper implementation of the "
-    "reader for the desired grid file format.",
+    "reader for the desired file format.",
 )
 parser.add_argument(
     "--snapshot_timestep",

@@ -26,7 +26,7 @@ class SnapshotProcessor:
         self,
         index: int,
         snapshot_files: List[str],
-        grid_files: List[str],
+        coordinate_files: List[str],
         particle_file: str,
         tqdm_position_queue: Queue[int],
         progress_dict: DictProxy,  # type: ignore
@@ -35,7 +35,7 @@ class SnapshotProcessor:
     ):
         self.index = index
         self.snapshot_files = snapshot_files
-        self.grid_files = grid_files
+        self.coordinate_files = coordinate_files
         self.particle_file = particle_file
         self.progress_dict: DictProxy[int, bool] = progress_dict
         self.interpolator_factory = interpolator_factory
@@ -59,12 +59,14 @@ class SnapshotProcessor:
         particles = read_seed_particles_coordinates(self.particle_file)
         integrator = get_integrator(args.integrator)
 
-        for snapshot_file, grid_file in zip(self.snapshot_files, self.grid_files):
+        for snapshot_file, coordinate_file in zip(
+            self.snapshot_files, self.coordinate_files
+        ):
             tqdm_bar.set_description(f"FTLE {self.index:04d}: {snapshot_file}")
             tqdm_bar.update(1)
 
             interpolator = self.interpolator_factory.create_interpolator(
-                snapshot_file, grid_file, args.interpolator
+                snapshot_file, coordinate_file, args.interpolator
             )
             integrator.integrate(args.snapshot_timestep, particles, interpolator)
 

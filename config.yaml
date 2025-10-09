@@ -1,6 +1,6 @@
 experiment_name: "experiment"
 list_velocity_files: "path/to/file.txt"
-list_grid_files: "path/to/file.txt"
+list_coordinate_files: "path/to/file.txt"
 list_particle_files: "path/to/file.txt"
 snapshot_timestep: 0.1
 flow_map_period: 5

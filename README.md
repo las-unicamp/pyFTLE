@@ -68,7 +68,7 @@ folder, combine analytical velocity fields with visual explanations to illustrat
 solver’s execution.
 
 > [!TIP]
-> For production runs, it is often more practical to read velocity and grid data directly
+> For production runs, it is often more practical to read velocity and coordinate data directly
 from the file system (HD/SSD). In this case, the [file-based CLI](#anchor-point-running-via-CLI) offers greater convenience and flexibility.
 
 
@@ -122,7 +122,7 @@ Alternatively, you can run the script from the CLI as:
 PYTHONPATH=${PWD} uv run python main.py \
     --experiment_name "my_experiment" \
     --list_velocity_files "velocity_files.txt" \
-    --list_grid_files "grid_files.txt" \
+    --list_coordinate_files "coordinate_files.txt" \
     --list_particle_files "particle_files.txt" \
     --snapshot_timestep 0.1 \
     --flow_map_period 5.0 \
@@ -138,24 +138,24 @@ For VSCode users, the script execution can be streamlined via `.vscode/launch.js
 
 ### **Required Parameters**
 
-| Parameter             | Type    | Description                                                                                   |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `experiment_name`     | `str`   | Name of the subdirectory where the FTLE fields will be saved.                                 |
-| `list_velocity_files` | `str`   | Path to a text file listing velocity data files.                                              |
-| `list_grid_files`     | `str`   | Path to a text file listing grid files.                                                       |
-| `list_particle_files` | `str`   | Path to a text file listing particle data files.                                              |
-| `snapshot_timestep`   | `float` | Timestep between snapshots (positive for forward-time FTLE, negative for backward-time FTLE). |
-| `flow_map_period`     | `float` | Integration period for computing the flow map.                                                |
-| `integrator`          | `str`   | Time-stepping method (`rk4`, `euler`, `ab2`).                                                 |
-| `interpolator`        | `str`   | Interpolation method (`cubic`, `linear`, `nearest`, `grid`).                                  |
-| `num_processes`       | `int`   | Number of workers in the multiprocessing pool. Each worker computs the FTLE of a snapshot.    |
-| `output_format`       | `str`   | Output format (`mat`, `vtk`).                                                                 |
+| Parameter               | Type    | Description                                                                                   |
+| ----------------------- | ------- | --------------------------------------------------------------------------------------------- |
+| `experiment_name`       | `str`   | Name of the subdirectory where the FTLE fields will be saved.                                 |
+| `list_velocity_files`   | `str`   | Path to a text file listing velocity data files.                                              |
+| `list_coordinate_files` | `str`   | Path to a text file listing coordinate files.                                                 |
+| `list_particle_files`   | `str`   | Path to a text file listing particle data files.                                              |
+| `snapshot_timestep`     | `float` | Timestep between snapshots (positive for forward-time FTLE, negative for backward-time FTLE). |
+| `flow_map_period`       | `float` | Integration period for computing the flow map.                                                |
+| `integrator`            | `str`   | Time-stepping method (`rk4`, `euler`, `ab2`).                                                 |
+| `interpolator`          | `str`   | Interpolation method (`cubic`, `linear`, `nearest`, `grid`).                                  |
+| `num_processes`         | `int`   | Number of workers in the multiprocessing pool. Each worker computes the FTLE of a snapshot.    |
+| `output_format`         | `str`   | Output format (`mat`, `vtk`).                                                                 |
 
 ### **Optional Parameters**
 
-| Parameter             | Type    | Description                                                                                   |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `grid_shape`          | `int`   | Grid shape for structured points. It must be a comma-separated tuple of integers.             |
+| Parameter               | Type    | Description                                                                                   |
+| ----------------------- | ------- | --------------------------------------------------------------------------------------------- |
+| `grid_shape`            | `int`   | Grid shape for structured points. It must be a comma-separated tuple of integers.             |
 
 
 ---

@@ -25,7 +25,7 @@ class FTLEComputationManager:
 
     def __init__(self):
         self.snapshot_files: List[str] = get_files_list(args.list_velocity_files)
-        self.grid_files: List[str] = get_files_list(args.list_grid_files)
+        self.coordinate_files: List[str] = get_files_list(args.list_coordinate_files)
         self.particle_files: List[str] = get_files_list(args.list_particle_files)
         self._validate_input_lists()
 
@@ -39,8 +39,8 @@ class FTLEComputationManager:
 
     def _validate_input_lists(self):
         """Ensures input lists are correctly formatted."""
-        if len(self.grid_files) > 1:
-            assert len(self.snapshot_files) == len(self.grid_files)
+        if len(self.coordinate_files) > 1:
+            assert len(self.snapshot_files) == len(self.coordinate_files)
         if len(self.particle_files) > 1:
             assert len(self.snapshot_files) == len(self.particle_files)
 
@@ -48,7 +48,7 @@ class FTLEComputationManager:
         """Handles time direction for backward/forward FTLE computation."""
         if args.snapshot_timestep < 0:
             self.snapshot_files.reverse()
-            self.grid_files.reverse()
+            self.coordinate_files.reverse()
             self.particle_files.reverse()
             print("Running backward-time FTLE")
         else:
@@ -94,9 +94,9 @@ class FTLEComputationManager:
             snapshot_files_period = self.snapshot_files[
                 i : i + self.num_snapshots_in_flow_map_period
             ]
-            grid_files_period = list(
+            coordinate_files_period = list(
                 itertools.islice(
-                    itertools.cycle(self.grid_files),
+                    itertools.cycle(self.coordinate_files),
                     i,
                     i + self.num_snapshots_in_flow_map_period,
                 )
@@ -112,7 +112,7 @@ class FTLEComputationManager:
             processor = SnapshotProcessor(
                 i,
                 snapshot_files_period,
-                grid_files_period,
+                coordinate_files_period,
                 particle_file,
                 tqdm_position_queue,
                 progress_dict,

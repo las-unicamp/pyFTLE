@@ -40,7 +40,7 @@ def write_list_to_txt(file_list: list[str], output_file: str) -> None:
 
 def get_files_list(file_path: str) -> List[str]:
     """
-    Reads a file containing a list of paths to velocity, grid or particle files,
+    Reads a file containing a list of paths to velocity, coordinate or particle files,
     then returns its content as a list of strings.
 
     Args:
