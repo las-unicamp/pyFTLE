@@ -9,7 +9,7 @@ from scipy.interpolate import (
     RegularGridInterpolator,
 )
 
-from src.file_readers import CoordinateMatReader, VelocityReader
+from src.file_readers import CoordinateReader, VelocityReader
 from src.my_types import (
     Array2xMxN,
     Array3xMxN,
@@ -221,7 +221,7 @@ class GridInterpolatorStrategy:
 class InterpolatorFactory:
     def __init__(
         self,
-        coordinate_reader: CoordinateMatReader,
+        coordinate_reader: CoordinateReader,
         velocity_reader: VelocityReader,
     ):
         self.coordinate_reader = coordinate_reader
