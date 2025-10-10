@@ -74,7 +74,7 @@ class FTLEComputationManager:
             leave=True,
         )
 
-        interpolator_factory = InterpolatorFactory(
+        interpolator_factory = InterpolatorFactory.from_files(
             CoordinateMatReader(), VelocityMatReader()
         )
 
@@ -114,10 +114,10 @@ class FTLEComputationManager:
                 snapshot_files_period,
                 coordinate_files_period,
                 particle_file,
-                tqdm_position_queue,
-                progress_dict,
                 interpolator_factory,
                 writer,
+                tqdm_position_queue,
+                progress_dict,
             )
             tasks.append(pool.apply_async(processor.run))
 

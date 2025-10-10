@@ -1,10 +1,12 @@
 from multiprocessing.managers import DictProxy
 from queue import Queue
-from typing import List
+from typing import List, Optional
 
+import numpy as np
 from tqdm import tqdm
 
 from file_writers import FTLEWriter
+from my_types import ArrayFloat64N
 from src.cauchy_green import (
     compute_flow_map_jacobian_2x2,
     compute_flow_map_jacobian_3x3,
@@ -28,16 +30,16 @@ class SnapshotProcessor:
         snapshot_files: List[str],
         coordinate_files: List[str],
         particle_file: str,
-        tqdm_position_queue: Queue[int],
-        progress_dict: DictProxy,  # type: ignore
         interpolator_factory: InterpolatorFactory,
-        output_writer: FTLEWriter,
+        output_writer: Optional[FTLEWriter] = None,
+        tqdm_position_queue: Optional[Queue[int]] = None,
+        progress_dict: Optional[DictProxy[int, bool]] = None,  # type: ignore
     ):
         self.index = index
         self.snapshot_files = snapshot_files
         self.coordinate_files = coordinate_files
         self.particle_file = particle_file
-        self.progress_dict: DictProxy[int, bool] = progress_dict
+        self.progress_dict = progress_dict
         self.interpolator_factory = interpolator_factory
         self.tqdm_position_queue = tqdm_position_queue
         self.tqdm_position = None  # Will be assigned dynamically
@@ -45,6 +47,11 @@ class SnapshotProcessor:
 
     def run(self) -> None:
         """Processes a single snapshot period."""
+        if self.tqdm_position_queue is None or self.progress_dict is None:
+            raise RuntimeError(
+                "SnapshotProcessor.run() requires multiprocessing context."
+            )
+
         self.tqdm_position = self.tqdm_position_queue.get()
 
         tqdm_bar = tqdm(
@@ -70,25 +77,66 @@ class SnapshotProcessor:
             )
             integrator.integrate(args.snapshot_timestep, particles, interpolator)
 
-        self._compute_and_save_ftle(particles)
+        ftle_field = self._compute_ftle(particles)
+
+        if self.output_writer is not None:
+            filename = f"ftle{self.index:04d}"
+            self.output_writer.write(filename, ftle_field, particles.initial_centroid)
 
         tqdm_bar.clear()
         tqdm_bar.close()
         self.progress_dict[self.index] = True  # Notify progress monitor
         self.tqdm_position_queue.put(self.tqdm_position)
 
-    def _compute_and_save_ftle(self, particles: NeighboringParticles) -> None:
+    def run_in_memory(
+        self,
+        particles: NeighboringParticles,
+        snapshot_timestep: float,
+        flow_map_period: float,
+        integrator_name: str = "rk4",
+    ):
+        """
+        Computes FTLE directly in memory (for Jupyter examples).
+
+        Parameters
+        ----------
+        particles (NeighboringParticles): Particles to be tracked.
+        snapshot_timestep (float): Time between consecutive snapshots.
+        flow_map_period (float): Integration duration.
+        integrator_name (str): e.g. 'rk4'.
+        interpolator_name (str) e.g. 'cubic'.
+
+        Returns
+        -------
+        ftle_field (np.ndarray): The computed FTLE field.
+        particles (NeighboringParticles): Updated particle object (for visualization).
+        """
+
+        integrator = get_integrator(integrator_name)
+
+        num_snapshots = int(flow_map_period / abs(snapshot_timestep)) + 1
+        time_values = np.linspace(0.0, flow_map_period, num_snapshots) * np.sign(
+            snapshot_timestep
+        )
+
+        for t in time_values:
+            interpolator = self.interpolator_factory.create_interpolator_in_memory(
+                time=t
+            )
+            integrator.integrate(snapshot_timestep, particles, interpolator)
+
+        ftle_field = self._compute_ftle(particles)
+
+        return ftle_field, particles
+
+    def _compute_ftle(self, particles: NeighboringParticles) -> ArrayFloat64N:
         """Computes FTLE and saves the results."""
 
         if particles.num_neighbors == 4:
             jacobian = compute_flow_map_jacobian_2x2(particles)
             map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
-            ftle_field = compute_ftle_2x2(jacobian, map_period)
+            return compute_ftle_2x2(jacobian, map_period)
 
-        else:
-            jacobian = compute_flow_map_jacobian_3x3(particles)
-            map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
-            ftle_field = compute_ftle_3x3(jacobian, map_period)
-
-        filename = f"ftle{self.index:04d}"
-        self.output_writer.write(filename, ftle_field, particles.initial_centroid)
+        jacobian = compute_flow_map_jacobian_3x3(particles)
+        map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
+        return compute_ftle_3x3(jacobian, map_period)
