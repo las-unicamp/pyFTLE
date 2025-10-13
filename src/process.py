@@ -6,7 +6,7 @@ import numpy as np
 
 from dtos import FTLETask
 from file_writers import FTLEWriter
-from integrate import IntegratorStrategy
+from integrate import Integrator
 from my_types import ArrayFloat64N
 from src.cauchy_green import (
     compute_flow_map_jacobian_2x2,
@@ -62,7 +62,7 @@ class FTLESolver:
         batch_data: FTLETask,
         timestep: float,
         interpolator_factory: InterpolatorFactory,
-        integrator: IntegratorStrategy,
+        integrator: Integrator,
         progress_queue: Queue,
         output_writer: Optional[FTLEWriter] = None,
     ):

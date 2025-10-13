@@ -9,13 +9,13 @@ from src.integrate import (
     RungeKutta4Integrator,
     get_integrator,
 )
-from src.interpolate import InterpolationStrategy
+from src.interpolate import Interpolator
 from src.particles import NeighboringParticles
 
 
 @pytest.fixture
 def mock_interpolator():
-    mock = MagicMock(spec=InterpolationStrategy)
+    mock = MagicMock(spec=Interpolator)
     mock.interpolate.side_effect = lambda x: x * 0.1  # Fake velocity field
     return mock
 

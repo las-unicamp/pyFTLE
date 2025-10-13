@@ -2,17 +2,17 @@ from typing import Protocol
 
 from numba import njit  # type: ignore
 
-from src.interpolate import InterpolationStrategy
+from src.interpolate import Interpolator
 from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
 from src.particles import NeighboringParticles
 
 
-class IntegratorStrategy(Protocol):
+class Integrator(Protocol):
     def integrate(
         self,
         h: float,
         particles: NeighboringParticles,
-        interpolator: InterpolationStrategy,
+        interpolator: Interpolator,
     ) -> None:
         """
         Perform a single integration step (Euler, Runge-Kutta, Adams-Bashforth 2).
@@ -22,9 +22,9 @@ class IntegratorStrategy(Protocol):
             h (float): Step size for integration.
             particles (NeighboringParticles): Dataclass instance containing the
                 coordinates of the particles at the current step.
-            interpolator (InterpolationStrategy):
-                An instance of an interpolation strategy that computes the velocity
-                given the position values.
+            interpolator (Interpolation):
+                An instance of an interpolator that computes the velocity given the
+                position values.
         """
         ...
 
@@ -62,7 +62,7 @@ class AdamsBashforth2Integrator:
         self,
         h: float,
         particles: NeighboringParticles,
-        interpolator: InterpolationStrategy,
+        interpolator: Interpolator,
     ) -> None:
         current_velocity = interpolator.interpolate(particles.positions)
 
@@ -100,7 +100,7 @@ class EulerIntegrator:
         self,
         h: float,
         particles: NeighboringParticles,
-        interpolator: InterpolationStrategy,
+        interpolator: Interpolator,
     ) -> None:
         current_velocity = interpolator.interpolate(particles.positions)
         particles.positions += euler_step(h, current_velocity)
@@ -131,7 +131,7 @@ class RungeKutta4Integrator:
         self,
         h: float,
         particles: NeighboringParticles,
-        interpolator: InterpolationStrategy,
+        interpolator: Interpolator,
     ) -> None:
         # Compute the four slopes (k1, k2, k3, k4)
         k1 = interpolator.interpolate(particles.positions)
@@ -143,12 +143,12 @@ class RungeKutta4Integrator:
         particles.positions += runge_kutta_4_step(h, k1, k2, k3, k4)
 
 
-def get_integrator(integrator_name: str) -> IntegratorStrategy:
+def get_integrator(integrator_name: str) -> Integrator:
     """Factory to create IntegratorStrategy instances"""
 
     integrator_name = integrator_name.lower()  # Normalize input to lowercase
 
-    integrator_map: dict[str, type[IntegratorStrategy]] = {
+    integrator_map: dict[str, type[Integrator]] = {
         "ab2": AdamsBashforth2Integrator,  # Uses Euler for the first step, then AB2
         "euler": EulerIntegrator,
         "rk4": RungeKutta4Integrator,

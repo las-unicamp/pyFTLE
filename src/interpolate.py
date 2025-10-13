@@ -18,7 +18,7 @@ from src.my_types import (
 )
 
 
-class InterpolationStrategy(Protocol):
+class Interpolator(Protocol):
     def interpolate(
         self,
         new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
@@ -27,7 +27,7 @@ class InterpolationStrategy(Protocol):
         ...
 
 
-class CubicInterpolatorStrategy:
+class CubicInterpolatorStrategy(Interpolator):
     """Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D
     for the velocity field using Clough-Tocher interpolation.
 
@@ -68,7 +68,7 @@ class CubicInterpolatorStrategy:
             )
 
 
-class LinearInterpolatorStrategy:
+class LinearInterpolatorStrategy(Interpolator):
     """Piecewise linear interpolator using Delaunay triangulation.
 
     Pros:
@@ -107,7 +107,7 @@ class LinearInterpolatorStrategy:
             )
 
 
-class NearestNeighborInterpolatorStrategy:
+class NearestNeighborInterpolatorStrategy(Interpolator):
     """Nearest neighbor interpolation, assigning the value of the closest known point.
 
     Pros:
@@ -142,7 +142,7 @@ class NearestNeighborInterpolatorStrategy:
             )
 
 
-class GridInterpolatorStrategy:
+class GridInterpolatorStrategy(Interpolator):
     """Grid-based interpolation using RegularGridInterpolator.
 
     Pros:
@@ -218,7 +218,7 @@ class GridInterpolatorStrategy:
             return np.column_stack((u_interp, v_interp))
 
 
-class InMemoryInterpolator(InterpolationStrategy):
+class InMemoryInterpolator(Interpolator):
     """InterpolationStrategy wrapper for in-memory velocity fields."""
 
     def __init__(
@@ -310,7 +310,7 @@ class InterpolatorFactory:
     # -------------------------------------------------------------------------
     def create_interpolator(
         self, snapshot_file: str, grid_file: str, strategy: str = "cubic"
-    ) -> InterpolationStrategy:
+    ) -> Interpolator:
         """
         Reads velocity and coordinate data from the given files and creates an
         interpolator based on the selected strategy.
@@ -365,7 +365,7 @@ class InterpolatorFactory:
     # -------------------------------------------------------------------------
     # In-memory interpolation (Jupyter / FTLESolver workflow)
     # -------------------------------------------------------------------------
-    def create_interpolator_in_memory(self, time=None) -> InterpolationStrategy:
+    def create_interpolator_in_memory(self, time=None) -> Interpolator:
         """
         Returns an InterpolationStrategy that evaluates the velocity field in memory.
         """
