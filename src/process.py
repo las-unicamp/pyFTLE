@@ -1,11 +1,12 @@
-from multiprocessing.managers import DictProxy
+from pathlib import Path
 from queue import Queue
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
-from tqdm import tqdm
 
+from dtos import FTLETask
 from file_writers import FTLEWriter
+from integrate import IntegratorStrategy
 from my_types import ArrayFloat64N
 from src.cauchy_green import (
     compute_flow_map_jacobian_2x2,
@@ -21,72 +22,52 @@ from src.interpolate import InterpolatorFactory
 from src.particles import NeighboringParticles
 
 
-class SnapshotProcessor:
-    """Handles the computation of FTLE for a single snapshot period."""
+class FTLESolver:
+    """Computes the FTLE field given a batch of snapshots."""
 
     def __init__(
         self,
-        index: int,
-        snapshot_files: List[str],
-        coordinate_files: List[str],
-        particle_file: str,
+        batch_data: FTLETask,
+        timestep: float,
         interpolator_factory: InterpolatorFactory,
+        integrator: IntegratorStrategy,
+        progress_queue: Queue,
         output_writer: Optional[FTLEWriter] = None,
-        tqdm_position_queue: Optional[Queue[int]] = None,
-        progress_dict: Optional[DictProxy[int, bool]] = None,  # type: ignore
     ):
-        self.index = index
-        self.snapshot_files = snapshot_files
-        self.coordinate_files = coordinate_files
-        self.particle_file = particle_file
-        self.progress_dict = progress_dict
+        self.snapshot_files = batch_data["snapshots"]
+        self.coordinate_files = batch_data["coordinates"]
+        self.particle_file = batch_data["particles"]
+        self.timestep = timestep
         self.interpolator_factory = interpolator_factory
-        self.tqdm_position_queue = tqdm_position_queue
-        self.tqdm_position = None  # Will be assigned dynamically
+        self.integrator = integrator
         self.output_writer = output_writer
+        self.progress_queue = progress_queue
 
     def run(self) -> None:
         """Processes a single snapshot period."""
-        if self.tqdm_position_queue is None or self.progress_dict is None:
-            raise RuntimeError(
-                "SnapshotProcessor.run() requires multiprocessing context."
-            )
 
-        self.tqdm_position = self.tqdm_position_queue.get()
-
-        tqdm_bar = tqdm(
-            total=len(self.snapshot_files),
-            desc=f"FTLE {self.index:04d}",
-            position=self.tqdm_position,
-            leave=False,
-            dynamic_ncols=True,
-            mininterval=0.5,
-        )
-
+        # Assume a single particle file
         particles = read_seed_particles_coordinates(self.particle_file)
-        integrator = get_integrator(args.integrator)
 
-        for snapshot_file, coordinate_file in zip(
-            self.snapshot_files, self.coordinate_files
+        for i, (snapshot_file, coordinate_file) in enumerate(
+            zip(self.snapshot_files, self.coordinate_files), start=1
         ):
-            tqdm_bar.set_description(f"FTLE {self.index:04d}: {snapshot_file}")
-            tqdm_bar.update(1)
-
             interpolator = self.interpolator_factory.create_interpolator(
                 snapshot_file, coordinate_file, args.interpolator
             )
-            integrator.integrate(args.snapshot_timestep, particles, interpolator)
+            self.integrator.integrate(self.timestep, particles, interpolator)
+
+            # publish progress: i goes from 1 .. len(self.snapshot_files)
+            self.progress_queue.put((self._batch_name, i))
+
+        # signal task done
+        self.progress_queue.put((self._batch_name, "done"))
 
         ftle_field = self._compute_ftle(particles)
 
         if self.output_writer is not None:
-            filename = f"ftle{self.index:04d}"
+            filename = "ftle_" + Path(self.snapshot_files[0]).stem
             self.output_writer.write(filename, ftle_field, particles.initial_centroid)
-
-        tqdm_bar.clear()
-        tqdm_bar.close()
-        self.progress_dict[self.index] = True  # Notify progress monitor
-        self.tqdm_position_queue.put(self.tqdm_position)
 
     def run_in_memory(
         self,
@@ -140,3 +121,7 @@ class SnapshotProcessor:
         jacobian = compute_flow_map_jacobian_3x3(particles)
         map_period = (len(self.snapshot_files) - 1) * abs(args.snapshot_timestep)
         return compute_ftle_3x3(jacobian, map_period)
+
+    @property
+    def _batch_name(self):
+        return f"{Path(self.snapshot_files[0]).stem}"

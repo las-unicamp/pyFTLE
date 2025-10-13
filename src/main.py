@@ -1,14 +1,17 @@
 import itertools
-import multiprocessing
+import multiprocessing as mp
 import os
 import time
-from multiprocessing.managers import DictProxy
-from multiprocessing.pool import ApplyResult
-from typing import Any, Dict, List, cast
+import traceback
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from typing import List
 
+from colorama import Fore, Style
+from colorama import init as colorama_init
 from tqdm import tqdm
 
 from src.decorators import timeit
+from src.dtos import FTLETask
 from src.file_readers import (
     CoordinateMatReader,
     VelocityMatReader,
@@ -16,37 +19,157 @@ from src.file_readers import (
 from src.file_utils import get_files_list
 from src.file_writers import create_writer
 from src.hyperparameters import args
+from src.integrate import get_integrator
 from src.interpolate import InterpolatorFactory
-from src.process import SnapshotProcessor
+from src.process import FTLESolver  # Domain layer
+
+colorama_init(autoreset=True)
 
 
-class FTLEComputationManager:
-    """Manages the distribution of snapshot processing tasks."""
+# ─────────────────────────────────────────────────────────────
+# Infrastructure Layer (handles parallelism, tqdm, and errors)
+# ─────────────────────────────────────────────────────────────
+
+
+class ParallelExecutor:
+    """Handles multiprocessing and live progress monitoring."""
+
+    def __init__(self, n_processes: int = 4):
+        self.n_processes = n_processes
+        manager = mp.Manager()
+        self.progress_queue = manager.Queue()
+        self._stop_event = manager.Event()
+
+    def _monitor_progress(self, total_tasks: int, steps_per_task: int):
+        """Monitor progress in a separate process."""
+        global_bar = tqdm(
+            total=total_tasks, desc="Global", position=0, dynamic_ncols=True
+        )
+        active_bars = {}
+        available_slots = list(range(1, self.n_processes + 1))
+        finished = 0
+
+        while not self._stop_event.is_set() and finished < total_tasks:
+            while not self.progress_queue.empty():
+                task_id, status = self.progress_queue.get()
+                if status == "done":
+                    if task_id in active_bars:
+                        pos = active_bars[task_id].pos
+                        active_bars[task_id].close()
+                        del active_bars[task_id]
+                        available_slots.append(pos)
+                    global_bar.update(1)
+                    finished += 1
+                else:
+                    if task_id not in active_bars and available_slots:
+                        pos = available_slots.pop(0)
+                        bar = tqdm(
+                            total=steps_per_task,
+                            desc=task_id,
+                            position=pos,
+                            leave=False,
+                            dynamic_ncols=True,
+                        )
+                        active_bars[task_id] = bar
+                    bar = active_bars[task_id]
+                    bar.n = status
+                    bar.refresh()
+            time.sleep(0.05)
+
+        global_bar.close()
+        for bar in active_bars.values():
+            bar.close()
+
+    def run(self, tasks: list[FTLETask], worker_fn):
+        """Run worker_fn(task, queue) in parallel and handle errors."""
+        steps_per_task = len(tasks[0]["snapshots"])  # num snapshots in flow map period
+
+        monitor_proc = mp.Process(
+            target=self._monitor_progress,
+            args=(len(tasks), steps_per_task),
+        )
+        monitor_proc.start()
+
+        exceptions = []
+        with ProcessPoolExecutor(max_workers=self.n_processes) as executor:
+            futures = {
+                executor.submit(worker_fn, task, self.progress_queue): task
+                for task in tasks
+            }
+
+            for future in as_completed(futures):
+                task = futures[future]
+                try:
+                    future.result()
+                except Exception as e:
+                    # task is an FTLETask (TypedDict). Get the first snapshot filename
+                    # for reporting:
+                    first_snapshot = (
+                        task["snapshots"][0] if task.get("snapshots") else "<unknown>"
+                    )
+
+                    error_msg = (
+                        f"\n{Fore.RED}❌ Error in task "
+                        f"{first_snapshot}:{Style.RESET_ALL}\n"
+                        f"{traceback.format_exc()}"
+                    )
+                    print(error_msg, flush=True)
+                    exceptions.append((task, e))
+
+                    # Signal stop immediately
+                    self._stop_event.set()
+
+                    # 🔥 Cancel remaining futures and shut down pool immediately
+                    executor.shutdown(wait=False, cancel_futures=True)
+
+                    # 🔥 Kill monitor process right away
+                    if monitor_proc.is_alive():
+                        monitor_proc.terminate()
+
+                    raise  # re-raise to exit as_completed loop immediately
+
+        # Ensure monitor process is dead
+        if monitor_proc.is_alive():
+            monitor_proc.terminate()
+        monitor_proc.join(timeout=0.5)
+
+        if exceptions:
+            print(
+                f"{Fore.RED}\n⚠️  {len(exceptions)} task(s) failed. "
+                "See messages above for details."
+                f"{Style.RESET_ALL}",
+                flush=True,
+            )
+            raise RuntimeError("One or more FTLE batches failed.")
+
+
+# ─────────────────────────────────────────────────────────────
+# Application Layer (coordinates domain and infrastructure)
+# ─────────────────────────────────────────────────────────────
+
+
+class MultipleFTLEProcessManager:
+    """Reads snapshot list, creates batches, and runs FTLE solvers in parallel."""
 
     def __init__(self):
         self.snapshot_files: List[str] = get_files_list(args.list_velocity_files)
         self.coordinate_files: List[str] = get_files_list(args.list_coordinate_files)
         self.particle_files: List[str] = get_files_list(args.list_particle_files)
-        self._validate_input_lists()
-
-        self.num_snapshots_total = len(self.snapshot_files)
-        self.num_snapshots_in_flow_map_period = (
-            int(args.flow_map_period / abs(args.snapshot_timestep)) + 1
+        self.timestep: float = args.snapshot_timestep
+        self.executor = ParallelExecutor(n_processes=args.num_processes)
+        self.interpolator_factory = InterpolatorFactory.from_files(
+            CoordinateMatReader(), VelocityMatReader()
         )
-        self.num_processes = args.num_processes
+        self.integrator = get_integrator(args.integrator)
+
+        output_dir = os.path.join("outputs", args.experiment_name)
+        self.writer = create_writer(args.output_format, output_dir, args.grid_shape)
 
         self._handle_time_direction()
 
-    def _validate_input_lists(self):
-        """Ensures input lists are correctly formatted."""
-        if len(self.coordinate_files) > 1:
-            assert len(self.snapshot_files) == len(self.coordinate_files)
-        if len(self.particle_files) > 1:
-            assert len(self.snapshot_files) == len(self.particle_files)
-
-    def _handle_time_direction(self):
+    def _handle_time_direction(self) -> None:
         """Handles time direction for backward/forward FTLE computation."""
-        if args.snapshot_timestep < 0:
+        if self.timestep < 0:
             self.snapshot_files.reverse()
             self.coordinate_files.reverse()
             self.particle_files.reverse()
@@ -54,103 +177,69 @@ class FTLEComputationManager:
         else:
             print("Running forward-time FTLE")
 
-    def run(self) -> None:
-        """Runs FTLE computation using multiprocessing with shared progress tracking."""
-        pool = multiprocessing.Pool(processes=self.num_processes)
-        manager = multiprocessing.Manager()
-        progress_dict: DictProxy[int, bool] = manager.dict()
-        progress_dict_typed: Dict[int, bool] = cast(Dict[int, bool], progress_dict)
-
-        tqdm_position_queue = manager.Queue()
-
-        # Initialize available tqdm positions (from 1 to num_processes)
-        for i in range(1, self.num_processes + 1):
-            tqdm_position_queue.put(i)
-
-        tqdm_outer = tqdm(
-            total=self.num_snapshots_total - self.num_snapshots_in_flow_map_period + 1,
-            desc="Total Progress",
-            position=0,
-            leave=True,
+    def _create_batches(self) -> list[FTLETask]:
+        """Generate overlapping batches of snapshot, coordinate and particle files"""
+        num_snapshots_total = len(self.snapshot_files)
+        num_snapshots_in_flow_map_period = (
+            int(args.flow_map_period / abs(args.snapshot_timestep)) + 1
         )
 
-        interpolator_factory = InterpolatorFactory.from_files(
-            CoordinateMatReader(), VelocityMatReader()
+        p = num_snapshots_in_flow_map_period
+        n = num_snapshots_total
+
+        # Precompute snapshot file batches
+        snapshot_batches = [self.snapshot_files[i : i + p] for i in range(n - p + 1)]
+
+        # Precompute coordinate file batches (cycled)
+        coord_cycle = list(
+            itertools.islice(itertools.cycle(self.coordinate_files), n + p - 1)
         )
+        coordinate_batches = [coord_cycle[i : i + p] for i in range(n - p + 1)]
 
-        is_map_period_invalid = (
-            self.num_snapshots_total <= self.num_snapshots_in_flow_map_period + 1
+        # Precompute particle file selection (cycled)
+        particle_cycle = list(itertools.islice(itertools.cycle(self.particle_files), n))
+        particle_batches = [particle_cycle[i] for i in range(n - p + 1)]  # pick one str
+
+        tasks: list[FTLETask] = []
+
+        for i in range(n - p + 1):
+            task: FTLETask = {
+                "snapshots": list(snapshot_batches[i]),  # type: list[str]
+                "coordinates": list(coordinate_batches[i]),  # type: list[str]
+                "particles": particle_batches[i],  # type: str
+            }
+            tasks.append(task)
+        return tasks
+
+    def _worker(self, batch_files: FTLETask, progress_queue):
+        """Wrapper function for parallel execution."""
+        solver = FTLESolver(
+            batch_files,
+            timestep=self.timestep,
+            interpolator_factory=self.interpolator_factory,
+            integrator=self.integrator,
+            progress_queue=progress_queue,
+            output_writer=self.writer,
         )
-        if is_map_period_invalid:
-            raise ValueError("Flow map period is too big")
+        solver.run()
 
-        output_dir = os.path.join("outputs", args.experiment_name)
-        writer = create_writer(args.output_format, output_dir, args.grid_shape)
+    def run(self):
+        batches = self._create_batches()
+        self.executor.run(batches, self._worker)
 
-        tasks: List[ApplyResult[None]] = []
-        for i in range(
-            self.num_snapshots_total - self.num_snapshots_in_flow_map_period + 1
-        ):
-            snapshot_files_period = self.snapshot_files[
-                i : i + self.num_snapshots_in_flow_map_period
-            ]
-            coordinate_files_period = list(
-                itertools.islice(
-                    itertools.cycle(self.coordinate_files),
-                    i,
-                    i + self.num_snapshots_in_flow_map_period,
-                )
-            )
-            particle_file = list(
-                itertools.islice(
-                    itertools.cycle(self.particle_files), self.num_snapshots_total
-                )
-            )[i]
 
-            progress_dict[i] = False  # Mark as incomplete
-
-            processor = SnapshotProcessor(
-                i,
-                snapshot_files_period,
-                coordinate_files_period,
-                particle_file,
-                interpolator_factory,
-                writer,
-                tqdm_position_queue,
-                progress_dict,
-            )
-            tasks.append(pool.apply_async(processor.run))
-
-        self._monitor_progress(tasks, progress_dict_typed, tqdm_outer)
-
-        pool.close()
-        pool.join()
-        tqdm_outer.close()
-
-    def _monitor_progress(
-        self,
-        tasks: List[ApplyResult[None]],
-        tqdm_dict: Dict[int, bool],
-        tqdm_outer: Any,
-    ) -> None:
-        """Monitors the completion of parallel tasks and updates the progress bar."""
-        completed = 0
-        while completed < len(tasks):
-            completed = sum(1 for v in tqdm_dict.values() if v)  # Count completed tasks
-            tqdm_outer.update(completed - tqdm_outer.n)  # Increment new completions
-            tqdm_outer.refresh()
-            time.sleep(2.0)  # Prevents excessive polling, keeping CPU usage low
-
-            # OBS: the computations inside the loop runs asynchronously, thus
-            # time.sleep will not held the computations. The present method just
-            # waits for notifications of completed tasks.
+# ─────────────────────────────────────────────────────────────
+# Usage Example
+# ─────────────────────────────────────────────────────────────
 
 
 @timeit
 def main():
-    """Main execution entry point."""
-    manager = FTLEComputationManager()
-    manager.run()
+    try:
+        manager = MultipleFTLEProcessManager()
+        manager.run()
+    except RuntimeError as e:
+        print(f"{Fore.RED}\n❌ Execution stopped: {e}{Style.RESET_ALL}")
 
 
 if __name__ == "__main__":

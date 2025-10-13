@@ -5,6 +5,7 @@ description = "Python package to compute Finite Time Lyapunov Exponents (FTLE)."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "colorama>=0.4.6",
     "configargparse>=1.7",
     "matplotlib>=3.10.0",
     "nptyping>=2.5.0",

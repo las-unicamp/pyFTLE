@@ -1781,6 +1781,7 @@ name = "pyftle"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [
+    { name = "colorama" },
     { name = "configargparse" },
     { name = "matplotlib" },
     { name = "nptyping" },
@@ -1815,6 +1816,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "colorama", specifier = ">=0.4.6" },
     { name = "configargparse", specifier = ">=1.7" },
     { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "nptyping", specifier = ">=2.5.0" },
