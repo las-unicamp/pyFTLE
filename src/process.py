@@ -23,7 +23,39 @@ from src.particles import NeighboringParticles
 
 
 class FTLESolver:
-    """Computes the FTLE field given a batch of snapshots."""
+    """
+    Computes the FTLE field from snapshots and particle data stored on disk.
+
+    All snapshot and coordinate files provided in `batch_data` will be processed
+    sequentially. Therefore, it is important to pre-select these files carefully
+    so that they cover the desired flow map period.
+
+    This is the standard, production-oriented workflow that reads input files,
+    integrates particle trajectories, computes the FTLE field, and optionally
+    writes the results to disk
+
+    Workflow:
+    1. Reads the seed particle coordinates from the particle file.
+    2. For each snapshot period:
+       - Creates an interpolator for the velocity field using the snapshot and
+         coordinate files.
+       - Integrates the particle trajectories over the timestep using the chosen
+         integrator.
+       - Publishes progress updates to the progress queue.
+    3. Signals completion of the batch by sending a 'done' message to the progress
+       queue.
+    4. Computes the FTLE field based on the final particle positions.
+    5. If an output writer is provided, saves the FTLE field and particle centroid
+       to disk.
+
+    Notes
+    -----
+    - The progress queue can be used to track progress in multi-processing or GUI
+      applications.
+    - The FTLE field computation uses the number of neighbors in `particles` to
+      determine whether to compute a 2x2 or 3x3 flow map Jacobian.
+    - Output filenames are automatically generated based on the first snapshot file.
+    """
 
     def __init__(
         self,
@@ -72,7 +104,7 @@ class FTLESolver:
     def run_in_memory(
         self,
         particles: NeighboringParticles,
-        snapshot_timestep: float,
+        timestep: float,
         flow_map_period: float,
         integrator_name: str = "rk4",
     ):
@@ -82,7 +114,7 @@ class FTLESolver:
         Parameters
         ----------
         particles (NeighboringParticles): Particles to be tracked.
-        snapshot_timestep (float): Time between consecutive snapshots.
+        timestep (float): Time between consecutive snapshots.
         flow_map_period (float): Integration duration.
         integrator_name (str): e.g. 'rk4'.
         interpolator_name (str) e.g. 'cubic'.
@@ -95,16 +127,16 @@ class FTLESolver:
 
         integrator = get_integrator(integrator_name)
 
-        num_snapshots = int(flow_map_period / abs(snapshot_timestep)) + 1
+        num_snapshots = int(flow_map_period / abs(timestep)) + 1
         time_values = np.linspace(0.0, flow_map_period, num_snapshots) * np.sign(
-            snapshot_timestep
+            timestep
         )
 
         for t in time_values:
             interpolator = self.interpolator_factory.create_interpolator_in_memory(
                 time=t
             )
-            integrator.integrate(snapshot_timestep, particles, interpolator)
+            integrator.integrate(timestep, particles, interpolator)
 
         ftle_field = self._compute_ftle(particles)
 
