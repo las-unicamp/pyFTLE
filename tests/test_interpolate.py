@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 
 from src.interpolate import (
-    CubicInterpolatorStrategy,
-    GridInterpolatorStrategy,
+    CubicInterpolator,
+    GridInterpolator,
     InterpolatorFactory,
-    LinearInterpolatorStrategy,
-    NearestNeighborInterpolatorStrategy,
+    LinearInterpolator,
+    NearestNeighborInterpolator,
 )
 from src.my_types import (
     Array2xMxN,
@@ -69,9 +69,9 @@ def generate_mock_data_3d() -> tuple[ArrayFloat64Nx3, ArrayFloat64Nx3]:
 @pytest.mark.parametrize(
     "strategy_class",
     [
-        CubicInterpolatorStrategy,
-        LinearInterpolatorStrategy,
-        NearestNeighborInterpolatorStrategy,
+        CubicInterpolator,
+        LinearInterpolator,
+        NearestNeighborInterpolator,
     ],
 )
 def test_interpolators_2d(strategy_class):
@@ -91,8 +91,8 @@ def test_interpolators_2d(strategy_class):
 @pytest.mark.parametrize(
     "strategy_class",
     [
-        LinearInterpolatorStrategy,
-        NearestNeighborInterpolatorStrategy,
+        LinearInterpolator,
+        NearestNeighborInterpolator,
     ],
 )
 def test_interpolators_3d(strategy_class):
@@ -117,7 +117,7 @@ def test_grid_interpolator_2d():
     coordinates: Array2xMxN = np.array([grid_x, grid_y], dtype=np.float64)
     velocities: Array2xMxN = np.array([velocities_u, velocities_v], dtype=np.float64)
 
-    interpolator = GridInterpolatorStrategy(coordinates, velocities)
+    interpolator = GridInterpolator(coordinates, velocities)
     new_points = np.array([[0.5, 0.5], [0.25, 0.75]], dtype=np.float64)
     interpolated_values = interpolator.interpolate(new_points)
 
@@ -136,7 +136,7 @@ def test_grid_interpolator_3d():
         [velocities_u, velocities_v, velocities_w], dtype=np.float64
     )
 
-    interpolator = GridInterpolatorStrategy(coordinates, velocities)
+    interpolator = GridInterpolator(coordinates, velocities)
     new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.25, 0.75]], dtype=np.float64)
     interpolated_values = interpolator.interpolate(new_points)
 

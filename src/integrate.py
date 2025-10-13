@@ -38,7 +38,7 @@ def adams_bashforth_2_step(
     return h * (1.5 * current_velocity - 0.5 * previous_velocity)
 
 
-class AdamsBashforth2Integrator:
+class AdamsBashforth2Integrator(Integrator):
     """
     Perform a single step of the second-order Adams-Bashforth method
     for solving ordinary differential equations (ODEs).
@@ -86,7 +86,7 @@ def euler_step(
     return h * current_velocity
 
 
-class EulerIntegrator:
+class EulerIntegrator(Integrator):
     """
     Perform a single step of the Euler method for solving ordinary differential
     equations (ODEs).
@@ -97,10 +97,7 @@ class EulerIntegrator:
     """
 
     def integrate(
-        self,
-        h: float,
-        particles: NeighboringParticles,
-        interpolator: Interpolator,
+        self, h: float, particles: NeighboringParticles, interpolator: Interpolator
     ) -> None:
         current_velocity = interpolator.interpolate(particles.positions)
         particles.positions += euler_step(h, current_velocity)
@@ -117,7 +114,7 @@ def runge_kutta_4_step(
     return (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
 
 
-class RungeKutta4Integrator:
+class RungeKutta4Integrator(Integrator):
     """
     Perform a single step of the 4th-order Runge-Kutta method for solving
     ordinary differential equations (ODEs).
@@ -144,7 +141,7 @@ class RungeKutta4Integrator:
 
 
 def get_integrator(integrator_name: str) -> Integrator:
-    """Factory to create IntegratorStrategy instances"""
+    """Factory to create Integrator instances"""
 
     integrator_name = integrator_name.lower()  # Normalize input to lowercase
 

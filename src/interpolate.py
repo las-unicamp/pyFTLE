@@ -1,5 +1,6 @@
 # ruff: noqa: N806
-from typing import Callable, Protocol, cast
+from abc import ABC, abstractmethod
+from typing import Callable, Optional, cast
 
 import numpy as np
 from scipy.interpolate import (
@@ -18,16 +19,45 @@ from src.my_types import (
 )
 
 
-class Interpolator(Protocol):
+class Interpolator(ABC):
+    def __init__(
+        self,
+        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,  # noqa: ARG002
+        points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    ):
+        self.velocities = velocities
+        self.points = points
+        self.interpolator = None  # Placeholder for the actual interpolator instance
+
+        self._initialize_interpolator()
+
+    def _initialize_interpolator(self):
+        """Initialize the actual interpolator object based on velocity and points."""
+        raise NotImplementedError("This method should be implemented by subclasses")
+
+    def update(
+        self,
+        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        points: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None,
+    ) -> None:
+        """Updates the interpolation function for a new field."""
+
+        self.velocities = velocities
+        if points is not None:
+            self.points = points
+
+        self._initialize_interpolator()
+
+    @abstractmethod
     def interpolate(
         self,
         new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Implements the interpolation strategy."""
-        ...
+        pass
 
 
-class CubicInterpolatorStrategy(Interpolator):
+class CubicInterpolator(Interpolator):
     """Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D
     for the velocity field using Clough-Tocher interpolation.
 
@@ -47,15 +77,20 @@ class CubicInterpolatorStrategy(Interpolator):
         Array of shape `(n_points, 2)` representing the velocities values.
     """
 
-    def __init__(
-        self,
-        points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    ):
-        velocities_cmplx = velocities[:, 0] + 1j * velocities[:, 1]
-        self.interpolator = CloughTocher2DInterpolator(points, velocities_cmplx)
-        if points.shape[1] == 3:
-            self.interpolator_z = CloughTocher2DInterpolator(points, velocities[:, 2])
+    # def __init__(
+    #     self,
+    #     velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    #     points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    # ):
+    #     pass
+
+    def _initialize_interpolator(self):
+        velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
+        self.interpolator = CloughTocher2DInterpolator(self.points, velocities_cmplx)
+        if self.points.shape[1] == 3:
+            self.interpolator_z = CloughTocher2DInterpolator(
+                self.points, self.velocities[:, 2]
+            )
 
     def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
         interp_velocities = self.interpolator(new_points)
@@ -68,7 +103,7 @@ class CubicInterpolatorStrategy(Interpolator):
             )
 
 
-class LinearInterpolatorStrategy(Interpolator):
+class LinearInterpolator(Interpolator):
     """Piecewise linear interpolator using Delaunay triangulation.
 
     Pros:
@@ -80,17 +115,19 @@ class LinearInterpolatorStrategy(Interpolator):
     - May introduce discontinuities in derivatives.
     """
 
-    def __init__(
-        self,
-        points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    ):
-        velocities_cmplx = velocities[:, 0] + 1j * velocities[:, 1]
-        self.interpolator = LinearNDInterpolator(points, velocities_cmplx)
+    # def __init__(
+    #     self,
+    #     velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    #     points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    # ):
 
-        if points.shape[1] == 3:
+    def _initialize_interpolator(self):
+        velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
+        self.interpolator = LinearNDInterpolator(self.points, velocities_cmplx)
+
+        if self.points.shape[1] == 3:
             self.interpolator_z = LinearNDInterpolator(
-                points, velocities[:, 2], fill_value=0.0
+                self.points, self.velocities[:, 2], fill_value=0.0
             )
 
     def interpolate(
@@ -107,7 +144,7 @@ class LinearInterpolatorStrategy(Interpolator):
             )
 
 
-class NearestNeighborInterpolatorStrategy(Interpolator):
+class NearestNeighborInterpolator(Interpolator):
     """Nearest neighbor interpolation, assigning the value of the closest known point.
 
     Pros:
@@ -119,15 +156,19 @@ class NearestNeighborInterpolatorStrategy(Interpolator):
     - Not suitable for smoothly varying velocity fields.
     """
 
-    def __init__(
-        self,
-        points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    ):
-        velocities_cmplx = velocities[:, 0] + 1j * velocities[:, 1]
-        self.interpolator = NearestNDInterpolator(points, velocities_cmplx)
-        if points.shape[1] == 3:
-            self.interpolator_z = NearestNDInterpolator(points, velocities[:, 2])
+    # def __init__(
+    #     self,
+    #     velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    #     points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    # ):
+
+    def _initialize_interpolator(self):
+        velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
+        self.interpolator = NearestNDInterpolator(self.points, velocities_cmplx)
+        if self.points.shape[1] == 3:
+            self.interpolator_z = NearestNDInterpolator(
+                self.points, self.velocities[:, 2]
+            )
 
     def interpolate(
         self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
@@ -142,7 +183,7 @@ class NearestNeighborInterpolatorStrategy(Interpolator):
             )
 
 
-class GridInterpolatorStrategy(Interpolator):
+class GridInterpolator(Interpolator):
     """Grid-based interpolation using RegularGridInterpolator.
 
     Pros:
@@ -156,51 +197,60 @@ class GridInterpolatorStrategy(Interpolator):
 
     def __init__(
         self,
-        coordinates: Array3xMxN | Array2xMxN,
         velocities: Array3xMxN | Array2xMxN,
+        coordinates: Array3xMxN | Array2xMxN,
     ):
-        grid_shape = coordinates[0].shape
+        super().__init__(velocities, coordinates)
+
+    def _initialize_interpolator(self):
+        grid_shape = self.points[0].shape
 
         grid_x = np.linspace(
-            np.min(coordinates[0]),
-            np.max(coordinates[0]),
+            np.min(self.points[0]),
+            np.max(self.points[0]),
             grid_shape[0],
         )
         grid_y = np.linspace(
-            np.min(coordinates[1]),
-            np.max(coordinates[1]),
+            np.min(self.points[1]),
+            np.max(self.points[1]),
             grid_shape[1],
         )
 
         if len(grid_shape) == 2:
             self.interpolator_u = RegularGridInterpolator(
-                (grid_x, grid_y), velocities[0], bounds_error=False, fill_value=None
+                (grid_x, grid_y),
+                self.velocities[0],
+                bounds_error=False,
+                fill_value=None,
             )
             self.interpolator_v = RegularGridInterpolator(
-                (grid_x, grid_y), velocities[1], bounds_error=False, fill_value=None
+                (grid_x, grid_y),
+                self.velocities[1],
+                bounds_error=False,
+                fill_value=None,
             )
         else:
             grid_z = np.linspace(
-                np.min(coordinates[2]),
-                np.max(coordinates[2]),
+                np.min(self.points[2]),
+                np.max(self.points[2]),
                 grid_shape[2],
             )
 
             self.interpolator_u = RegularGridInterpolator(
                 (grid_x, grid_y, grid_z),
-                velocities[0],
+                self.velocities[0],
                 bounds_error=False,
                 fill_value=0.0,
             )
             self.interpolator_v = RegularGridInterpolator(
                 (grid_x, grid_y, grid_z),
-                velocities[1],
+                self.velocities[1],
                 bounds_error=False,
                 fill_value=0.0,
             )
             self.interpolator_z = RegularGridInterpolator(
                 (grid_x, grid_y, grid_z),
-                velocities[2],
+                self.velocities[2],
                 bounds_error=False,
                 fill_value=0.0,
             )
@@ -219,7 +269,7 @@ class GridInterpolatorStrategy(Interpolator):
 
 
 class InMemoryInterpolator(Interpolator):
-    """InterpolationStrategy wrapper for in-memory velocity fields."""
+    """Interpolation wrapper for in-memory velocity fields."""
 
     def __init__(
         self, velocity_field: Callable | np.ndarray, coordinates, time: float = 0.0
@@ -328,7 +378,7 @@ class InterpolatorFactory:
             "nearest", "grid").
 
         Returns:
-            (InterpolationStrategy): The selected interpolator object.
+            (Interpolation): The selected interpolator object.
         """
         if self.velocity_reader is None or self.coordinate_reader is None:
             raise RuntimeError(
@@ -352,13 +402,13 @@ class InterpolatorFactory:
 
         match strategy:
             case "cubic":
-                return CubicInterpolatorStrategy(coordinates, velocities)
+                return CubicInterpolator(velocities, coordinates)
             case "linear":
-                return LinearInterpolatorStrategy(coordinates, velocities)
+                return LinearInterpolator(velocities, coordinates)
             case "nearest":
-                return NearestNeighborInterpolatorStrategy(coordinates, velocities)
+                return NearestNeighborInterpolator(velocities, coordinates)
             case "grid":
-                return GridInterpolatorStrategy(coordinates, velocities)
+                return GridInterpolator(velocities, coordinates)
             case _:
                 raise ValueError(f"Unknown interpolation strategy: {strategy}")
 
@@ -367,7 +417,7 @@ class InterpolatorFactory:
     # -------------------------------------------------------------------------
     def create_interpolator_in_memory(self, time=None) -> Interpolator:
         """
-        Returns an InterpolationStrategy that evaluates the velocity field in memory.
+        Returns an Interpolation that evaluates the velocity field in memory.
         """
         if self.velocity_field is None or self.coordinates is None:
             raise RuntimeError(
