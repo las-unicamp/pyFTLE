@@ -1,0 +1,122 @@
+from pathlib import Path
+from typing import List, Optional, Protocol, Tuple
+
+from src.file_readers import (
+    CoordinateMatReader,
+    VelocityMatReader,
+    read_seed_particles_coordinates,
+)
+from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
+from src.particles import NeighboringParticles
+
+
+class BatchSource(Protocol):
+    @property
+    def timestep(self) -> float: ...
+    @property
+    def num_steps(self) -> int: ...
+    @property
+    def id(self) -> str: ...
+    def get_particles(self) -> NeighboringParticles: ...
+    def get_data_for_step(
+        self, step_index: int
+    ) -> Tuple[
+        ArrayFloat64Nx2 | ArrayFloat64Nx3, ArrayFloat64Nx2 | ArrayFloat64Nx3
+    ]: ...
+
+
+class FileBatchSource(BatchSource):
+    def __init__(
+        self,
+        snapshot_files: List[str],
+        coordinate_files: List[str],
+        particle_file: str,
+        snapshot_timestep: float,
+        flow_map_period: int | float,
+        grid_shape: Optional[tuple[int, ...]] = None,
+    ):
+        self.snapshot_files = snapshot_files
+        self.coordinate_files = coordinate_files
+        self.particle_file = particle_file  # Assume single file
+        self.snapshot_timestep = snapshot_timestep
+        self.flow_map_period = flow_map_period
+        self.grid_shape = grid_shape
+        self._n = len(snapshot_files)
+        self._id = f"{Path(self.snapshot_files[0]).stem}"
+
+        # Choose the appropriate reader method (flatten or raw)
+        velocity_reader = VelocityMatReader()
+        coordinate_reader = CoordinateMatReader()
+
+        flatten = self.grid_shape is None
+
+        self.read_velocity = getattr(
+            velocity_reader, "read_flatten" if flatten else "read_raw"
+        )
+        self.read_coordinates = getattr(
+            coordinate_reader, "read_flatten" if flatten else "read_raw"
+        )
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def num_steps(self) -> int:
+        return self._n
+
+    @property
+    def timestep(self) -> float:
+        return self.snapshot_timestep
+
+    def get_particles(self):
+        return read_seed_particles_coordinates(self.particle_file)
+
+    def get_data_for_step(
+        self, step_index: int
+    ) -> Tuple[ArrayFloat64Nx2 | ArrayFloat64Nx3, ArrayFloat64Nx2 | ArrayFloat64Nx3]:
+        vel_file = self.snapshot_files[step_index]
+        coord_file = self.coordinate_files[step_index]
+
+        velocities = self.read_velocity(vel_file)
+        coordinates = self.read_coordinates(coord_file)
+
+        return velocities, coordinates
+
+
+class MemoryBatchSource(BatchSource):
+    def __init__(
+        self,
+        velocity_field,
+        grid,
+        particles: NeighboringParticles,
+        timestep: float,
+        flow_map_period: float,
+    ):
+        self.velocity_field = velocity_field
+        self.grid = grid
+        self.particles = particles
+        self._timestep = timestep
+        self.flow_map_period = flow_map_period
+        self.num_snapshots = int(flow_map_period / abs(timestep)) + 1
+        self._id = "???"  # TODO: passar o id ou definir ele aqui?
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def num_steps(self) -> int:
+        return self.num_snapshots
+
+    @property
+    def timestep(self) -> float:
+        return self._timestep
+
+    def get_particles(self):
+        return self.particles
+
+    def get_data_for_step(
+        self, step_index: int
+    ) -> Tuple[ArrayFloat64Nx2 | ArrayFloat64Nx3, ArrayFloat64Nx2 | ArrayFloat64Nx3]:
+        raise NotImplementedError("Need to implement this")

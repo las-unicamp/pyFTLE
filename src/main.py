@@ -10,17 +10,13 @@ from colorama import Fore, Style
 from colorama import init as colorama_init
 from tqdm import tqdm
 
+from src.data_source import BatchSource, FileBatchSource
 from src.decorators import timeit
-from src.dtos import FTLETask
-from src.file_readers import (
-    CoordinateMatReader,
-    VelocityMatReader,
-)
 from src.file_utils import get_files_list
 from src.file_writers import create_writer
 from src.hyperparameters import args
-from src.integrate import get_integrator
-from src.interpolate import InterpolatorFactory
+from src.integrate import create_integrator
+from src.interpolate import create_interpolator
 from src.process import FTLESolver  # Domain layer
 
 colorama_init(autoreset=True)
@@ -80,9 +76,9 @@ class ParallelExecutor:
         for bar in active_bars.values():
             bar.close()
 
-    def run(self, tasks: list[FTLETask], worker_fn):
+    def run(self, tasks: list[BatchSource], worker_fn):
         """Run worker_fn(task, queue) in parallel and handle errors."""
-        steps_per_task = len(tasks[0]["snapshots"])  # num snapshots in flow map period
+        steps_per_task = tasks[0].num_steps  # num snapshots in flow map period
 
         monitor_proc = mp.Process(
             target=self._monitor_progress,
@@ -102,15 +98,9 @@ class ParallelExecutor:
                 try:
                     future.result()
                 except Exception as e:
-                    # task is an FTLETask (TypedDict). Get the first snapshot filename
-                    # for reporting:
-                    first_snapshot = (
-                        task["snapshots"][0] if task.get("snapshots") else "<unknown>"
-                    )
-
                     error_msg = (
                         f"\n{Fore.RED}❌ Error in task "
-                        f"{first_snapshot}:{Style.RESET_ALL}\n"
+                        f"{task.id}:{Style.RESET_ALL}\n"
                         f"{traceback.format_exc()}"
                     )
                     print(error_msg, flush=True)
@@ -157,10 +147,11 @@ class MultipleFTLEProcessManager:
         self.particle_files: List[str] = get_files_list(args.list_particle_files)
         self.timestep: float = args.snapshot_timestep
         self.executor = ParallelExecutor(n_processes=args.num_processes)
-        self.interpolator_factory = InterpolatorFactory.from_files(
-            CoordinateMatReader(), VelocityMatReader()
-        )
-        self.integrator = get_integrator(args.integrator)
+        self.grid_shape = args.grid_shape
+
+        interpolator = create_interpolator(args.interpolator)
+
+        self.integrator = create_integrator(args.integrator, interpolator)
 
         output_dir = os.path.join("outputs", args.experiment_name)
         self.writer = create_writer(args.output_format, output_dir, args.grid_shape)
@@ -177,7 +168,7 @@ class MultipleFTLEProcessManager:
         else:
             print("Running forward-time FTLE")
 
-    def _create_batches(self) -> list[FTLETask]:
+    def _create_batches(self) -> list[BatchSource]:
         """Generate overlapping batches of snapshot, coordinate and particle files"""
         num_snapshots_total = len(self.snapshot_files)
         num_snapshots_in_flow_map_period = (
@@ -200,23 +191,24 @@ class MultipleFTLEProcessManager:
         particle_cycle = list(itertools.islice(itertools.cycle(self.particle_files), n))
         particle_batches = [particle_cycle[i] for i in range(n - p + 1)]  # pick one str
 
-        tasks: list[FTLETask] = []
+        tasks: list[BatchSource] = []
 
         for i in range(n - p + 1):
-            task: FTLETask = {
-                "snapshots": list(snapshot_batches[i]),  # type: list[str]
-                "coordinates": list(coordinate_batches[i]),  # type: list[str]
-                "particles": particle_batches[i],  # type: str
-            }
+            task = FileBatchSource(
+                snapshot_files=list(snapshot_batches[i]),
+                coordinate_files=list(coordinate_batches[i]),
+                particle_file=particle_batches[i],  # Assume single particle file
+                snapshot_timestep=self.timestep,
+                flow_map_period=p,
+                grid_shape=self.grid_shape,
+            )
             tasks.append(task)
         return tasks
 
-    def _worker(self, batch_files: FTLETask, progress_queue):
+    def _worker(self, batch_source: BatchSource, progress_queue):
         """Wrapper function for parallel execution."""
         solver = FTLESolver(
-            batch_files,
-            timestep=self.timestep,
-            interpolator_factory=self.interpolator_factory,
+            batch_source,
             integrator=self.integrator,
             progress_queue=progress_queue,
             output_writer=self.writer,

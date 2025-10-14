@@ -10,10 +10,7 @@ from scipy.interpolate import (
     RegularGridInterpolator,
 )
 
-from src.file_readers import CoordinateReader, VelocityReader
 from src.my_types import (
-    Array2xMxN,
-    Array3xMxN,
     ArrayFloat64Nx2,
     ArrayFloat64Nx3,
 )
@@ -22,17 +19,25 @@ from src.my_types import (
 class Interpolator(ABC):
     def __init__(
         self,
-        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,  # noqa: ARG002
-        points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
     ):
-        self.velocities = velocities
-        self.points = points
+        """Lazy initialization: need to call update() once the velocities and
+        points are available
+        """
+
+        self.velocities: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None
+        self.points: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None
         self.interpolator = None  # Placeholder for the actual interpolator instance
 
-        self._initialize_interpolator()
-
-    def _initialize_interpolator(self):
+    def _initialize_interpolator(self) -> None:
         """Initialize the actual interpolator object based on velocity and points."""
+
+        if self.velocities is None or self.points is None:
+            raise ValueError("Velocities and points must be set before initialization.")
+
+        # Ensure to check that the velocities and points are properly shaped
+        if self.velocities.shape[0] != self.points.shape[0]:
+            raise ValueError("Number of velocities must match the number of points.")
+
         raise NotImplementedError("This method should be implemented by subclasses")
 
     def update(
@@ -77,14 +82,10 @@ class CubicInterpolator(Interpolator):
         Array of shape `(n_points, 2)` representing the velocities values.
     """
 
-    # def __init__(
-    #     self,
-    #     velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    #     points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    # ):
-    #     pass
+    def _initialize_interpolator(self) -> None:
+        if self.velocities is None or self.points is None:
+            raise ValueError("Velocities and points must be set before initialization.")
 
-    def _initialize_interpolator(self):
         velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
         self.interpolator = CloughTocher2DInterpolator(self.points, velocities_cmplx)
         if self.points.shape[1] == 3:
@@ -115,13 +116,10 @@ class LinearInterpolator(Interpolator):
     - May introduce discontinuities in derivatives.
     """
 
-    # def __init__(
-    #     self,
-    #     velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    #     points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    # ):
+    def _initialize_interpolator(self) -> None:
+        if self.velocities is None or self.points is None:
+            raise ValueError("Velocities and points must be set before initialization.")
 
-    def _initialize_interpolator(self):
         velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
         self.interpolator = LinearNDInterpolator(self.points, velocities_cmplx)
 
@@ -156,13 +154,10 @@ class NearestNeighborInterpolator(Interpolator):
     - Not suitable for smoothly varying velocity fields.
     """
 
-    # def __init__(
-    #     self,
-    #     velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    #     points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    # ):
+    def _initialize_interpolator(self) -> None:
+        if self.velocities is None or self.points is None:
+            raise ValueError("Velocities and points must be set before initialization.")
 
-    def _initialize_interpolator(self):
         velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
         self.interpolator = NearestNDInterpolator(self.points, velocities_cmplx)
         if self.points.shape[1] == 3:
@@ -195,28 +190,29 @@ class GridInterpolator(Interpolator):
     - Requires careful handling of grid spacing and boundaries.
     """
 
-    def __init__(
-        self,
-        velocities: Array3xMxN | Array2xMxN,
-        coordinates: Array3xMxN | Array2xMxN,
-    ):
-        super().__init__(velocities, coordinates)
+    def __init__(self):
+        super().__init__()
+        self.interpolator_u = None
+        self.interpolator_v = None
+        self.interpolator_z = None
 
-    def _initialize_interpolator(self):
-        grid_shape = self.points[0].shape
+    def _initialize_interpolator(self) -> None:
+        """Initializes the actual interpolator for grid-based interpolation."""
+
+        if self.velocities is None or self.points is None:
+            raise ValueError("Velocities and points must be set before initialization.")
+
+        # Shape of velocities and coordinates
+        dimension, *grid_shape = self.velocities.shape
 
         grid_x = np.linspace(
-            np.min(self.points[0]),
-            np.max(self.points[0]),
-            grid_shape[0],
+            np.min(self.points[:, 0]), np.max(self.points[:, 0]), grid_shape[0]
         )
         grid_y = np.linspace(
-            np.min(self.points[1]),
-            np.max(self.points[1]),
-            grid_shape[1],
+            np.min(self.points[:, 1]), np.max(self.points[:, 1]), grid_shape[1]
         )
 
-        if len(grid_shape) == 2:
+        if dimension == 2:  # 2D grid (nx, ny)
             self.interpolator_u = RegularGridInterpolator(
                 (grid_x, grid_y),
                 self.velocities[0],
@@ -229,7 +225,7 @@ class GridInterpolator(Interpolator):
                 bounds_error=False,
                 fill_value=None,
             )
-        else:
+        else:  # 3D grid (nx, ny, nz)
             grid_z = np.linspace(
                 np.min(self.points[2]),
                 np.max(self.points[2]),
@@ -259,13 +255,26 @@ class GridInterpolator(Interpolator):
         self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Interpolates velocity field at given Cartesian points."""
+        if self.interpolator_u is None or self.interpolator_v is None:
+            raise ValueError(
+                "Interpolator has not been initialized. Call `update()` first."
+            )
+
         u_interp = self.interpolator_u(new_points)
         v_interp = self.interpolator_v(new_points)
+
         if new_points.shape[1] == 3:
+            if self.interpolator_z is None:
+                raise ValueError("3D interpolator is not initialized properly.")
+
             w_interp = self.interpolator_z(new_points)
             return np.column_stack((u_interp, v_interp, w_interp))
         else:
             return np.column_stack((u_interp, v_interp))
+
+
+class AnalyticalInterpolator(Interpolator):
+    pass
 
 
 class InMemoryInterpolator(Interpolator):
@@ -318,116 +327,36 @@ class InMemoryInterpolator(Interpolator):
         return np.column_stack((u, v, w))
 
 
-class InterpolatorFactory:
-    def __init__(
-        self,
-        coordinate_reader: CoordinateReader | None = None,
-        velocity_reader: VelocityReader | None = None,
-        velocity_field=None,
-        coordinates=None,
-    ):
-        """
-        Unified factory supporting both file-based and in-memory workflows.
-        """
-        self.coordinate_reader = coordinate_reader
-        self.velocity_reader = velocity_reader
-        self.velocity_field = velocity_field
-        self.coordinates = coordinates
+def create_interpolator(interpolation_type: str) -> Interpolator:
+    """
+    Factory function to return an interpolator constructor based on the type.
 
-    # -------------------------------------------------------------------------
-    # Alternate constructors
-    # -------------------------------------------------------------------------
-    @classmethod
-    def from_files(
-        cls, coordinate_reader: CoordinateReader, velocity_reader: VelocityReader
-    ):
-        """
-        Factory for file-based interpolation. Readers will be used to load data
-        from disk when `create_interpolator` is called.
-        """
-        return cls(coordinate_reader=coordinate_reader, velocity_reader=velocity_reader)
+    Supported types of interpolators:
+    - "cubic": Clough-Tocher interpolation (default, high-quality but slow).
+    - "linear": Linear interpolation (faster, but less smooth).
+    - "nearest": Nearest-neighbor interpolation (fastest, but lowest quality).
+    - "grid": Grid-based interpolation (fastest for structured grids).
 
-    @classmethod
-    def from_memory(cls, velocity_field, coordinates):
-        """
-        Factory for in-memory interpolation. The velocity field and coordinates
-        are already available as arrays or callables.
-        """
-        return cls(velocity_field=velocity_field, coordinates=coordinates)
+    Args:
+        interpolation_type (str): Specifies which interpolator to use
+            ('cubic', 'linear', 'nearest', or 'grid').
 
-    # -------------------------------------------------------------------------
-    # File-based interpolation (production workflow)
-    # -------------------------------------------------------------------------
-    def create_interpolator(
-        self, snapshot_file: str, grid_file: str, strategy: str = "cubic"
-    ) -> Interpolator:
-        """
-        Reads velocity and coordinate data from the given files and creates an
-        interpolator based on the selected strategy.
+    Returns:
+        An instance of the appropriate interpolator.
+    """
+    interpolation_type = interpolation_type.lower()  # Normalize input to lowercase
 
-        Supported strategies:
-        - "cubic": Clough-Tocher interpolation (default, high-quality but slow).
-        - "linear": Linear interpolation (faster, but less smooth).
-        - "nearest": Nearest-neighbor interpolation (fastest, but lowest quality).
-        - "grid": Grid-based interpolation (fastest for structured grids).
+    interpolation_map: dict[str, type[Interpolator]] = {
+        "cubic": CubicInterpolator,  # Uses Euler for the first step, then AB2
+        "linear": LinearInterpolator,
+        "nearest": NearestNeighborInterpolator,
+        "grid": GridInterpolator,
+    }
 
-        Args:
-            snapshot_file (str): Path to the velocity data file.
-            grid_file (str): Path to the coordinate data file.
-            strategy (str): Interpolation strategy to use ("cubic", "linear",
-            "nearest", "grid").
-
-        Returns:
-            (Interpolation): The selected interpolator object.
-        """
-        if self.velocity_reader is None or self.coordinate_reader is None:
-            raise RuntimeError(
-                "InterpolatorFactory must be created with readers when using "
-                "`create_interpolator()`.\n Use `InterpolatorFactory.from_files()` "
-                "for file-based workflows."
-            )
-
-        flatten = strategy != "grid"
-
-        # Choose the appropriate method dynamically
-        read_velocity = getattr(
-            self.velocity_reader, "read_flatten" if flatten else "read_raw"
-        )
-        read_coordinates = getattr(
-            self.coordinate_reader, "read_flatten" if flatten else "read_raw"
+    if interpolation_type not in interpolation_map:
+        raise ValueError(
+            f"Invalid interpolation type '{interpolation_type}'. "
+            f"Choose from {list(interpolation_map.keys())}."
         )
 
-        velocities = read_velocity(snapshot_file)
-        coordinates = read_coordinates(grid_file)
-
-        match strategy:
-            case "cubic":
-                return CubicInterpolator(velocities, coordinates)
-            case "linear":
-                return LinearInterpolator(velocities, coordinates)
-            case "nearest":
-                return NearestNeighborInterpolator(velocities, coordinates)
-            case "grid":
-                return GridInterpolator(velocities, coordinates)
-            case _:
-                raise ValueError(f"Unknown interpolation strategy: {strategy}")
-
-    # -------------------------------------------------------------------------
-    # In-memory interpolation (Jupyter / FTLESolver workflow)
-    # -------------------------------------------------------------------------
-    def create_interpolator_in_memory(self, time=None) -> Interpolator:
-        """
-        Returns an Interpolation that evaluates the velocity field in memory.
-        """
-        if self.velocity_field is None or self.coordinates is None:
-            raise RuntimeError(
-                "InterpolatorFactory must be created with velocity and coordinates "
-                "when using `create_interpolator_in_memory()`.\n"
-                "Use `InterpolatorFactory.from_memory()` for in-memory workflows."
-            )
-
-        return InMemoryInterpolator(
-            velocity_field=self.velocity_field,
-            coordinates=self.coordinates,
-            time=time or 0.0,
-        )
+    return interpolation_map[interpolation_type]()

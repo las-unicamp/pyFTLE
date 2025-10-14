@@ -1,4 +1,4 @@
-from typing import Protocol
+from abc import ABC, abstractmethod
 
 from numba import njit  # type: ignore
 
@@ -7,13 +7,21 @@ from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
 from src.particles import NeighboringParticles
 
 
-class Integrator(Protocol):
-    def integrate(
-        self,
-        h: float,
-        particles: NeighboringParticles,
-        interpolator: Interpolator,
-    ) -> None:
+class Integrator(ABC):
+    def __init__(self, interpolator: Interpolator, **kwargs) -> None:  # noqa: ARG002
+        """
+        Constructor for the Integrator. All integrators must receive an
+        interpolator during initialization.
+
+        Args:
+            interpolator (Interpolator): The interpolator used to compute
+                velocity based on particle positions.
+            **kwargs: Additional parameters specific to the integrator type.
+        """
+        self.interpolator = interpolator
+
+    @abstractmethod
+    def integrate(self, h: float, particles: NeighboringParticles) -> None:
         """
         Perform a single integration step (Euler, Runge-Kutta, Adams-Bashforth 2).
         WARNING: This method performs in-place mutations of the particle positions.
@@ -26,7 +34,7 @@ class Integrator(Protocol):
                 An instance of an interpolator that computes the velocity given the
                 position values.
         """
-        ...
+        pass
 
 
 @njit
@@ -55,16 +63,12 @@ class AdamsBashforth2Integrator(Integrator):
     - n   → Previous timestep, obtained from `particles_previous`
     """
 
-    def __init__(self):
+    def __init__(self, interpolator: Interpolator, **kwargs) -> None:
+        super().__init__(interpolator, **kwargs)
         self.previous_velocity = None  # Stores f(t_n, y_n) for next iteration
 
-    def integrate(
-        self,
-        h: float,
-        particles: NeighboringParticles,
-        interpolator: Interpolator,
-    ) -> None:
-        current_velocity = interpolator.interpolate(particles.positions)
+    def integrate(self, h: float, particles: NeighboringParticles) -> None:
+        current_velocity = self.interpolator.interpolate(particles.positions)
 
         if self.previous_velocity is None:
             # First step: fallback to Euler method
@@ -96,10 +100,8 @@ class EulerIntegrator(Integrator):
     point in time.
     """
 
-    def integrate(
-        self, h: float, particles: NeighboringParticles, interpolator: Interpolator
-    ) -> None:
-        current_velocity = interpolator.interpolate(particles.positions)
+    def integrate(self, h: float, particles: NeighboringParticles) -> None:
+        current_velocity = self.interpolator.interpolate(particles.positions)
         particles.positions += euler_step(h, current_velocity)
 
 
@@ -124,23 +126,18 @@ class RungeKutta4Integrator(Integrator):
     higher-order accuracy than the Euler or Adams-Bashforth methods.
     """
 
-    def integrate(
-        self,
-        h: float,
-        particles: NeighboringParticles,
-        interpolator: Interpolator,
-    ) -> None:
+    def integrate(self, h: float, particles: NeighboringParticles) -> None:
         # Compute the four slopes (k1, k2, k3, k4)
-        k1 = interpolator.interpolate(particles.positions)
-        k2 = interpolator.interpolate(particles.positions + 0.5 * h * k1)
-        k3 = interpolator.interpolate(particles.positions + 0.5 * h * k2)
-        k4 = interpolator.interpolate(particles.positions + h * k3)
+        k1 = self.interpolator.interpolate(particles.positions)
+        k2 = self.interpolator.interpolate(particles.positions + 0.5 * h * k1)
+        k3 = self.interpolator.interpolate(particles.positions + 0.5 * h * k2)
+        k4 = self.interpolator.interpolate(particles.positions + h * k3)
 
         # Update the solution in-place using the weighted average of the slopes
         particles.positions += runge_kutta_4_step(h, k1, k2, k3, k4)
 
 
-def get_integrator(integrator_name: str) -> Integrator:
+def create_integrator(integrator_name: str, interpolator: Interpolator) -> Integrator:
     """Factory to create Integrator instances"""
 
     integrator_name = integrator_name.lower()  # Normalize input to lowercase
@@ -157,4 +154,4 @@ def get_integrator(integrator_name: str) -> Integrator:
             f"Choose from {list(integrator_map.keys())}."
         )
 
-    return integrator_map[integrator_name]()
+    return integrator_map[integrator_name](interpolator)
