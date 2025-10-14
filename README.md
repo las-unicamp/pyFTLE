@@ -113,13 +113,13 @@ particles).
 > Once the parameters are properly set, the solver can be executed from the root directory with the following command:
 >
 > ```bash
-> PYTHONPATH=${PWD} uv run python src/main.py -c config.yaml
+> PYTHONPATH=${PWD} uv run python src/app.py -c config.yaml
 > ```
 
 Alternatively, you can run the script from the CLI as:
 
 ```bash
-PYTHONPATH=${PWD} uv run python main.py \
+PYTHONPATH=${PWD} uv run python app.py \
     --experiment_name "my_experiment" \
     --list_velocity_files "velocity_files.txt" \
     --list_coordinate_files "coordinate_files.txt" \
