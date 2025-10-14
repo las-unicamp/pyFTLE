@@ -5,10 +5,10 @@ import numpy as np
 from particles import NeighboringParticles
 from src.file_writers import create_writer
 from src.interpolate import InterpolatorFactory
-from src.process import SnapshotProcessor
+from src.process import FTLESolver
 
 
-class FTLESolver:
+class FTLESolverAPI:
     def __init__(
         self,
         velocity_field: Callable | np.ndarray,
@@ -64,7 +64,7 @@ class FTLESolver:
             )
 
         # 3. Create and run the processor
-        processor = SnapshotProcessor(
+        processor = FTLESolver(
             index=0,
             snapshot_files=[],  # not used in-memory
             coordinate_files=[],  # not used in-memory
