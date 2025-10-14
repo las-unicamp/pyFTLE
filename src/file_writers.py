@@ -16,7 +16,10 @@ class FTLEWriter(ABC):
         grid_shape: Optional[tuple[int, ...]] = None,
     ) -> None:
         self.path = directory_path
-        os.makedirs(self.path, exist_ok=True)
+        try:
+            os.makedirs(self.path, exist_ok=True)
+        except OSError as e:
+            print(f"Error creating output folder: {e}")
 
         self.grid_shape = grid_shape
         self.dim: Optional[int] = None
