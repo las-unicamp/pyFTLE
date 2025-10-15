@@ -8,7 +8,6 @@ from src.cauchy_green import (
 from src.data_source import BatchSource
 from src.file_writers import FTLEWriter
 from src.ftle import compute_ftle_2x2, compute_ftle_3x3
-from src.hyperparameters import args
 from src.integrate import Integrator
 from src.my_types import ArrayFloat64N
 
@@ -36,7 +35,7 @@ class FTLESolver:
         self.output_writer = output_writer
         self.progress_queue = progress_queue
 
-    def run(self) -> None:
+    def run(self):  # TODO: add return type
         """Processes a single snapshot period."""
 
         self.particles = self.source.get_particles()
@@ -66,16 +65,19 @@ class FTLESolver:
             self.output_writer.write(
                 filename, ftle_field, self.particles.initial_centroid
             )
+        else:
+            return ftle_field, self.particles
 
     def _compute_ftle(self) -> ArrayFloat64N:
         """Computes FTLE and saves the results."""
         num_steps = self.source.num_steps
+        timestep = self.source.timestep
 
         if self.particles.num_neighbors == 4:
             jacobian = compute_flow_map_jacobian_2x2(self.particles)
-            map_period = (num_steps - 1) * abs(args.snapshot_timestep)
+            map_period = (num_steps - 1) * abs(timestep)
             return compute_ftle_2x2(jacobian, map_period)
 
         jacobian = compute_flow_map_jacobian_3x3(self.particles)
-        map_period = (num_steps - 1) * abs(args.snapshot_timestep)
+        map_period = (num_steps - 1) * abs(timestep)
         return compute_ftle_3x3(jacobian, map_period)
