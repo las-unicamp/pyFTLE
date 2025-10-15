@@ -39,6 +39,8 @@ class NeighboringParticles:
             self.initial_delta_front_back = compute_initial_delta_front_back(
                 self.positions, self.num_neighbors
             )
+        else:
+            self.initial_delta_front_back = np.zeros(0)  # no-ops
 
         self.initial_centroid = compute_centroid(
             self.positions, n_particles, self.num_neighbors
