@@ -13,6 +13,11 @@ outputs/
 
 # Virtual environments
 .venv
+# Cython libraries
+*.so
+./src/build
+./src/cython_integrators/__pycache__
+*.c
 
 # Code-generated files
 *.mat
