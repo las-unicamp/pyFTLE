@@ -46,7 +46,7 @@ class MatWriter(FTLEWriter):
     def __init__(
         self,
         directory_path: Union[str, os.PathLike],
-        grid_shape: Optional[tuple[int, ...]],
+        grid_shape: Optional[tuple[int, ...]] = None,
     ) -> None:
         super().__init__(directory_path, grid_shape)
 
@@ -110,7 +110,7 @@ class VTKWriter(FTLEWriter):
     def __init__(
         self,
         directory_path: Union[str, os.PathLike],
-        grid_shape: Optional[tuple[int, ...]],
+        grid_shape: Optional[tuple[int, ...]] = None,
     ) -> None:
         super().__init__(directory_path, grid_shape)
 
@@ -173,7 +173,7 @@ class VTKWriter(FTLEWriter):
 def create_writer(
     output_format: str,
     directory_path: str,
-    grid_shape: Optional[tuple[int, ...]],
+    grid_shape: Optional[tuple[int, ...]] = None,
 ) -> FTLEWriter:
     """
     Creates an FTLE writer based on the specified output format.
