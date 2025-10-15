@@ -1,8 +1,9 @@
 # ruff: noqa: N806
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, cast
+from typing import Callable, Optional
 
 import numpy as np
+from matplotlib import ExecutableNotFoundError
 from scipy.interpolate import (
     CloughTocher2DInterpolator,
     LinearNDInterpolator,
@@ -27,6 +28,7 @@ class Interpolator(ABC):
         self.velocities: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None
         self.points: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None
         self.interpolator = None  # Placeholder for the actual interpolator instance
+        self.velocity_fn: Optional[Callable] = None  # Used only by AnalyticalInterp
 
     def _initialize_interpolator(self) -> None:
         """Initialize the actual interpolator object based on velocity and points."""
@@ -274,60 +276,35 @@ class GridInterpolator(Interpolator):
 
 
 class AnalyticalInterpolator(Interpolator):
-    pass
-
-
-class InMemoryInterpolator(Interpolator):
-    """Interpolation wrapper for in-memory velocity fields."""
-
     def __init__(
-        self, velocity_field: Callable | np.ndarray, coordinates, time: float = 0.0
+        self,
+        time: float = 0.0,
     ):
         self.time = time
-        self.velocity_field = velocity_field
-        self.coordinates = coordinates
-        self._is_callable = callable(velocity_field)
-
-        if not self._is_callable:
-            vf_array = cast(np.ndarray, velocity_field)
-            X, Y, Z = coordinates
-            u, v, w = (
-                vf_array[..., 0],
-                vf_array[..., 1],
-                vf_array[..., 2],
-            )
-            self._interp_u = RegularGridInterpolator(
-                (X[:, 0, 0], Y[0, :, 0], Z[0, 0, :]), u
-            )
-            self._interp_v = RegularGridInterpolator(
-                (X[:, 0, 0], Y[0, :, 0], Z[0, 0, :]), v
-            )
-            self._interp_w = RegularGridInterpolator(
-                (X[:, 0, 0], Y[0, :, 0], Z[0, 0, :]), w
-            )
+        self.velocity_fn: Optional[Callable] = None
 
     def interpolate(
         self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Evaluates the velocity field at the given coordinates."""
-        if self._is_callable:
-            vf_func = cast(Callable[..., np.ndarray], self.velocity_field)
 
-            x, y = new_points[:, 0], new_points[:, 1]
-            z = new_points[:, 2] if new_points.shape[1] == 3 else None
-            result = vf_func(x, y, z, self.time)
-            return np.asarray(result)
+        if not callable(self.velocity_fn):
+            raise ExecutableNotFoundError("velocity_fn was not assigned properly")
+        return self.velocity_fn(self.time, new_points)
 
-        # Array-based interpolation
-        x, y, z = new_points[:, 0], new_points[:, 1], new_points[:, 2]
-        u = self._interp_u((x, y, z))
-        v = self._interp_v((x, y, z))
-        w = self._interp_w((x, y, z))
-
-        return np.column_stack((u, v, w))
+    def update(
+        self,
+        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        points: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None,
+    ) -> None:
+        """Override parent to do nothing (no state update necessary).
+        Arguments are required by the interface, but they are not used here."""
+        pass
 
 
-def create_interpolator(interpolation_type: str) -> Interpolator:
+def create_interpolator(
+    interpolation_type: str, velocity_fn: Optional[Callable] = None
+) -> Interpolator:
     """
     Factory function to return an interpolator constructor based on the type.
 
@@ -351,6 +328,7 @@ def create_interpolator(interpolation_type: str) -> Interpolator:
         "linear": LinearInterpolator,
         "nearest": NearestNeighborInterpolator,
         "grid": GridInterpolator,
+        "analytical": AnalyticalInterpolator,
     }
 
     if interpolation_type not in interpolation_map:
@@ -359,4 +337,9 @@ def create_interpolator(interpolation_type: str) -> Interpolator:
             f"Choose from {list(interpolation_map.keys())}."
         )
 
-    return interpolation_map[interpolation_type]()
+    interpolator = interpolation_map[interpolation_type]()
+
+    if interpolation_type == "analytical":
+        interpolator.velocity_fn = velocity_fn
+
+    return interpolator

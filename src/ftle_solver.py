@@ -45,9 +45,8 @@ class FTLESolver:
         num_steps = self.source.num_steps
 
         for i in range(num_steps):
-            velocities, coordinates = self.source.get_data_for_step(i)
+            self.source.update_interpolator(self.integrator.interpolator, i)
 
-            self.integrator.interpolator.update(velocities, coordinates)
             self.integrator.integrate(timestep, self.particles)
 
             # publish progress: i goes from 1 ... num_steps
@@ -66,7 +65,7 @@ class FTLESolver:
                 filename, ftle_field, self.particles.initial_centroid
             )
         else:
-            return ftle_field, self.particles
+            return ftle_field
 
     def _compute_ftle(self) -> ArrayFloat64N:
         """Computes FTLE and saves the results."""
