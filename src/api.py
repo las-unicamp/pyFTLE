@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, Optional
+from typing import Callable, Optional, cast
 
 import numpy as np
 
@@ -89,9 +89,25 @@ class AnalyticalSolver:
             progress_queue=progress_queue,
             output_writer=self.writer,
         )
-        return solver.run()  # FIXME: preciso pegar o retorno da chamada
+        return solver.run()
 
     def run(self):
         batches = self._create_batches()
-        # self.executor.run(batches, self._worker)
-        return self._worker(batches[0], None)  # FIXME: voltar pro paralelo
+        results = self.executor.run(batches, self._worker)
+
+        # Case 1: writer was used — results are all None
+        if self.writer is not None:
+            # Nothing to return; data already written to disk
+            return
+
+        # Case 2: no writer — results are np.ndarray (some may be None if a
+        # worker failed)
+        if not results:
+            raise RuntimeError("No FTLE fields were returned (all results were None).")
+
+        if len(results) == 1:
+            return results[0]
+
+        results = cast(list[np.ndarray], results)
+
+        return np.stack(results, axis=0)  # (num_ftles, n_points)
