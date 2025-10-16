@@ -5,13 +5,34 @@ import time
 import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
+import numpy as np
 from colorama import Fore, Style
 from colorama import init as colorama_init
-from tqdm import tqdm
 
 from src.data_source import BatchSource
 
 colorama_init(autoreset=True)
+
+
+def get_tqdm():
+    """Return tqdm suitable for notebooks or terminal environments."""
+    try:
+        from IPython.core.getipython import get_ipython
+
+        shell = get_ipython()
+        if shell and hasattr(shell, "config") and "IPKernelApp" in shell.config:
+            from tqdm.notebook import tqdm as tqdm_notebook
+
+            return tqdm_notebook
+    except Exception:
+        pass
+
+    from tqdm import tqdm as tqdm_terminal
+
+    return tqdm_terminal
+
+
+tqdm = get_tqdm()
 
 
 class ParallelExecutor:
@@ -73,17 +94,21 @@ class ParallelExecutor:
         )
         monitor_proc.start()
 
+        results: list[np.ndarray | None] = [None] * len(tasks)
         exceptions = []
+
         with ProcessPoolExecutor(max_workers=self.n_processes) as executor:
             futures = {
-                executor.submit(worker_fn, task, self.progress_queue): task
-                for task in tasks
+                executor.submit(worker_fn, task, self.progress_queue): i
+                for i, task in enumerate(tasks)
             }
 
             for future in as_completed(futures):
-                task = futures[future]
+                i = futures[future]
+                task = tasks[i]
                 try:
-                    future.result()
+                    result = future.result()
+                    results[i] = result  # preserve task order
                 except Exception as e:
                     error_msg = (
                         f"\n{Fore.RED}❌ Error in task "
@@ -118,3 +143,5 @@ class ParallelExecutor:
                 flush=True,
             )
             raise RuntimeError("One or more FTLE batches failed.")
+
+        return results

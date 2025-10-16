@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import List, Optional, Protocol, Tuple
+from typing import Callable, List, Optional, Protocol, Tuple
 
 from src.file_readers import (
     CoordinateMatReader,
     VelocityMatReader,
     read_seed_particles_coordinates,
 )
+from src.interpolate import Interpolator
 from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
 from src.particles import NeighboringParticles
 
@@ -18,11 +19,9 @@ class BatchSource(Protocol):
     @property
     def id(self) -> str: ...
     def get_particles(self) -> NeighboringParticles: ...
-    def get_data_for_step(
-        self, step_index: int
-    ) -> Tuple[
-        ArrayFloat64Nx2 | ArrayFloat64Nx3, ArrayFloat64Nx2 | ArrayFloat64Nx3
-    ]: ...
+    def update_interpolator(
+        self, interpolator: Interpolator, step_index: int
+    ) -> None: ...
 
 
 class FileBatchSource(BatchSource):
@@ -83,31 +82,31 @@ class FileBatchSource(BatchSource):
 
         return velocities, coordinates
 
+    def update_interpolator(self, interpolator: Interpolator, step_index: int) -> None:
+        velocities, coordinates = self.get_data_for_step(step_index)
+        interpolator.update(velocities, coordinates)
 
-class MemoryBatchSource(BatchSource):
+
+class AnalyticalBatchSource(BatchSource):
     def __init__(
         self,
-        velocity_field,
-        grid,
+        velocity_fn: Callable,  # TODO: add type
         particles: NeighboringParticles,
         timestep: float,
-        flow_map_period: float,
+        times,  # TODO: add type -- 1D array of floats
     ):
-        self.velocity_field = velocity_field
-        self.grid = grid
+        self.velocity_fn = velocity_fn
         self.particles = particles
         self._timestep = timestep
-        self.flow_map_period = flow_map_period
-        self.num_snapshots = int(flow_map_period / abs(timestep)) + 1
-        self._id = "???"  # TODO: passar o id ou definir ele aqui?
+        self.times = times
 
     @property
     def id(self) -> str:
-        return self._id
+        return f"{self.times[0]:06f}"
 
     @property
     def num_steps(self) -> int:
-        return self.num_snapshots
+        return len(self.times)
 
     @property
     def timestep(self) -> float:
@@ -116,7 +115,6 @@ class MemoryBatchSource(BatchSource):
     def get_particles(self):
         return self.particles
 
-    def get_data_for_step(
-        self, step_index: int
-    ) -> Tuple[ArrayFloat64Nx2 | ArrayFloat64Nx3, ArrayFloat64Nx2 | ArrayFloat64Nx3]:
-        raise NotImplementedError("Need to implement this")
+    def update_interpolator(self, interpolator, step_index: int) -> None:
+        """AnalyticalInterpolator doesn’t need to be updated."""
+        pass
