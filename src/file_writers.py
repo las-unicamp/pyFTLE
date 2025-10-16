@@ -131,32 +131,39 @@ class VTKWriter(FTLEWriter):
             if len(self.grid_shape) == 2:
                 nx, ny = self.grid_shape
                 nz = 1
+                particles_centroid = particles_centroid.reshape(
+                    nx, ny, nz, self.dim, order="F"
+                )
+
+                x = particles_centroid[..., 0]
+                y = particles_centroid[..., 1]
+                z = np.zeros_like(x)
+
+                grid = pv.StructuredGrid(x, y, z)
+                grid["ftle"] = ftle_field.flatten(order="F")
+                grid.save(vtk_filename + ".vts")
+
             elif len(self.grid_shape) == 3:
                 nx, ny, nz = self.grid_shape
+                x_matrix = particles_centroid[:, 0].reshape((nx, ny, nz), order="C")
+                y_matrix = particles_centroid[:, 1].reshape((nx, ny, nz), order="C")
+                z_matrix = particles_centroid[:, 2].reshape((nx, ny, nz), order="C")
+
+                x_cartesian = np.transpose(x_matrix, axes=(1, 0, 2))
+                y_cartesian = np.transpose(y_matrix, axes=(1, 0, 2))
+                z_cartesian = np.transpose(z_matrix, axes=(1, 0, 2))
+                grid = pv.StructuredGrid(x_cartesian, y_cartesian, z_cartesian)
+
+                ftle_matrix = ftle_field.reshape((nx, ny, nz), order="C")
+                ftle_cartesian = np.transpose(ftle_matrix, axes=(1, 0, 2))
+
+                grid["ftle"] = ftle_cartesian.flatten(order="F")
+
+                grid.save(vtk_filename + ".vts")
             else:
                 raise ValueError(
                     f"Invalid grid_shape length {len(self.grid_shape)}. Must be 2 or 3."
                 )
-
-            self.dim = cast(int, self.dim)
-
-            particles_centroid = particles_centroid.reshape(
-                nx, ny, nz, self.dim, order="F"
-            )
-
-            # For 2D data, create a zero z-plane
-            x = particles_centroid[..., 0]
-            y = particles_centroid[..., 1]
-            if self.dim == 3:
-                z = particles_centroid[..., 2]
-            else:
-                z = np.zeros_like(x)
-
-            grid = pv.StructuredGrid(x, y, z)
-            grid["ftle"] = ftle_field.flatten(order="F")
-            grid.save(vtk_filename + ".vts")
-
-        # Unstructured points
         else:
             if self.dim == 2:
                 points = np.hstack(
@@ -164,9 +171,8 @@ class VTKWriter(FTLEWriter):
                 )
             else:
                 points = particles_centroid
-
             mesh = pv.PolyData(points)
-            mesh["ftle"] = ftle_field.flatten(order="C")
+            mesh["ftle"] = ftle_field.flatten()
             mesh.save(vtk_filename + ".vtp")
 
 
