@@ -7,7 +7,6 @@ from src.interpolate import (
     CubicInterpolator,
     CythonInterpolator,
     GridInterpolator,
-    InMemoryInterpolator,
     LinearInterpolator,
     NearestNeighborInterpolator,
     create_interpolator,
@@ -133,54 +132,6 @@ def test_grid_3d_from_factory(kind, grid_data_3d):
     assert np.isfinite(interpolated_values).all()
     # For a simple u=x, v=y, w=z field, interpolated values should match the points
     assert np.allclose(interpolated_values, new_points, atol=1e-9)
-
-
-# ##################################
-# ## Tests for Special Classes    ##
-# ##################################
-
-
-class TestInMemoryInterpolator:
-    """Grouped tests for the InMemoryInterpolator."""
-
-    def test_with_callable_velocity_field(self):
-        """Tests InMemoryInterpolator with a function as the velocity field."""
-
-        # Velocity field: u=2x, v=3y, w=4z
-        def velocity_func(x, y, z, _):
-            return np.vstack([2 * x, 3 * y, 4 * z]).T
-
-        # The 'coordinates' argument is not used for callable fields, so it can be None
-        interpolator = InMemoryInterpolator(
-            velocity_field=velocity_func, coordinates=None
-        )
-        new_points = np.array([[1.0, 1.0, 1.0], [0.5, 0.2, 0.1]], dtype=np.float64)
-
-        interpolated_values = interpolator.interpolate(new_points)
-        expected_values = np.array([[2.0, 3.0, 4.0], [1.0, 0.6, 0.4]], dtype=np.float64)
-
-        assert np.allclose(interpolated_values, expected_values)
-
-    def test_with_array_velocity_field(self, grid_data_3d):
-        """Tests InMemoryInterpolator with a numpy array as the velocity field."""
-        coordinates, velocities = grid_data_3d
-
-        # Reshape velocities to (M, N, P, 3) as expected by the class
-        vf_array = np.moveaxis(velocities, 0, -1)
-
-        # Unpack grid components
-        x, y, z = coordinates[0], coordinates[1], coordinates[2]
-
-        interpolator = InMemoryInterpolator(
-            velocity_field=vf_array, coordinates=(x, y, z)
-        )
-        new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.75, 0.1]], dtype=np.float64)
-
-        interpolated_values = interpolator.interpolate(new_points)
-
-        # Since the mock field is u=x, v=y, w=z,
-        # the result should match the input points
-        assert np.allclose(interpolated_values, new_points)
 
 
 # ##################################
