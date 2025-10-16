@@ -1,178 +1,210 @@
+# test_interpolate.py
+
 import numpy as np
 import pytest
 
 from src.interpolate import (
     CubicInterpolator,
+    CythonInterpolator,
     GridInterpolator,
+    InMemoryInterpolator,
     LinearInterpolator,
     NearestNeighborInterpolator,
     create_interpolator,
 )
-from src.my_types import (
-    Array2xMxN,
-    Array3xMxN,
-    ArrayFloat64Nx2,
-    ArrayFloat64Nx3,
-)
+from src.my_types import Array2xMxN, Array3xMxN, ArrayFloat64Nx2, ArrayFloat64Nx3
+
+# #######################
+# ## Helper Fixtures   ##
+# #######################
 
 
-# -----------------------
-# Helper: mock data
-# -----------------------
-def generate_mock_data_2d() -> tuple[ArrayFloat64Nx2, ArrayFloat64Nx2]:
+@pytest.fixture
+def scatter_data_2d() -> tuple[ArrayFloat64Nx2, ArrayFloat64Nx2]:
+    """Provides 2D scattered points and a corresponding velocity field (u=x, v=y)."""
     points = np.array(
-        [
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [0.0, 1.0],
-            [1.0, 1.0],
-        ],
+        [[0, 0], [1, 0], [0, 1], [1, 1]],
         dtype=np.float64,
     )
-    velocities = np.array(
-        [
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [0.0, 1.0],
-            [1.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
+    velocities = np.copy(points)
     return points, velocities
 
 
-def generate_mock_data_3d() -> tuple[ArrayFloat64Nx3, ArrayFloat64Nx3]:
+@pytest.fixture
+def scatter_data_3d() -> tuple[ArrayFloat64Nx3, ArrayFloat64Nx3]:
+    """Provides 3D scattered points and
+    a corresponding velocity field (u=x, v=y, w=z)."""
     points = np.array(
         [
-            [0.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [1.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0],
-            [1.0, 0.0, 1.0],
-            [0.0, 1.0, 1.0],
-            [1.0, 1.0, 1.0],
+            [0, 0, 0],
+            [1, 0, 0],
+            [0, 1, 0],
+            [1, 1, 0],
+            [0, 0, 1],
+            [1, 0, 1],
+            [0, 1, 1],
+            [1, 1, 1],
         ],
         dtype=np.float64,
     )
-    velocities = np.array(
-        [
-            [0.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [1.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0],
-            [1.0, 0.0, 1.0],
-            [0.0, 1.0, 1.0],
-            [1.0, 1.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
+    velocities = np.copy(points)
     return points, velocities
 
 
-# -----------------------
-# Interpolator tests (2D)
-# -----------------------
-@pytest.mark.parametrize(
-    "strategy_class",
-    [
-        CubicInterpolator,
-        LinearInterpolator,
-        NearestNeighborInterpolator,
-    ],
-)
-def test_interpolators_2d(strategy_class):
-    points, velocities = generate_mock_data_2d()
-    interpolator = strategy_class()
-    interpolator.update(velocities, points)
-
-    new_points = np.array([[0.5, 0.5], [0.25, 0.75]], dtype=np.float64)
-    interpolated_values = interpolator.interpolate(new_points)
-
-    assert interpolated_values.shape == (new_points.shape[0], 2)
-    assert np.isfinite(interpolated_values).all()
+@pytest.fixture
+def grid_data_2d() -> tuple[Array2xMxN, Array2xMxN]:
+    """Provides a 2D grid and a corresponding velocity field (u=x, v=y)."""
+    grid_x, grid_y = np.mgrid[0:1:5j, 0:1:5j]
+    coordinates = np.array([grid_x, grid_y], dtype=np.float64)
+    velocities = np.array([np.copy(grid_x), np.copy(grid_y)], dtype=np.float64)
+    return coordinates, velocities
 
 
-# -----------------------
-# Interpolator tests (3D)
-# -----------------------
-@pytest.mark.parametrize(
-    "strategy_class",
-    [
-        LinearInterpolator,
-        NearestNeighborInterpolator,
-    ],
-)
-def test_interpolators_3d(strategy_class):
-    points, velocities = generate_mock_data_3d()
-    interpolator = strategy_class()
-    interpolator.update(velocities, points)
-
-    new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.25, 0.75]], dtype=np.float64)
-    interpolated_values = interpolator.interpolate(new_points)
-
-    assert interpolated_values.shape == (new_points.shape[0], 3)
-    assert np.isfinite(interpolated_values).all()
-
-
-# -----------------------
-# GridInterpolator tests
-# -----------------------
-def test_grid_interpolator_2d():
-    grid_x, grid_y = np.mgrid[0:1:3j, 0:1:3j]
-    velocities_u = np.copy(grid_x)
-    velocities_v = np.copy(grid_y)
-
-    coordinates: Array2xMxN = np.array([grid_x, grid_y], dtype=np.float64)
-    velocities: Array2xMxN = np.array([velocities_u, velocities_v], dtype=np.float64)
-
-    interpolator = GridInterpolator()
-    interpolator.update(velocities, coordinates)
-    new_points = np.array([[0.5, 0.5], [0.25, 0.75]], dtype=np.float64)
-    interpolated_values = interpolator.interpolate(new_points)
-
-    assert interpolated_values.shape == (new_points.shape[0], 2)
-    assert np.isfinite(interpolated_values).all()
-
-
-def test_grid_interpolator_3d():
-    grid_x, grid_y, grid_z = np.mgrid[0:1:3j, 0:1:3j, 0:1:3j]
-    velocities_u = np.copy(grid_x)
-    velocities_v = np.copy(grid_y)
-    velocities_w = np.copy(grid_z)
-
-    coordinates: Array3xMxN = np.array([grid_x, grid_y, grid_z], dtype=np.float64)
-    velocities: Array3xMxN = np.array(
-        [velocities_u, velocities_v, velocities_w], dtype=np.float64
+@pytest.fixture
+def grid_data_3d() -> tuple[Array3xMxN, Array3xMxN]:
+    """Provides a 3D grid and a corresponding velocity field (u=x, v=y, w=z)."""
+    grid_x, grid_y, grid_z = np.mgrid[0:1:5j, 0:1:5j, 0:1:5j]
+    coordinates = np.array([grid_x, grid_y, grid_z], dtype=np.float64)
+    velocities = np.array(
+        [np.copy(grid_x), np.copy(grid_y), np.copy(grid_z)], dtype=np.float64
     )
-
-    interpolator = GridInterpolator()
-    interpolator.update(velocities, coordinates)
-    new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.25, 0.75]], dtype=np.float64)
-    interpolated_values = interpolator.interpolate(new_points)
-
-    assert interpolated_values.shape == (new_points.shape[0], 3)
-    assert np.isfinite(interpolated_values).all()
+    return coordinates, velocities
 
 
-# -----------------------
-# Factory tests
-# -----------------------
-@pytest.mark.parametrize("kind", ["cubic", "linear", "nearest", "grid"])
-def test_create_interpolator_returns_correct_type(kind):
+# ######################################
+# ## Tests for Factory Interpolators  ##
+# ######################################
+
+
+@pytest.mark.parametrize("kind", ["cubic", "linear", "nearest"])
+def test_unstructured_2d_from_factory(kind, scatter_data_2d):
+    """Tests 2D interpolators for scattered data created via the factory."""
+    points, velocities = scatter_data_2d
+    new_points = np.array([[0.5, 0.5], [0.25, 0.75]], dtype=np.float64)
+
     interpolator = create_interpolator(kind)
-    assert isinstance(
-        interpolator,
-        (
-            CubicInterpolator,
-            LinearInterpolator,
-            NearestNeighborInterpolator,
-            GridInterpolator,
-        ),
-    )
+    interpolator.update(velocities=velocities, points=points)
+    interpolated_values = interpolator.interpolate(new_points)
+
+    assert interpolated_values.shape == (new_points.shape[0], 2)
+    assert np.isfinite(interpolated_values).all()
 
 
-def test_create_interpolator_invalid_type():
+@pytest.mark.parametrize("kind", ["linear", "nearest"])
+def test_unstructured_3d_from_factory(kind, scatter_data_3d):
+    """Tests 3D interpolators for scattered data created via the factory."""
+    points, velocities = scatter_data_3d
+    new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.75, 0.1]], dtype=np.float64)
+
+    interpolator = create_interpolator(kind)
+    interpolator.update(velocities=velocities, points=points)
+    interpolated_values = interpolator.interpolate(new_points)
+
+    assert interpolated_values.shape == (new_points.shape[0], 3)
+    assert np.isfinite(interpolated_values).all()
+
+
+def test_grid_2d_from_factory(grid_data_2d):
+    """Tests the 2D grid interpolator created via the factory."""
+    coordinates, velocities = grid_data_2d
+    new_points = np.array([[0.5, 0.5], [0.25, 0.75]], dtype=np.float64)
+
+    interpolator = create_interpolator("grid")
+    interpolator.update(velocities=velocities, points=coordinates)
+    interpolated_values = interpolator.interpolate(new_points)
+
+    assert interpolated_values.shape == (new_points.shape[0], 2)
+    assert np.isfinite(interpolated_values).all()
+    # For a simple u=x, v=y field, interpolated values should match the points
+    assert np.allclose(interpolated_values, new_points)
+
+
+@pytest.mark.parametrize("kind", ["grid", "grid_cython"])
+def test_grid_3d_from_factory(kind, grid_data_3d):
+    """Tests 3D grid interpolators (standard and Cython) from the factory."""
+    coordinates, velocities = grid_data_3d
+    new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.75, 0.1]], dtype=np.float64)
+
+    interpolator = create_interpolator(kind)
+    interpolator.update(velocities=velocities, points=coordinates)
+    interpolated_values = interpolator.interpolate(new_points)
+
+    assert interpolated_values.shape == (new_points.shape[0], 3)
+    assert np.isfinite(interpolated_values).all()
+    # For a simple u=x, v=y, w=z field, interpolated values should match the points
+    assert np.allclose(interpolated_values, new_points, atol=1e-9)
+
+
+# ##################################
+# ## Tests for Special Classes    ##
+# ##################################
+
+
+class TestInMemoryInterpolator:
+    """Grouped tests for the InMemoryInterpolator."""
+
+    def test_with_callable_velocity_field(self):
+        """Tests InMemoryInterpolator with a function as the velocity field."""
+
+        # Velocity field: u=2x, v=3y, w=4z
+        def velocity_func(x, y, z, _):
+            return np.vstack([2 * x, 3 * y, 4 * z]).T
+
+        # The 'coordinates' argument is not used for callable fields, so it can be None
+        interpolator = InMemoryInterpolator(
+            velocity_field=velocity_func, coordinates=None
+        )
+        new_points = np.array([[1.0, 1.0, 1.0], [0.5, 0.2, 0.1]], dtype=np.float64)
+
+        interpolated_values = interpolator.interpolate(new_points)
+        expected_values = np.array([[2.0, 3.0, 4.0], [1.0, 0.6, 0.4]], dtype=np.float64)
+
+        assert np.allclose(interpolated_values, expected_values)
+
+    def test_with_array_velocity_field(self, grid_data_3d):
+        """Tests InMemoryInterpolator with a numpy array as the velocity field."""
+        coordinates, velocities = grid_data_3d
+
+        # Reshape velocities to (M, N, P, 3) as expected by the class
+        vf_array = np.moveaxis(velocities, 0, -1)
+
+        # Unpack grid components
+        x, y, z = coordinates[0], coordinates[1], coordinates[2]
+
+        interpolator = InMemoryInterpolator(
+            velocity_field=vf_array, coordinates=(x, y, z)
+        )
+        new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.75, 0.1]], dtype=np.float64)
+
+        interpolated_values = interpolator.interpolate(new_points)
+
+        # Since the mock field is u=x, v=y, w=z,
+        # the result should match the input points
+        assert np.allclose(interpolated_values, new_points)
+
+
+# ##################################
+# ## Tests for Factory Logic      ##
+# ##################################
+
+
+@pytest.mark.parametrize(
+    "kind, expected_class",
+    [
+        ("cubic", CubicInterpolator),
+        ("linear", LinearInterpolator),
+        ("nearest", NearestNeighborInterpolator),
+        ("grid", GridInterpolator),
+        ("grid_cython", CythonInterpolator),
+    ],
+)
+def test_factory_returns_correct_types(kind, expected_class):
+    """Ensures the factory returns an instance of the correct class for each key."""
+    interpolator = create_interpolator(kind)
+    assert isinstance(interpolator, expected_class)
+
+
+def test_factory_raises_error_for_invalid_type():
+    """Ensures the factory raises a ValueError for an unknown interpolator type."""
     with pytest.raises(ValueError, match="Invalid interpolation type"):
-        create_interpolator("nonsense")
+        create_interpolator("nonexistent_interpolator")

@@ -106,7 +106,7 @@ parser.add_argument(
 parser.add_argument(
     "--interpolator",
     type=str,
-    choices=["cubic", "linear", "nearest", "grid"],
+    choices=["cubic", "linear", "nearest", "grid", "grid_cython"],
     help="Select interpolator strategy to evaluate the particle velocity at "
     "their current location. default='cubic'",
 )

@@ -10,6 +10,7 @@ from scipy.interpolate import (
     RegularGridInterpolator,
 )
 
+from src.interp3d import interp_3d
 from src.my_types import (
     ArrayFloat64Nx2,
     ArrayFloat64Nx3,
@@ -55,8 +56,7 @@ class Interpolator(ABC):
 
     @abstractmethod
     def interpolate(
-        self,
-        new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Implements the interpolation strategy."""
         pass
@@ -86,22 +86,35 @@ class CubicInterpolator(Interpolator):
         if self.velocities is None or self.points is None:
             raise ValueError("Velocities and points must be set before initialization.")
 
-        velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
-        self.interpolator = CloughTocher2DInterpolator(self.points, velocities_cmplx)
+        self.interpolator = CloughTocher2DInterpolator(
+            self.points, self.velocities[:, 0] + 1j * self.velocities[:, 1]
+        )
         if self.points.shape[1] == 3:
             self.interpolator_z = CloughTocher2DInterpolator(
                 self.points, self.velocities[:, 2]
             )
 
-    def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
-        interp_velocities = self.interpolator(new_points)
+    def interpolate(
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
+    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+        if out is None:
+            if new_points.shape[1] == 2:
+                out = np.empty((len(new_points), 2), dtype=float)
+            else:
+                out = np.empty((len(new_points), 3), dtype=float)
+
+        # Get complex interpolation from self.interpolator
+        interp_val = self.interpolator(new_points)  # complex-valued
+
         if new_points.shape[1] == 2:
-            return np.column_stack((interp_velocities.real, interp_velocities.imag))
+            out[:, 0] = interp_val.real
+            out[:, 1] = interp_val.imag
         else:
-            interp_velocities_z = self.interpolator_z(new_points)
-            return np.column_stack(
-                (interp_velocities.real, interp_velocities.imag, interp_velocities_z)
-            )
+            interp_z = self.interpolator_z(new_points)
+            out[:, 0] = interp_val.real
+            out[:, 1] = interp_val.imag
+            out[:, 2] = interp_z
+        return out
 
 
 class LinearInterpolator(Interpolator):
@@ -120,8 +133,9 @@ class LinearInterpolator(Interpolator):
         if self.velocities is None or self.points is None:
             raise ValueError("Velocities and points must be set before initialization.")
 
-        velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
-        self.interpolator = LinearNDInterpolator(self.points, velocities_cmplx)
+        self.interpolator = LinearNDInterpolator(
+            self.points, self.velocities[:, 0] + 1j * self.velocities[:, 1]
+        )
 
         if self.points.shape[1] == 3:
             self.interpolator_z = LinearNDInterpolator(
@@ -129,17 +143,27 @@ class LinearInterpolator(Interpolator):
             )
 
     def interpolate(
-        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
-        interp_velocities = self.interpolator(new_points)
+        if out is None:
+            if new_points.shape[1] == 2:
+                out = np.empty((len(new_points), 2), dtype=float)
+            else:
+                out = np.empty((len(new_points), 3), dtype=float)
+
+        # Get complex interpolation from self.interpolator
+        interp_val = self.interpolator(new_points)  # complex-valued
 
         if new_points.shape[1] == 2:
-            return np.column_stack((interp_velocities.real, interp_velocities.imag))
+            out[:, 0] = interp_val.real
+            out[:, 1] = interp_val.imag
         else:
-            interp_velocities_z = self.interpolator_z(new_points)
-            return np.column_stack(
-                (interp_velocities.real, interp_velocities.imag, interp_velocities_z)
-            )
+            interp_z = self.interpolator_z(new_points)
+            out[:, 0] = interp_val.real
+            out[:, 1] = interp_val.imag
+            out[:, 2] = interp_z
+
+        return out
 
 
 class NearestNeighborInterpolator(Interpolator):
@@ -157,25 +181,36 @@ class NearestNeighborInterpolator(Interpolator):
     def _initialize_interpolator(self) -> None:
         if self.velocities is None or self.points is None:
             raise ValueError("Velocities and points must be set before initialization.")
-
-        velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
-        self.interpolator = NearestNDInterpolator(self.points, velocities_cmplx)
+        self.interpolator = NearestNDInterpolator(
+            self.points, self.velocities[:, 0] + 1j * self.velocities[:, 1]
+        )
         if self.points.shape[1] == 3:
             self.interpolator_z = NearestNDInterpolator(
                 self.points, self.velocities[:, 2]
             )
 
     def interpolate(
-        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
-        interp_velocities = self.interpolator(new_points)
+        if out is None:
+            if new_points.shape[1] == 2:
+                out = np.empty((len(new_points), 2), dtype=float)
+            else:
+                out = np.empty((len(new_points), 3), dtype=float)
+
+        # Get complex interpolation from self.interpolator
+        interp_val = self.interpolator(new_points)  # complex-valued
+
         if new_points.shape[1] == 2:
-            return np.column_stack((interp_velocities.real, interp_velocities.imag))
+            out[:, 0] = interp_val.real
+            out[:, 1] = interp_val.imag
         else:
-            interp_velocities_z = self.interpolator_z(new_points)
-            return np.column_stack(
-                (interp_velocities.real, interp_velocities.imag, interp_velocities_z)
-            )
+            interp_z = self.interpolator_z(new_points)
+            out[:, 0] = interp_val.real
+            out[:, 1] = interp_val.imag
+            out[:, 2] = interp_z
+
+        return out
 
 
 class GridInterpolator(Interpolator):
@@ -194,7 +229,7 @@ class GridInterpolator(Interpolator):
         super().__init__()
         self.interpolator_u = None
         self.interpolator_v = None
-        self.interpolator_z = None
+        self.interpolator_z: Optional[RegularGridInterpolator] = None
 
     def _initialize_interpolator(self) -> None:
         """Initializes the actual interpolator for grid-based interpolation."""
@@ -252,25 +287,109 @@ class GridInterpolator(Interpolator):
             )
 
     def interpolate(
-        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Interpolates velocity field at given Cartesian points."""
-        if self.interpolator_u is None or self.interpolator_v is None:
-            raise ValueError(
-                "Interpolator has not been initialized. Call `update()` first."
-            )
+        assert self.interpolator_u is not None, (
+            "Interpolator not initialized. Call _initialize_interpolator() first."
+        )
+        assert self.interpolator_v is not None, (
+            "Interpolator not initialized. Call _initialize_interpolator() first."
+        )
 
-        u_interp = self.interpolator_u(new_points)
-        v_interp = self.interpolator_v(new_points)
-
+        if out is None:
+            out = np.empty_like(new_points)
+        out[:, 0] = self.interpolator_u(new_points)
+        out[:, 1] = self.interpolator_v(new_points)
         if new_points.shape[1] == 3:
-            if self.interpolator_z is None:
-                raise ValueError("3D interpolator is not initialized properly.")
+            assert self.interpolator_z is not None, (
+                "3D interpolation attempted on a 2D-initialized field."
+            )
+            out[:, 2] = self.interpolator_z(new_points)
+        return out
 
-            w_interp = self.interpolator_z(new_points)
-            return np.column_stack((u_interp, v_interp, w_interp))
-        else:
-            return np.column_stack((u_interp, v_interp))
+
+class CythonInterpolator(Interpolator):
+    """Grid-based interpolation based on https://github.com/jglaser/interp3d.
+    the implementation was vectorized to handle multiple particles at the same time.
+
+    this method works for regular rectangular grids
+
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._u_buffer = None
+        self._v_buffer = None
+        self._w_buffer = None
+
+    def _initialize_interpolator(self) -> None:
+        if self.velocities is None or self.points is None:
+            raise ValueError("Velocities and points must be set before initialization.")
+
+        coordinates = self.points
+        velocities = self.velocities
+        grid_shape = coordinates[0].shape
+
+        if len(grid_shape) == 2:
+            raise NotImplementedError("grid_cython only works for 3D cases.")
+
+        grid_x = np.linspace(
+            np.min(coordinates[0]),
+            np.max(coordinates[0]),
+            grid_shape[0],
+        )
+        grid_y = np.linspace(
+            np.min(coordinates[1]),
+            np.max(coordinates[1]),
+            grid_shape[1],
+        )
+        grid_z = np.linspace(
+            np.min(coordinates[2]),
+            np.max(coordinates[2]),
+            grid_shape[2],
+        )
+
+        grid_x = make_safe_array(grid_x)
+        grid_y = make_safe_array(grid_y)
+        grid_z = make_safe_array(grid_z)
+
+        self.interpolator_u = interp_3d.Interp3D(
+            make_safe_array(velocities[0]), grid_x, grid_y, grid_z
+        )
+
+        self.interpolator_v = interp_3d.Interp3D(
+            make_safe_array(velocities[1]), grid_x, grid_y, grid_z
+        )
+        self.interpolator_z = interp_3d.Interp3D(
+            make_safe_array(velocities[2]), grid_x, grid_y, grid_z
+        )
+
+    def _ensure_buffers(self, n):
+        """Allocate or resize buffers if Ne"""
+        if self._u_buffer is None or self._u_buffer.shape[0] != n:
+            self._u_buffer = np.empty(n, dtype=np.float64)
+            self._v_buffer = np.empty(n, dtype=np.float64)
+            self._w_buffer = np.empty(n, dtype=np.float64)
+
+    def interpolate(
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
+    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+        """Interpolates velocity field at given Cartesian points."""
+
+        n = new_points.shape[0]
+
+        if out is None:
+            out = np.empty_like(new_points)
+        self._ensure_buffers(n)
+
+        self.interpolator_u(new_points, out=self._u_buffer)
+        self.interpolator_v(new_points, out=self._v_buffer)
+        self.interpolator_z(new_points, out=self._w_buffer)
+        out[:, 0] = self._u_buffer
+        out[:, 1] = self._v_buffer
+        out[:, 2] = self._w_buffer
+        return out
 
 
 class AnalyticalInterpolator(Interpolator):
@@ -307,9 +426,11 @@ class InMemoryInterpolator(Interpolator):
             )
 
     def interpolate(
-        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Evaluates the velocity field at the given coordinates."""
+        if out is None:
+            out = np.empty_like(new_points)  ### need to fix this to inplace as well
         if self._is_callable:
             vf_func = cast(Callable[..., np.ndarray], self.velocity_field)
 
@@ -347,10 +468,11 @@ def create_interpolator(interpolation_type: str) -> Interpolator:
     interpolation_type = interpolation_type.lower()  # Normalize input to lowercase
 
     interpolation_map: dict[str, type[Interpolator]] = {
-        "cubic": CubicInterpolator,  # Uses Euler for the first step, then AB2
+        "cubic": CubicInterpolator,
         "linear": LinearInterpolator,
         "nearest": NearestNeighborInterpolator,
         "grid": GridInterpolator,
+        "grid_cython": CythonInterpolator,
     }
 
     if interpolation_type not in interpolation_map:
@@ -360,3 +482,7 @@ def create_interpolator(interpolation_type: str) -> Interpolator:
         )
 
     return interpolation_map[interpolation_type]()
+
+
+def make_safe_array(arr):
+    return np.ascontiguousarray(arr, dtype=np.float64)
