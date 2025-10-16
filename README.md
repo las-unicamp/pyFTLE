@@ -50,7 +50,11 @@ pyFTLE provides a robust and modular implementation for computing FTLE fields. I
    ```bash
    uv sync
    ```
-3. Install src/ directory as an "editable" package within .venv to overcome import issues:
+3. Build Cython libraries:
+   ```bash
+   sh build_cython.sh
+   ```
+4. Install src/ directory as an "editable" package within .venv to overcome import issues:
    ```bash
    uv pip install -e '.[dev,test]' --verbose
    ```
