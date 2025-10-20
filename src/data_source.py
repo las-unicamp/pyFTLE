@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, List, Optional, Protocol, Tuple
+from typing import Callable, List, Protocol, Tuple
 
 from src.file_readers import (
     read_coordinate,
@@ -32,16 +32,17 @@ class FileBatchSource(BatchSource):
         particle_file: str,
         snapshot_timestep: float,
         flow_map_period: int | float,
-        grid_shape: Optional[tuple[int, ...]] = None,
     ):
         self.snapshot_files = snapshot_files
         self.coordinate_files = coordinate_files
         self.particle_file = particle_file  # Assume single file
         self.snapshot_timestep = snapshot_timestep
         self.flow_map_period = flow_map_period
-        self.grid_shape = grid_shape
         self._n = len(snapshot_files)
         self._id = f"{Path(self.snapshot_files[0]).stem}"
+
+        is_coordinate_files_identical = len(set(coordinate_files)) == 1
+        self.reuse_coordinates = is_coordinate_files_identical
 
     @property
     def id(self) -> str:
@@ -60,12 +61,17 @@ class FileBatchSource(BatchSource):
 
     def get_data_for_step(
         self, step_index: int
-    ) -> Tuple[ArrayFloat64Nx2 | ArrayFloat64Nx3, ArrayFloat64Nx2 | ArrayFloat64Nx3]:
+    ) -> Tuple[
+        ArrayFloat64Nx2 | ArrayFloat64Nx3, ArrayFloat64Nx2 | ArrayFloat64Nx3 | None
+    ]:
         vel_file = self.snapshot_files[step_index]
         coord_file = self.coordinate_files[step_index]
 
         velocities = read_velocity(vel_file)
-        coordinates = read_coordinate(coord_file)
+        coordinates = None
+
+        if step_index == 0 or not self.reuse_coordinates:
+            coordinates = read_coordinate(coord_file)
 
         return velocities, coordinates
 

@@ -1,9 +1,7 @@
-from typing import Protocol
-
 import numpy as np
 from scipy.io import loadmat
 
-from src.my_types import ArrayFloat64MxN, ArrayFloat64Nx2, ArrayFloat64Nx3
+from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
 from src.particles import NeighboringParticles
 
 
