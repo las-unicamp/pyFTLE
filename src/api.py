@@ -33,7 +33,6 @@ class AnalyticalSolver:
         save_output: bool = False,
         output_format: str = "vtk",
         output_dir_name: Optional[str] = None,
-        grid_shape: Optional[tuple[int, ...]] = None,
     ):
         self.velocity_fn = velocity_fn
         self.particles = particles
@@ -45,7 +44,7 @@ class AnalyticalSolver:
 
         self.executor = ParallelExecutor(num_processes)
 
-        interpolator = create_interpolator("analytical", grid_shape, velocity_fn)
+        interpolator = create_interpolator("analytical", velocity_fn=velocity_fn)
 
         self.integrator = create_integrator(integrator_name, interpolator)
 

@@ -24,14 +24,17 @@ class MultipleFTLEProcessManager:
         self.particle_files: List[str] = get_files_list(args.list_particle_files)
         self.timestep: float = args.snapshot_timestep
         self.executor = ParallelExecutor(n_processes=args.num_processes)
-        self.grid_shape = args.grid_shape
+        self.flow_grid_shape = args.flow_grid_shape
+        self.particles_grid_shape = args.particles_grid_shape
 
-        interpolator = create_interpolator(args.interpolator, self.grid_shape)
+        interpolator = create_interpolator(args.interpolator, self.flow_grid_shape)
 
         self.integrator = create_integrator(args.integrator, interpolator)
 
         output_dir = os.path.join("outputs", args.experiment_name)
-        self.writer = create_writer(args.output_format, output_dir, args.grid_shape)
+        self.writer = create_writer(
+            args.output_format, output_dir, args.particles_grid_shape
+        )
 
         self._handle_time_direction()
 
@@ -77,7 +80,6 @@ class MultipleFTLEProcessManager:
                 particle_file=particle_batches[i],  # Assume single particle file
                 snapshot_timestep=self.timestep,
                 flow_map_period=p,
-                grid_shape=self.grid_shape,
             )
             tasks.append(task)
         return tasks

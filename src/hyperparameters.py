@@ -25,7 +25,8 @@ class MyProgramArgs:
 
     # configuration
     output_format: str
-    grid_shape: tuple[int, ...]
+    flow_grid_shape: tuple[int, ...]
+    particles_grid_shape: tuple[int, ...]
 
 
 parser = configargparse.ArgumentParser()
@@ -125,7 +126,14 @@ parser.add_argument(
     help="Select output file format. default='mat'",
 )
 parser.add_argument(
-    "--grid_shape",
+    "--flow_grid_shape",
+    type=parse_tuple,
+    help="Leverage grid structure of data to efficiently interpolate. "
+    "Must be passed as a tuple of integers, e.g., --grid_shape 10,10,10 "
+    "Leave empty for unstructured point distribution (default).",
+)
+parser.add_argument(
+    "--particles_grid_shape",
     type=parse_tuple,
     help="Leverage grid structure of data to efficiently save output files. "
     "Must be passed as a tuple of integers, e.g., --grid_shape 10,10,10 "
