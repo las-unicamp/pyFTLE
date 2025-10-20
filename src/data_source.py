@@ -2,9 +2,9 @@ from pathlib import Path
 from typing import Callable, List, Optional, Protocol, Tuple
 
 from src.file_readers import (
-    CoordinateMatReader,
-    VelocityMatReader,
+    read_coordinate,
     read_seed_particles_coordinates,
+    read_velocity,
 )
 from src.interpolate import Interpolator
 from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
@@ -43,19 +43,6 @@ class FileBatchSource(BatchSource):
         self._n = len(snapshot_files)
         self._id = f"{Path(self.snapshot_files[0]).stem}"
 
-        # Choose the appropriate reader method (flatten or raw)
-        velocity_reader = VelocityMatReader()
-        coordinate_reader = CoordinateMatReader()
-
-        flatten = self.grid_shape is None
-
-        self.read_velocity = getattr(
-            velocity_reader, "read_flatten" if flatten else "read_raw"
-        )
-        self.read_coordinates = getattr(
-            coordinate_reader, "read_flatten" if flatten else "read_raw"
-        )
-
     @property
     def id(self) -> str:
         return self._id
@@ -77,8 +64,8 @@ class FileBatchSource(BatchSource):
         vel_file = self.snapshot_files[step_index]
         coord_file = self.coordinate_files[step_index]
 
-        velocities = self.read_velocity(vel_file)
-        coordinates = self.read_coordinates(coord_file)
+        velocities = read_velocity(vel_file)
+        coordinates = read_coordinate(coord_file)
 
         return velocities, coordinates
 

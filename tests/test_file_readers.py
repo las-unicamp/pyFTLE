@@ -3,9 +3,9 @@ import pytest
 from scipy.io import savemat
 
 from src.file_readers import (
-    CoordinateMatReader,
-    VelocityMatReader,
+    read_coordinate,
     read_seed_particles_coordinates,
+    read_velocity,
 )
 
 
@@ -69,17 +69,15 @@ def mock_coordinate_file_3d(tmp_path):
 # ==========================================================
 # Velocity Reader Tests
 # ==========================================================
-def test_velocity_reader_flatten_2d(mock_velocity_file_2d):
-    reader = VelocityMatReader()
-    result = reader.read_flatten(mock_velocity_file_2d)
+def test_read_velocity_2d(mock_velocity_file_2d):
+    result = read_velocity(str(mock_velocity_file_2d))
     expected = np.array([[1.0, 4.0], [2.0, 5.0], [3.0, 6.0]])
     np.testing.assert_array_equal(result, expected)
     assert result.shape == (3, 2)
 
 
-def test_velocity_reader_flatten_3d(mock_velocity_file_3d):
-    reader = VelocityMatReader()
-    result = reader.read_flatten(mock_velocity_file_3d)
+def test_read_velocity_3d(mock_velocity_file_3d):
+    result = read_velocity(str(mock_velocity_file_3d))
     expected = np.array([[1.0, 4.0, 7.0], [2.0, 5.0, 8.0], [3.0, 6.0, 9.0]])
     np.testing.assert_array_equal(result, expected)
     assert result.shape == (3, 3)
@@ -88,17 +86,15 @@ def test_velocity_reader_flatten_3d(mock_velocity_file_3d):
 # ==========================================================
 # Coordinate Reader Tests
 # ==========================================================
-def test_coordinate_reader_flatten_2d(mock_coordinate_file_2d):
-    reader = CoordinateMatReader()
-    result = reader.read_flatten(mock_coordinate_file_2d)
+def test_read_coordinate_2d(mock_coordinate_file_2d):
+    result = read_coordinate(str(mock_coordinate_file_2d))
     expected = np.array([[10.0, 13.0], [11.0, 14.0], [12.0, 15.0]])
     np.testing.assert_array_equal(result, expected)
     assert result.shape == (3, 2)
 
 
-def test_coordinate_reader_flatten_3d(mock_coordinate_file_3d):
-    reader = CoordinateMatReader()
-    result = reader.read_flatten(mock_coordinate_file_3d)
+def test_read_coordinate_3d(mock_coordinate_file_3d):
+    result = read_coordinate(str(mock_coordinate_file_3d))
     expected = np.array([[10.0, 13.0, 16.0], [11.0, 14.0, 17.0], [12.0, 15.0, 18.0]])
     np.testing.assert_array_equal(result, expected)
     assert result.shape == (3, 3)

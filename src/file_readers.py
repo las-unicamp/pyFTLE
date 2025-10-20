@@ -7,182 +7,49 @@ from src.my_types import ArrayFloat64MxN, ArrayFloat64Nx2, ArrayFloat64Nx3
 from src.particles import NeighboringParticles
 
 
-class VelocityReader(Protocol):
-    def read_raw(
-        self, file_path: str
-    ) -> (
-        tuple[ArrayFloat64MxN, ArrayFloat64MxN]
-        | tuple[ArrayFloat64MxN, ArrayFloat64MxN, ArrayFloat64MxN]
-    ):
-        """
-        Reads velocity data from a file and returns it as a tuple of numpy
-        arrays (grids of velocity_x, velocity_y and/or velocity_z) with each
-        having shape [nx, ny, nz].
+def read_velocity(file_path: str) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+    """
+    Reads velocity data from a MATLAB file.
+    """
+    data = loadmat(file_path)
 
-        Args:
-            file_path (str): Path to the file.
-
-        Returns:
-            Tuple of arrays of shape [nx, ny, nz].
-        """
-        ...
-
-    def read_flatten(self, file_path: str) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
-        """
-        Reads velocity data from a file and returns it as a numpy array with shape
-        [n_points, 2] (velocity_x and velocity_y are flattened)
-        or
-        [n_points, 3] (velocity_x, velocity_y and velocity_z are flattened).
-
-        Args:
-            file_path (str): Path to the file.
-
-        Returns:
-            ArrayFloat64Nx2: Array of shape [n_points, dim], where dim = 2 or 3.
-        """
-        ...
-
-
-class CoordinateReader(Protocol):
-    def read_raw(
-        self, file_path: str
-    ) -> (
-        tuple[ArrayFloat64MxN, ArrayFloat64MxN]
-        | tuple[ArrayFloat64MxN, ArrayFloat64MxN, ArrayFloat64MxN]
-    ):
-        """
-        Reads coordinate data from a file and returns it as a tuple of numpy
-        arrays (grids of coordinate_x, coordinate_y and/or coordinate_z) with each
-        having shape [nx, ny, nz].
-
-        Args:
-            file_path (str): Path to the file.
-
-        Returns:
-            Tuple of arrays of shape [nx, ny, nz].
-        """
-        ...
-
-    def read_flatten(self, file_path: str) -> ArrayFloat64Nx2:
-        """
-        Reads coordinate data from a file.
-
-        Args:
-            file_path (str): Path to the file.
-
-        Returns:
-            ArrayFloat64Nx2: Array of shape [n_points, dim], where dim = 2 or 3.
-        """
-        ...
-
-
-class VelocityMatReader:
-    def read_raw(
-        self, file_path: str
-    ) -> (
-        tuple[ArrayFloat64MxN, ArrayFloat64MxN]
-        | tuple[ArrayFloat64MxN, ArrayFloat64MxN, ArrayFloat64MxN]
-    ):
-        """
-        Reads velocity data from a MATLAB file.
-        """
-        data = loadmat(file_path)
-
-        if "velocity_x" not in data or "velocity_y" not in data:
-            raise ValueError(
-                "The MATLAB file does not contain the expected keys 'velocity_x' and"
-                "'velocity_y'."
-            )
-
-        velocity_x: ArrayFloat64MxN = np.asarray(data["velocity_x"], dtype=np.float64)
-        velocity_y: ArrayFloat64MxN = np.asarray(data["velocity_y"], dtype=np.float64)
-
-        if "velocity_z" in data:
-            velocity_z: ArrayFloat64MxN = np.asarray(
-                data["velocity_z"], dtype=np.float64
-            )
-
-            return velocity_x, velocity_y, velocity_z
-        else:
-            return velocity_x, velocity_y
-
-    def read_flatten(self, file_path: str) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
-        """
-        Reads velocity data from a MATLAB file.
-        """
-        data = loadmat(file_path)
-
-        if "velocity_x" not in data or "velocity_y" not in data:
-            raise ValueError(
-                "The MATLAB file does not contain the expected keys 'velocity_x' and"
-                "'velocity_y'."
-            )
-
-        velocity_x = np.asarray(data["velocity_x"]).flatten().astype(np.float64)
-        velocity_y = np.asarray(data["velocity_y"]).flatten().astype(np.float64)
-
-        if "velocity_z" in data:
-            velocity_z = np.asarray(data["velocity_z"]).flatten().astype(np.float64)
-
-            return np.column_stack((velocity_x, velocity_y, velocity_z))
-        else:
-            return np.column_stack((velocity_x, velocity_y))
-
-
-class CoordinateMatReader:
-    def read_raw(
-        self, file_path: str
-    ) -> (
-        tuple[ArrayFloat64MxN, ArrayFloat64MxN]
-        | tuple[ArrayFloat64MxN, ArrayFloat64MxN, ArrayFloat64MxN]
-    ):
-        """
-        Reads coordinate data from a MATLAB file.
-        """
-        data = loadmat(file_path)
-
-        if "coordinate_x" not in data or "coordinate_y" not in data:
-            raise ValueError(
-                "The MATLAB file does not contain the expected keys 'coordinate_x' and"
-                "'coordinate_y'."
-            )
-
-        coordinate_x: ArrayFloat64MxN = np.asarray(
-            data["coordinate_x"], dtype=np.float64
-        )
-        coordinate_y: ArrayFloat64MxN = np.asarray(
-            data["coordinate_y"], dtype=np.float64
+    if "velocity_x" not in data or "velocity_y" not in data:
+        raise ValueError(
+            "The MATLAB file does not contain the expected keys 'velocity_x' and"
+            "'velocity_y'."
         )
 
-        if "coordinate_z" in data:
-            coordinate_z: ArrayFloat64MxN = np.asarray(
-                data["coordinate_z"], dtype=np.float64
-            )
+    velocity_x = np.asarray(data["velocity_x"]).flatten().astype(np.float64)
+    velocity_y = np.asarray(data["velocity_y"]).flatten().astype(np.float64)
 
-            return coordinate_x, coordinate_y, coordinate_z
-        else:
-            return coordinate_x, coordinate_y
+    if "velocity_z" in data:
+        velocity_z = np.asarray(data["velocity_z"]).flatten().astype(np.float64)
 
-    def read_flatten(self, file_path: str) -> ArrayFloat64Nx2:
-        """
-        Reads coordinate data from a MATLAB file.
-        """
-        data = loadmat(file_path)
+        return np.column_stack((velocity_x, velocity_y, velocity_z))
+    else:
+        return np.column_stack((velocity_x, velocity_y))
 
-        if "coordinate_x" not in data or "coordinate_y" not in data:
-            raise ValueError(
-                "The MATLAB file does not contain the expected keys 'coordinate_x' and"
-                "'coordinate_y'."
-            )
 
-        coordinate_x = np.asarray(data["coordinate_x"]).flatten().astype(np.float64)
-        coordinate_y = np.asarray(data["coordinate_y"]).flatten().astype(np.float64)
+def read_coordinate(file_path: str) -> ArrayFloat64Nx2:
+    """
+    Reads coordinate data from a MATLAB file.
+    """
+    data = loadmat(file_path)
 
-        if "coordinate_z" in data:
-            coordinate_z = np.asarray(data["coordinate_z"]).flatten().astype(np.float64)
-            return np.column_stack((coordinate_x, coordinate_y, coordinate_z))
-        else:
-            return np.column_stack((coordinate_x, coordinate_y))
+    if "coordinate_x" not in data or "coordinate_y" not in data:
+        raise ValueError(
+            "The MATLAB file does not contain the expected keys 'coordinate_x' and"
+            "'coordinate_y'."
+        )
+
+    coordinate_x = np.asarray(data["coordinate_x"]).flatten().astype(np.float64)
+    coordinate_y = np.asarray(data["coordinate_y"]).flatten().astype(np.float64)
+
+    if "coordinate_z" in data:
+        coordinate_z = np.asarray(data["coordinate_z"]).flatten().astype(np.float64)
+        return np.column_stack((coordinate_x, coordinate_y, coordinate_z))
+    else:
+        return np.column_stack((coordinate_x, coordinate_y))
 
 
 def read_seed_particles_coordinates(file_path: str) -> NeighboringParticles:
