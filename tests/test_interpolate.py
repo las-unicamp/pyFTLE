@@ -9,8 +9,6 @@ from src.interpolate import (
     create_interpolator,
 )
 from src.my_types import (
-    Array2xMxN,
-    Array3xMxN,
     ArrayFloat64Nx2,
     ArrayFloat64Nx3,
 )
@@ -121,14 +119,17 @@ def test_interpolators_3d(strategy_class):
 # -----------------------
 def test_grid_interpolator_2d():
     grid_x, grid_y = np.mgrid[0:1:3j, 0:1:3j]
-    velocities_u = np.copy(grid_x)
-    velocities_v = np.copy(grid_y)
+    grid_shape = grid_x.shape  # (3, 3)
 
-    coordinates: Array2xMxN = np.array([grid_x, grid_y], dtype=np.float64)
-    velocities: Array2xMxN = np.array([velocities_u, velocities_v], dtype=np.float64)
+    # Flatten grid points to shape (n_points, ndim)
+    points = np.column_stack((grid_x.ravel(), grid_y.ravel()))
 
-    interpolator = GridInterpolator()
-    interpolator.update(velocities, coordinates)
+    # Create velocities array shape (n_points, ndim)
+    velocities = np.column_stack((grid_x.ravel(), grid_y.ravel()))
+
+    interpolator = GridInterpolator(grid_shape=grid_shape, method="linear")
+    interpolator.update(velocities, points)
+
     new_points = np.array([[0.5, 0.5], [0.25, 0.75]], dtype=np.float64)
     interpolated_values = interpolator.interpolate(new_points)
 
@@ -138,17 +139,14 @@ def test_grid_interpolator_2d():
 
 def test_grid_interpolator_3d():
     grid_x, grid_y, grid_z = np.mgrid[0:1:3j, 0:1:3j, 0:1:3j]
-    velocities_u = np.copy(grid_x)
-    velocities_v = np.copy(grid_y)
-    velocities_w = np.copy(grid_z)
+    grid_shape = grid_x.shape  # (3, 3, 3)
 
-    coordinates: Array3xMxN = np.array([grid_x, grid_y, grid_z], dtype=np.float64)
-    velocities: Array3xMxN = np.array(
-        [velocities_u, velocities_v, velocities_w], dtype=np.float64
-    )
+    points = np.column_stack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel()))
+    velocities = np.column_stack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel()))
 
-    interpolator = GridInterpolator()
-    interpolator.update(velocities, coordinates)
+    interpolator = GridInterpolator(grid_shape=grid_shape, method="linear")
+    interpolator.update(velocities, points)
+
     new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.25, 0.75]], dtype=np.float64)
     interpolated_values = interpolator.interpolate(new_points)
 
@@ -156,10 +154,18 @@ def test_grid_interpolator_3d():
     assert np.isfinite(interpolated_values).all()
 
 
+def test_create_interpolator_with_grid_shape():
+    grid_shape = (3, 3)
+    interpolator = create_interpolator("linear", grid_shape=grid_shape)
+    assert isinstance(interpolator, GridInterpolator)
+    assert interpolator.grid_shape == grid_shape
+    assert interpolator.method == "linear"
+
+
 # -----------------------
 # Factory tests
 # -----------------------
-@pytest.mark.parametrize("kind", ["cubic", "linear", "nearest", "grid"])
+@pytest.mark.parametrize("kind", ["cubic", "linear", "nearest"])
 def test_create_interpolator_returns_correct_type(kind):
     interpolator = create_interpolator(kind)
     assert isinstance(

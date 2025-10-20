@@ -1,6 +1,6 @@
 # ruff: noqa: N806
 from abc import ABC, abstractmethod
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional, cast
 
 import numpy as np
 from matplotlib import ExecutableNotFoundError
@@ -10,6 +10,7 @@ from scipy.interpolate import (
     NearestNDInterpolator,
     RegularGridInterpolator,
 )
+from scipy.spatial import Delaunay
 
 from src.my_types import (
     ArrayFloat64Nx2,
@@ -18,9 +19,7 @@ from src.my_types import (
 
 
 class Interpolator(ABC):
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         """Lazy initialization: need to call update() once the velocities and
         points are available
         """
@@ -29,6 +28,7 @@ class Interpolator(ABC):
         self.points: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None
         self.interpolator = None  # Placeholder for the actual interpolator instance
         self.velocity_fn: Optional[Callable] = None  # Used only by AnalyticalInterp
+        self.grid_shape: Optional[tuple[int, ...]] = None  # Used only by GridInterp
 
     def _initialize_interpolator(self) -> None:
         """Initialize the actual interpolator object based on velocity and points."""
@@ -84,26 +84,29 @@ class CubicInterpolator(Interpolator):
         Array of shape `(n_points, 2)` representing the velocities values.
     """
 
+    def __init__(self):
+        self.tri: Optional[Delaunay] = None  # pre-computed Delaunay for faster updates
+
     def _initialize_interpolator(self) -> None:
         if self.velocities is None or self.points is None:
             raise ValueError("Velocities and points must be set before initialization.")
 
-        velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
-        self.interpolator = CloughTocher2DInterpolator(self.points, velocities_cmplx)
         if self.points.shape[1] == 3:
-            self.interpolator_z = CloughTocher2DInterpolator(
-                self.points, self.velocities[:, 2]
+            raise ValueError("cubic interpolator is only valid for 2D cases")
+
+        velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
+
+        if self.tri is None:
+            self.interpolator = CloughTocher2DInterpolator(
+                self.points, velocities_cmplx
             )
+            self.tri = self.interpolator.tri  # type: ignore[attr-defined]
+        else:
+            self.interpolator = CloughTocher2DInterpolator(self.tri, velocities_cmplx)
 
     def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
         interp_velocities = self.interpolator(new_points)
-        if new_points.shape[1] == 2:
-            return np.column_stack((interp_velocities.real, interp_velocities.imag))
-        else:
-            interp_velocities_z = self.interpolator_z(new_points)
-            return np.column_stack(
-                (interp_velocities.real, interp_velocities.imag, interp_velocities_z)
-            )
+        return np.column_stack((interp_velocities.real, interp_velocities.imag))
 
 
 class LinearInterpolator(Interpolator):
@@ -118,17 +121,25 @@ class LinearInterpolator(Interpolator):
     - May introduce discontinuities in derivatives.
     """
 
+    def __init__(self):
+        self.tri: Optional[Delaunay] = None  # pre-computed Delaunay for faster updates
+
     def _initialize_interpolator(self) -> None:
         if self.velocities is None or self.points is None:
             raise ValueError("Velocities and points must be set before initialization.")
 
         velocities_cmplx = self.velocities[:, 0] + 1j * self.velocities[:, 1]
-        self.interpolator = LinearNDInterpolator(self.points, velocities_cmplx)
+
+        if self.tri is None:
+            self.interpolator = LinearNDInterpolator(self.points, velocities_cmplx)
+            self.tri = self.interpolator.tri  # type: ignore[attr-defined]
+        else:
+            self.interpolator = LinearNDInterpolator(self.tri, velocities_cmplx)
 
         if self.points.shape[1] == 3:
-            self.interpolator_z = LinearNDInterpolator(
-                self.points, self.velocities[:, 2], fill_value=0.0
-            )
+            if self.tri is None:
+                raise RuntimeError("self.tri not initialized")
+            self.interpolator_z = LinearNDInterpolator(self.tri, self.velocities[:, 2])
 
     def interpolate(
         self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
@@ -188,15 +199,24 @@ class GridInterpolator(Interpolator):
     - Memory efficient compared to unstructured methods.
 
     Cons:
-    - Only works with structured grids.
-    - Requires careful handling of grid spacing and boundaries.
+    - Requires grid_shape and structured coordinate data.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.interpolator_u = None
-        self.interpolator_v = None
-        self.interpolator_z = None
+    VALID_METHODS = {"linear", "nearest", "slinear", "cubic", "quintic"}
+
+    def __init__(
+        self,
+        grid_shape: tuple[int, ...],
+        method: Literal["linear", "nearest", "slinear", "cubic", "quintic"] = "linear",
+    ):
+        if method not in self.VALID_METHODS:
+            raise ValueError(
+                f"Invalid method '{method}'. Must be one of {self.VALID_METHODS}"
+            )
+        self.method = method
+        self.grid_shape = grid_shape
+        self.interpolator: Optional[RegularGridInterpolator] = None
+        self.grid: Optional[tuple[np.ndarray, ...]] = None  # cached grid axes
 
     def _initialize_interpolator(self) -> None:
         """Initializes the actual interpolator for grid-based interpolation."""
@@ -204,90 +224,58 @@ class GridInterpolator(Interpolator):
         if self.velocities is None or self.points is None:
             raise ValueError("Velocities and points must be set before initialization.")
 
-        # Shape of velocities and coordinates
-        dimension, *grid_shape = self.velocities.shape
+        if self.grid_shape is None:
+            raise ValueError("grid_shape must be provided before initialization.")
 
-        grid_x = np.linspace(
-            np.min(self.points[:, 0]), np.max(self.points[:, 0]), grid_shape[0]
+        n_points, ndim = self.points.shape
+        expected_points = np.prod(self.grid_shape)
+
+        if expected_points != n_points:
+            raise ValueError(
+                f"grid_shape {self.grid_shape} implies {expected_points} points, "
+                f"but got {n_points}."
+            )
+
+        if ndim not in (2, 3):
+            raise ValueError("Velocity field must have 2 or 3 components (u, v, [w]).")
+
+        reshaped_coords = [
+            self.points[:, i].reshape(self.grid_shape) for i in range(ndim)
+        ]
+        self.grid = tuple(np.unique(coord_axis) for coord_axis in reshaped_coords)
+
+        velocity_field = self.velocities.reshape(*self.grid_shape, ndim)
+
+        self.interpolator = RegularGridInterpolator(
+            self.grid,
+            velocity_field,
+            method=self.method,  # type: ignore
+            bounds_error=False,
+            fill_value=None,  # type: ignore[arg-type]
         )
-        grid_y = np.linspace(
-            np.min(self.points[:, 1]), np.max(self.points[:, 1]), grid_shape[1]
-        )
-
-        if dimension == 2:  # 2D grid (nx, ny)
-            self.interpolator_u = RegularGridInterpolator(
-                (grid_x, grid_y),
-                self.velocities[0],
-                bounds_error=False,
-                fill_value=None,
-            )
-            self.interpolator_v = RegularGridInterpolator(
-                (grid_x, grid_y),
-                self.velocities[1],
-                bounds_error=False,
-                fill_value=None,
-            )
-        else:  # 3D grid (nx, ny, nz)
-            grid_z = np.linspace(
-                np.min(self.points[2]),
-                np.max(self.points[2]),
-                grid_shape[2],
-            )
-
-            self.interpolator_u = RegularGridInterpolator(
-                (grid_x, grid_y, grid_z),
-                self.velocities[0],
-                bounds_error=False,
-                fill_value=0.0,
-            )
-            self.interpolator_v = RegularGridInterpolator(
-                (grid_x, grid_y, grid_z),
-                self.velocities[1],
-                bounds_error=False,
-                fill_value=0.0,
-            )
-            self.interpolator_z = RegularGridInterpolator(
-                (grid_x, grid_y, grid_z),
-                self.velocities[2],
-                bounds_error=False,
-                fill_value=0.0,
-            )
 
     def interpolate(
         self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Interpolates velocity field at given Cartesian points."""
-        if self.interpolator_u is None or self.interpolator_v is None:
+        if self.interpolator is None:
             raise ValueError(
                 "Interpolator has not been initialized. Call `update()` first."
             )
 
-        u_interp = self.interpolator_u(new_points)
-        v_interp = self.interpolator_v(new_points)
-
-        if new_points.shape[1] == 3:
-            if self.interpolator_z is None:
-                raise ValueError("3D interpolator is not initialized properly.")
-
-            w_interp = self.interpolator_z(new_points)
-            return np.column_stack((u_interp, v_interp, w_interp))
-        else:
-            return np.column_stack((u_interp, v_interp))
+        result = self.interpolator(new_points)
+        return cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, result)
 
 
 class AnalyticalInterpolator(Interpolator):
-    def __init__(
-        self,
-        time: float = 0.0,
-    ):
-        self.time = time
-        self.velocity_fn: Optional[Callable] = None
+    def __init__(self, velocity_fn: Callable):
+        self.velocity_fn = velocity_fn
+        self.time = 0.0
 
     def interpolate(
         self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Evaluates the velocity field at the given coordinates."""
-
         if not callable(self.velocity_fn):
             raise ExecutableNotFoundError("velocity_fn was not assigned properly")
         return self.velocity_fn(self.time, new_points)
@@ -303,7 +291,9 @@ class AnalyticalInterpolator(Interpolator):
 
 
 def create_interpolator(
-    interpolation_type: str, velocity_fn: Optional[Callable] = None
+    interpolation_type: str,
+    grid_shape: Optional[tuple[int, ...]] = None,
+    velocity_fn: Optional[Callable] = None,
 ) -> Interpolator:
     """
     Factory function to return an interpolator constructor based on the type.
@@ -317,17 +307,18 @@ def create_interpolator(
     Args:
         interpolation_type (str): Specifies which interpolator to use
             ('cubic', 'linear', 'nearest', or 'grid').
+        grid_shape: used to choose GridInterpolator and passed to constructor
+        velocity_fn: used only with 'analytical'
 
     Returns:
         An instance of the appropriate interpolator.
     """
-    interpolation_type = interpolation_type.lower()  # Normalize input to lowercase
+    interpolation_type = interpolation_type.lower()
 
     interpolation_map: dict[str, type[Interpolator]] = {
-        "cubic": CubicInterpolator,  # Uses Euler for the first step, then AB2
+        "cubic": CubicInterpolator,
         "linear": LinearInterpolator,
         "nearest": NearestNeighborInterpolator,
-        "grid": GridInterpolator,
         "analytical": AnalyticalInterpolator,
     }
 
@@ -337,9 +328,14 @@ def create_interpolator(
             f"Choose from {list(interpolation_map.keys())}."
         )
 
-    interpolator = interpolation_map[interpolation_type]()
-
     if interpolation_type == "analytical":
-        interpolator.velocity_fn = velocity_fn
+        if not callable(velocity_fn):
+            raise ExecutableNotFoundError("velocity_fn was not assigned properly")
+        return AnalyticalInterpolator(velocity_fn)
 
-    return interpolator
+    # If structured grid: use GridInterpolator with given method
+    if grid_shape is not None:
+        return GridInterpolator(grid_shape, interpolation_type)  # type: ignore
+
+    # Fallback: construct the requested unstructured interpolator
+    return interpolation_map[interpolation_type]()

@@ -26,7 +26,7 @@ class MultipleFTLEProcessManager:
         self.executor = ParallelExecutor(n_processes=args.num_processes)
         self.grid_shape = args.grid_shape
 
-        interpolator = create_interpolator(args.interpolator)
+        interpolator = create_interpolator(args.interpolator, self.grid_shape)
 
         self.integrator = create_integrator(args.integrator, interpolator)
 
