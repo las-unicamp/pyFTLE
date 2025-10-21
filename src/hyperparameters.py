@@ -34,9 +34,26 @@ parser = configargparse.ArgumentParser()
 
 def parse_tuple(value: str):
     """
-    Convert a string of integers separated by commas into a tuple of integers
+    Convert a string of integers separated by commas into a tuple of integers.
+    It ensures that the tuple contains either 2 or 3 positive integers.
+    If the last element is 1, it is ignored.
     """
-    return tuple(map(int, value.split(",")))
+    # Convert string to a list of integers
+    parsed_values = list(map(int, value.split(",")))
+
+    # Check if there are either 2 or 3 elements
+    if len(parsed_values) not in [2, 3]:
+        raise ValueError("Tuple must contain either 2 or 3 elements.")
+
+    # Check if all integers are positive
+    if not all(x > 0 for x in parsed_values):
+        raise ValueError("All elements must be positive integers.")
+
+    # If the last element is 1, remove it
+    if parsed_values[-1] == 1:
+        parsed_values.pop()
+
+    return tuple(parsed_values)
 
 
 # YAML configuration
