@@ -239,10 +239,19 @@ class GridInterpolator(Interpolator):
         if ndim not in (2, 3):
             raise ValueError("Velocity field must have 2 or 3 components (u, v, [w]).")
 
-        reshaped_coords = [
-            self.points[:, i].reshape(self.grid_shape) for i in range(ndim)
-        ]
-        self.grid = tuple(np.unique(coord_axis) for coord_axis in reshaped_coords)
+        x = np.linspace(
+            self.points[:, 0].min(), self.points[:, 0].max(), self.grid_shape[0]
+        )
+        y = np.linspace(
+            self.points[:, 1].min(), self.points[:, 1].max(), self.grid_shape[1]
+        )
+        if ndim == 3:
+            z = np.linspace(
+                self.points[:, 2].min(), self.points[:, 2].max(), self.grid_shape[2]
+            )
+            self.grid = (x, y, z)
+        else:
+            self.grid = (x, y)
 
         velocity_field = self.velocities.reshape(*self.grid_shape, ndim)
 
