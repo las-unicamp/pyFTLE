@@ -1,6 +1,6 @@
 # ruff: noqa: N806
 from abc import ABC, abstractmethod
-from typing import Callable, Literal, Optional, cast
+from typing import Callable, Literal, Optional
 
 import numpy as np
 from matplotlib import ExecutableNotFoundError
@@ -12,10 +12,7 @@ from scipy.interpolate import (
 )
 from scipy.spatial import Delaunay
 
-from src.my_types import (
-    ArrayFloat64Nx2,
-    ArrayFloat64Nx3,
-)
+from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
 
 
 class Interpolator(ABC):
@@ -215,8 +212,11 @@ class GridInterpolator(Interpolator):
             )
         self.method = method
         self.grid_shape = grid_shape
-        self.interpolator: Optional[RegularGridInterpolator] = None
+        self.interpolator_x: Optional[RegularGridInterpolator] = None
+        self.interpolator_y: Optional[RegularGridInterpolator] = None
+        self.interpolator_z: Optional[RegularGridInterpolator] = None
         self.grid: Optional[tuple[np.ndarray, ...]] = None  # cached grid axes
+        self.ndim: int
 
     def _initialize_interpolator(self) -> None:
         """Initializes the actual interpolator for grid-based interpolation."""
@@ -227,7 +227,7 @@ class GridInterpolator(Interpolator):
         if self.grid_shape is None:
             raise ValueError("grid_shape must be provided before initialization.")
 
-        n_points, ndim = self.points.shape
+        n_points, self.ndim = self.points.shape
         expected_points = np.prod(self.grid_shape)
 
         if expected_points != n_points:
@@ -236,44 +236,70 @@ class GridInterpolator(Interpolator):
                 f"but got {n_points}."
             )
 
-        if ndim not in (2, 3):
+        if self.ndim not in (2, 3):
             raise ValueError("Velocity field must have 2 or 3 components (u, v, [w]).")
 
-        x = np.linspace(
-            self.points[:, 0].min(), self.points[:, 0].max(), self.grid_shape[0]
-        )
-        y = np.linspace(
-            self.points[:, 1].min(), self.points[:, 1].max(), self.grid_shape[1]
-        )
-        if ndim == 3:
-            z = np.linspace(
-                self.points[:, 2].min(), self.points[:, 2].max(), self.grid_shape[2]
-            )
-            self.grid = (x, y, z)
+        if self.ndim == 2:
+            nx, ny = self.grid_shape
+            nz = 1
         else:
+            nx, ny, nz = self.grid_shape
+
+        x = np.linspace(self.points[:, 0].min(), self.points[:, 0].max(), nx)
+        y = np.linspace(self.points[:, 1].min(), self.points[:, 1].max(), ny)
+
+        if self.ndim == 2:
+            vel_shape = (ny, nx)
             self.grid = (x, y)
+        else:
+            z = np.linspace(self.points[:, 2].min(), self.points[:, 2].max(), nz)
 
-        velocity_field = self.velocities.reshape(*self.grid_shape, ndim)
+            vel_shape = (ny, nx, nz)
+            self.grid = (x, y, z)
 
-        self.interpolator = RegularGridInterpolator(
+        self.interpolator_x = RegularGridInterpolator(
             self.grid,
-            velocity_field,
+            np.swapaxes(self.velocities[:, 0].reshape(vel_shape), 0, 1),
             method=self.method,  # type: ignore
             bounds_error=False,
-            fill_value=None,  # type: ignore[arg-type]
+            fill_value=0.0,  # type: ignore[arg-type]
         )
+
+        self.interpolator_y = RegularGridInterpolator(
+            self.grid,
+            np.swapaxes(self.velocities[:, 1].reshape(vel_shape), 0, 1),
+            method=self.method,  # type: ignore
+            bounds_error=False,
+            fill_value=0.0,  # type: ignore[arg-type]
+        )
+
+        if self.ndim == 3:
+            self.interpolator_z = RegularGridInterpolator(
+                self.grid,
+                np.swapaxes(self.velocities[:, 2].reshape(vel_shape), 0, 1),
+                method=self.method,  # type: ignore
+                bounds_error=False,
+                fill_value=0.0,  # type: ignore[arg-type]
+            )
 
     def interpolate(
         self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         """Interpolates velocity field at given Cartesian points."""
-        if self.interpolator is None:
+        if self.interpolator_x is None:
             raise ValueError(
                 "Interpolator has not been initialized. Call `update()` first."
             )
 
-        result = self.interpolator(new_points)
-        return cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, result)
+        result = np.empty_like(new_points)
+
+        result[..., 0] = self.interpolator_x(new_points)
+        result[..., 1] = self.interpolator_y(new_points)  # type: ignore
+
+        if self.ndim == 3:
+            result[..., 2] = self.interpolator_z(new_points)  # type: ignore
+
+        return result
 
     def update(
         self,
@@ -282,8 +308,17 @@ class GridInterpolator(Interpolator):
     ) -> None:
         # If interp already initialized and don't need to update grid, then
         # just update the velocity field
-        if self.interpolator is not None and points is None:
-            self.interpolator.values[:] = velocities.reshape(*self.grid_shape, -1)  # type: ignore
+        if self.interpolator_x is not None and points is None:
+            velocity_field = velocities.reshape((*self.grid_shape, self.ndim))  # type: ignore
+
+            if self.ndim == 2:
+                self.interpolator_x.values[:, :] = velocity_field[:, :, 0]
+                self.interpolator_y.values[:, :] = velocity_field[:, :, 1]  # type: ignore
+            else:
+                self.interpolator_x.values[:, :, :] = velocity_field[:, :, :, 0]  # type: ignore
+                self.interpolator_y.values[:, :, :] = velocity_field[:, :, :, 1]  # type: ignore
+                self.interpolator_z.values[:, :, :] = velocity_field[:, :, :, 2]  # type: ignore
+
         else:
             # initialize interpolator
             super().update(velocities, points)
