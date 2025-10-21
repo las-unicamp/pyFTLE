@@ -266,6 +266,19 @@ class GridInterpolator(Interpolator):
         result = self.interpolator(new_points)
         return cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, result)
 
+    def update(
+        self,
+        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        points: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None,
+    ) -> None:
+        # If interp already initialized and don't need to update grid, then
+        # just update the velocity field
+        if self.interpolator is not None and points is None:
+            self.interpolator.values[:] = velocities.reshape(*self.grid_shape, -1)  # type: ignore
+        else:
+            # initialize interpolator
+            super().update(velocities, points)
+
 
 class AnalyticalInterpolator(Interpolator):
     def __init__(self, velocity_fn: Callable):
