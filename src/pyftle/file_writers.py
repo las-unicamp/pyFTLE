@@ -6,7 +6,7 @@ import numpy as np
 import pyvista as pv
 from scipy.io import savemat
 
-from src.my_types import ArrayFloat64N, ArrayFloat64Nx2, ArrayFloat64Nx3
+from pyftle.my_types import ArrayFloat64N, ArrayFloat64Nx2, ArrayFloat64Nx3
 
 
 class FTLEWriter(ABC):

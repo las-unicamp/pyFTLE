@@ -1,14 +1,14 @@
 from pathlib import Path
 from typing import Callable, List, Protocol, Tuple
 
-from src.file_readers import (
+from pyftle.file_readers import (
     read_coordinate,
     read_seed_particles_coordinates,
     read_velocity,
 )
-from src.interpolate import Interpolator
-from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
-from src.particles import NeighboringParticles
+from pyftle.interpolate import Interpolator
+from pyftle.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
+from pyftle.particles import NeighboringParticles
 
 
 class BatchSource(Protocol):

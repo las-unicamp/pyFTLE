@@ -3,14 +3,14 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from src.integrate import (
+from pyftle.integrate import (
     AdamsBashforth2Integrator,
     EulerIntegrator,
     RungeKutta4Integrator,
     create_integrator,
 )
-from src.interpolate import Interpolator
-from src.particles import NeighboringParticles
+from pyftle.interpolate import Interpolator
+from pyftle.particles import NeighboringParticles
 
 
 @pytest.fixture

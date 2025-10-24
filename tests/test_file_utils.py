@@ -4,7 +4,7 @@ from unittest.mock import mock_open, patch
 
 import pandas as pd
 
-from src.file_utils import (
+from pyftle.file_utils import (
     find_files_with_pattern,
     get_files_list,
     write_list_to_txt,

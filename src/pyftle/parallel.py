@@ -9,7 +9,7 @@ import numpy as np
 from colorama import Fore, Style
 from colorama import init as colorama_init
 
-from src.data_source import BatchSource
+from pyftle.data_source import BatchSource
 
 colorama_init(autoreset=True)
 

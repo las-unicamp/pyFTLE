@@ -1,15 +1,15 @@
 from queue import Queue
 from typing import Optional
 
-from src.cauchy_green import (
+from pyftle.cauchy_green import (
     compute_flow_map_jacobian_2x2,
     compute_flow_map_jacobian_3x3,
 )
-from src.data_source import BatchSource
-from src.file_writers import FTLEWriter
-from src.ftle import compute_ftle_2x2, compute_ftle_3x3
-from src.integrate import Integrator
-from src.my_types import ArrayFloat64N
+from pyftle.data_source import BatchSource
+from pyftle.file_writers import FTLEWriter
+from pyftle.ftle import compute_ftle_2x2, compute_ftle_3x3
+from pyftle.integrate import Integrator
+from pyftle.my_types import ArrayFloat64N
 
 
 class FTLESolver:

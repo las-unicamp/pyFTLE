@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.io import loadmat
 
-from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
-from src.particles import NeighboringParticles
+from pyftle.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
+from pyftle.particles import NeighboringParticles
 
 
 def read_velocity(file_path: str) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:

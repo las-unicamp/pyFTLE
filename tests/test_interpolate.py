@@ -1,14 +1,14 @@
 import numpy as np
 import pytest
 
-from src.interpolate import (
+from pyftle.interpolate import (
     CubicInterpolator,
     GridInterpolator,
     LinearInterpolator,
     NearestNeighborInterpolator,
     create_interpolator,
 )
-from src.my_types import (
+from pyftle.my_types import (
     ArrayFloat64Nx2,
     ArrayFloat64Nx3,
 )

@@ -12,7 +12,7 @@ from scipy.interpolate import (
 )
 from scipy.spatial import Delaunay
 
-from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
+from pyftle.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
 
 
 class Interpolator(ABC):

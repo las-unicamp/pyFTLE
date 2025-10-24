@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from src.ftle import (
+from pyftle.ftle import (
     compute_cauchy_green_2x2,
     compute_cauchy_green_3x3,
     compute_ftle_2x2,
@@ -10,7 +10,7 @@ from src.ftle import (
     max_eigenvalue_2x2,
     max_eigenvalue_3x3,
 )
-from src.my_types import (
+from pyftle.my_types import (
     ArrayFloat64Nx2x2,
     ArrayFloat64Nx3x3,
 )

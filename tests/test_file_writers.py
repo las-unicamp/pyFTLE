@@ -5,7 +5,7 @@ from unittest.mock import patch
 import numpy as np
 import pyvista as pv
 
-from src.file_writers import MatWriter, VTKWriter
+from pyftle.file_writers import MatWriter, VTKWriter
 
 
 class TestFTLEWriter(unittest.TestCase):
@@ -44,7 +44,7 @@ class TestFTLEWriter(unittest.TestCase):
     # ----------------------------
     # Tests for MatWriter
     # ----------------------------
-    @patch("src.file_writers.savemat")
+    @patch("pyftle.file_writers.savemat")
     def test_mat_writer_2d(self, mock_savemat):
         writer = MatWriter(self.test_dir, grid_shape=(2, 2, 1))
         writer.write("test_2d", self.ftle_field_2d, self.particles_centroid_2d)
@@ -60,7 +60,7 @@ class TestFTLEWriter(unittest.TestCase):
         self.assertNotIn("z", saved_data)  # Should not save z data
         self.assertEqual(saved_data["ftle"].shape, (2, 2, 1))
 
-    @patch("src.file_writers.savemat")
+    @patch("pyftle.file_writers.savemat")
     def test_mat_writer_3d(self, mock_savemat):
         writer = MatWriter(self.test_dir, grid_shape=(2, 2, 2))
         writer.write("test_3d", self.ftle_field_3d, self.particles_centroid_3d)
@@ -75,7 +75,7 @@ class TestFTLEWriter(unittest.TestCase):
         self.assertIn("y", saved_data)
         self.assertIn("z", saved_data)
 
-    @patch("src.file_writers.savemat")
+    @patch("pyftle.file_writers.savemat")
     def test_mat_writer_unstructured(self, mock_savemat):
         writer = MatWriter(self.test_dir, grid_shape=None)
         writer.write(
@@ -125,7 +125,7 @@ class TestFTLEWriter(unittest.TestCase):
     # ----------------------------
     # Edge case: empty centroid
     # ----------------------------
-    @patch("src.file_writers.savemat")
+    @patch("pyftle.file_writers.savemat")
     def test_empty_particles_centroid(self, mock_savemat):
         writer = MatWriter(self.test_dir, grid_shape=None)
         empty_centroid = np.empty((0, 2))

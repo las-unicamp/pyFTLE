@@ -4,15 +4,15 @@ from typing import List
 
 from colorama import Fore, Style
 
-from src.data_source import BatchSource, FileBatchSource
-from src.decorators import timeit
-from src.file_utils import get_files_list
-from src.file_writers import create_writer
-from src.ftle_solver import FTLESolver
-from src.hyperparameters import args
-from src.integrate import create_integrator
-from src.interpolate import create_interpolator
-from src.parallel import ParallelExecutor
+from pyftle.data_source import BatchSource, FileBatchSource
+from pyftle.decorators import timeit
+from pyftle.file_utils import get_files_list
+from pyftle.file_writers import create_writer
+from pyftle.ftle_solver import FTLESolver
+from pyftle.hyperparameters import args
+from pyftle.integrate import create_integrator
+from pyftle.interpolate import create_interpolator
+from pyftle.parallel import ParallelExecutor
 
 
 class MultipleFTLEProcessManager:

@@ -3,13 +3,13 @@ from typing import Callable, Optional, cast
 
 import numpy as np
 
-from particles import NeighboringParticles
-from src.data_source import AnalyticalBatchSource, BatchSource
-from src.file_writers import create_writer
-from src.ftle_solver import FTLESolver
-from src.integrate import create_integrator
-from src.interpolate import create_interpolator
-from src.parallel import ParallelExecutor
+from pyftle.data_source import AnalyticalBatchSource, BatchSource
+from pyftle.file_writers import create_writer
+from pyftle.ftle_solver import FTLESolver
+from pyftle.integrate import create_integrator
+from pyftle.interpolate import create_interpolator
+from pyftle.parallel import ParallelExecutor
+from pyftle.particles import NeighboringParticles
 
 
 class AnalyticalSolver:

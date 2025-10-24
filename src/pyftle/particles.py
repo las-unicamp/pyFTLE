@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from src.my_types import (
+from pyftle.my_types import (
     ArrayFloat64N4x2,
     ArrayFloat64N6x3,
     ArrayFloat64Nx2,

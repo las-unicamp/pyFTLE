@@ -4,9 +4,9 @@ from typing import Optional, cast
 import numpy as np
 from numba import njit  # type: ignore
 
-from src.interpolate import Interpolator
-from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
-from src.particles import NeighboringParticles
+from pyftle.interpolate import Interpolator
+from pyftle.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
+from pyftle.particles import NeighboringParticles
 
 # ============================================================
 # Low-level numerical kernels (Numba-accelerated)

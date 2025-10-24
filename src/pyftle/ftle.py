@@ -3,7 +3,7 @@
 import numpy as np
 from numba import njit  # type: ignore
 
-from src.my_types import ArrayFloat64N, ArrayFloat64Nx2x2, ArrayFloat64Nx3x3
+from pyftle.my_types import ArrayFloat64N, ArrayFloat64Nx2x2, ArrayFloat64Nx3x3
 
 
 @njit

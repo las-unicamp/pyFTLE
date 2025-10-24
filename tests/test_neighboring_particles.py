@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from src.my_types import ArrayFloat64N4x2, ArrayFloat64N6x3
-from src.particles import NeighboringParticles
+from pyftle.my_types import ArrayFloat64N4x2, ArrayFloat64N6x3
+from pyftle.particles import NeighboringParticles
 
 
 @pytest.fixture(params=["2D", "3D"])

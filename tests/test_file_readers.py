@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from scipy.io import savemat
 
-from src.file_readers import (
+from pyftle.file_readers import (
     read_coordinate,
     read_seed_particles_coordinates,
     read_velocity,
