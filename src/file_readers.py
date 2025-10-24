@@ -17,15 +17,15 @@ def read_velocity(file_path: str) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
             "'velocity_y'."
         )
 
-    velocity_x = np.asarray(data["velocity_x"]).flatten().astype(np.float64)
-    velocity_y = np.asarray(data["velocity_y"]).flatten().astype(np.float64)
+    velocity_x = np.asarray(data["velocity_x"]).flatten()
+    velocity_y = np.asarray(data["velocity_y"]).flatten()
 
     if "velocity_z" in data:
-        velocity_z = np.asarray(data["velocity_z"]).flatten().astype(np.float64)
+        velocity_z = np.asarray(data["velocity_z"]).flatten()
 
-        return np.column_stack((velocity_x, velocity_y, velocity_z))
+        return np.stack((velocity_x, velocity_y, velocity_z), axis=-1)
     else:
-        return np.column_stack((velocity_x, velocity_y))
+        return np.stack((velocity_x, velocity_y), axis=-1)
 
 
 def read_coordinate(file_path: str) -> ArrayFloat64Nx2:
@@ -40,14 +40,14 @@ def read_coordinate(file_path: str) -> ArrayFloat64Nx2:
             "'coordinate_y'."
         )
 
-    coordinate_x = np.asarray(data["coordinate_x"]).flatten().astype(np.float64)
-    coordinate_y = np.asarray(data["coordinate_y"]).flatten().astype(np.float64)
+    coordinate_x = np.asarray(data["coordinate_x"]).flatten()
+    coordinate_y = np.asarray(data["coordinate_y"]).flatten()
 
     if "coordinate_z" in data:
-        coordinate_z = np.asarray(data["coordinate_z"]).flatten().astype(np.float64)
+        coordinate_z = np.asarray(data["coordinate_z"]).flatten()
         return np.column_stack((coordinate_x, coordinate_y, coordinate_z))
     else:
-        return np.column_stack((coordinate_x, coordinate_y))
+        return np.stack((coordinate_x, coordinate_y), axis=-1)
 
 
 def read_seed_particles_coordinates(file_path: str) -> NeighboringParticles:
@@ -84,14 +84,8 @@ def read_seed_particles_coordinates(file_path: str) -> NeighboringParticles:
     if "front" in data and "back" in data:
         front = np.asarray(data["front"])
         back = np.asarray(data["back"])
-        positions = np.stack((left, right, top, bottom, front, back), axis=1)
-        positions = positions.reshape(
-            -1, 3, order="F"
-        )  # Convert (N, 4, 2) → (4*N, 2) | (N, 6, 3) → (6*N, 3)
+        positions = np.vstack((left, right, top, bottom, front, back)).reshape(-1, 3)
     else:
-        positions = np.stack((left, right, top, bottom), axis=1)
-        positions = positions.reshape(
-            -1, 2, order="F"
-        )  # Convert (N, 4, 2) → (4*N, 2) | (N, 6, 3) → (6*N, 3)
+        positions = np.vstack((left, right, top, bottom)).reshape(-1, 2)
 
     return NeighboringParticles(positions=positions)

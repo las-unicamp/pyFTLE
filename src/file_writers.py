@@ -95,7 +95,7 @@ class MatWriter(FTLEWriter):
         else:
             # Unstructured grid
             data = {
-                "ftle": ftle_field,
+                "ftle": ftle_field.flatten(),
                 "x": particles_centroid[:, 0],
                 "y": particles_centroid[:, 1],
             }
