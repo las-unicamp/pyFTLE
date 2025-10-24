@@ -1,0 +1,16 @@
+CompileFlags:
+  Add: [
+    "-std=c++17",
+    "-I/usr/include/python3.10",
+    "-I/home/miotto/Desktop/REMOVE/.venv/lib/python3.10/site-packages/pybind11/include",
+    "-I/home/miotto/Desktop/REMOVE/build/_deps/eigen-src"
+  ]
+
+  Remove: [-Wall, -Wextra]  # Avoid excessive warnings in editor
+  CompilationDatabase: ./build
+
+Diagnostics:
+  UnusedIncludes: Strict
+  Suppress:
+    - "-Wdocumentation"
+    - "-Wunknown-warning-option"
