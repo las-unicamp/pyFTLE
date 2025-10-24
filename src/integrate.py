@@ -1,10 +1,55 @@
 from abc import ABC, abstractmethod
+from typing import Optional, cast
 
+import numpy as np
 from numba import njit  # type: ignore
 
 from src.interpolate import Interpolator
 from src.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
 from src.particles import NeighboringParticles
+
+# ============================================================
+# Low-level numerical kernels (Numba-accelerated)
+# ============================================================
+
+
+@njit(inline="always")
+def euler_step_inplace(
+    positions: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    h: float,
+    velocity: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+):
+    """In-place Euler step: positions += h * velocity"""
+    positions += h * velocity
+
+
+@njit(inline="always")
+def adams_bashforth_2_step_inplace(
+    positions: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    h: float,
+    v_current: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    v_prev: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+):
+    """In-place AB2 step: positions += h * (1.5*v_current - 0.5*v_prev)"""
+    positions += h * (1.5 * v_current - 0.5 * v_prev)
+
+
+@njit(inline="always")
+def runge_kutta_4_step_inplace(
+    positions: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    h: float,
+    k1: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    k2: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    k3: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    k4: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+):
+    """In-place RK4 update: positions += (h/6)*(k1 + 2*k2 + 2*k3 + k4)"""
+    positions += (h / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
+
+
+# ============================================================
+# Integrator Base Class
+# =========================================================
 
 
 class Integrator(ABC):
@@ -37,13 +82,41 @@ class Integrator(ABC):
         pass
 
 
-@njit
-def adams_bashforth_2_step(
-    h: float,
-    current_velocity: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    previous_velocity: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
-    return h * (1.5 * current_velocity - 0.5 * previous_velocity)
+# ============================================================
+# Euler Integrator
+# ============================================================
+
+
+class EulerIntegrator(Integrator):
+    """
+    Perform a single step of the Euler method for solving ordinary differential
+    equations (ODEs).
+
+    The Euler method is a first-order numerical procedure for solving ODEs
+    by approximating the solution using the derivative (velocity) at the current
+    point in time.
+    """
+
+    def __init__(self, interpolator: Interpolator, **kwargs) -> None:
+        super().__init__(interpolator, **kwargs)
+        # Preallocate a temporary velocity buffer
+        self._velocity = None
+
+    def integrate(self, h: float, particles: NeighboringParticles) -> None:
+        # Get or allocate buffer
+        if self._velocity is None or self._velocity.shape != particles.positions.shape:
+            self._velocity = np.empty_like(particles.positions)
+
+        # Interpolate velocity directly into the preallocated buffer
+        np.copyto(self._velocity, self.interpolator.interpolate(particles.positions))
+
+        # In-place update using numba kernel
+        euler_step_inplace(particles.positions, h, self._velocity)
+
+
+# ============================================================
+# Adams-Bashforth 2 Integrator
+# ============================================================
 
 
 class AdamsBashforth2Integrator(Integrator):
@@ -65,55 +138,34 @@ class AdamsBashforth2Integrator(Integrator):
 
     def __init__(self, interpolator: Interpolator, **kwargs) -> None:
         super().__init__(interpolator, **kwargs)
-        self.previous_velocity = None  # Stores f(t_n, y_n) for next iteration
+        self.previous_velocity = None
+        self._velocity = None
 
     def integrate(self, h: float, particles: NeighboringParticles) -> None:
-        current_velocity = self.interpolator.interpolate(particles.positions)
+        if self._velocity is None or self._velocity.shape != particles.positions.shape:
+            self._velocity = np.empty_like(particles.positions)
+
+        # Compute current velocity
+        np.copyto(self._velocity, self.interpolator.interpolate(particles.positions))
 
         if self.previous_velocity is None:
-            # First step: fallback to Euler method
-            particles.positions += euler_step(h, current_velocity)
+            # First step: Euler fallback
+            euler_step_inplace(particles.positions, h, self._velocity)
         else:
-            # Adams-Bashforth 2-step method
-            particles.positions += adams_bashforth_2_step(
-                h, current_velocity, self.previous_velocity
+            # Use AB2 formula in-place
+            adams_bashforth_2_step_inplace(
+                particles.positions, h, self._velocity, self.previous_velocity
             )
 
-        # Store current velocity for the next step
-        self.previous_velocity = current_velocity
+        # Swap references to avoid reallocations
+        if self.previous_velocity is None:
+            self.previous_velocity = np.empty_like(self._velocity)
+        np.copyto(self.previous_velocity, self._velocity)
 
 
-@njit
-def euler_step(
-    h: float, current_velocity: ArrayFloat64Nx2 | ArrayFloat64Nx3
-) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
-    return h * current_velocity
-
-
-class EulerIntegrator(Integrator):
-    """
-    Perform a single step of the Euler method for solving ordinary differential
-    equations (ODEs).
-
-    The Euler method is a first-order numerical procedure for solving ODEs
-    by approximating the solution using the derivative (velocity) at the current
-    point in time.
-    """
-
-    def integrate(self, h: float, particles: NeighboringParticles) -> None:
-        current_velocity = self.interpolator.interpolate(particles.positions)
-        particles.positions += euler_step(h, current_velocity)
-
-
-@njit
-def runge_kutta_4_step(
-    h: float,
-    k1: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    k2: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    k3: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    k4: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
-    return (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+# ============================================================
+# Runge-Kutta 4 Integrator
+# ============================================================
 
 
 class RungeKutta4Integrator(Integrator):
@@ -126,15 +178,58 @@ class RungeKutta4Integrator(Integrator):
     higher-order accuracy than the Euler or Adams-Bashforth methods.
     """
 
-    def integrate(self, h: float, particles: NeighboringParticles) -> None:
-        # Compute the four slopes (k1, k2, k3, k4)
-        k1 = self.interpolator.interpolate(particles.positions)
-        k2 = self.interpolator.interpolate(particles.positions + 0.5 * h * k1)
-        k3 = self.interpolator.interpolate(particles.positions + 0.5 * h * k2)
-        k4 = self.interpolator.interpolate(particles.positions + h * k3)
+    def __init__(self, interpolator: Interpolator, **kwargs) -> None:
+        super().__init__(interpolator, **kwargs)
+        # Preallocate buffers for intermediate slopes
+        self._k1: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3 | None] = None
+        self._k2: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3 | None] = None
+        self._k3: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3 | None] = None
+        self._k4: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3 | None] = None
+        # temporary array for intermediate positions
+        self._tmp: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3 | None] = None
 
-        # Update the solution in-place using the weighted average of the slopes
-        particles.positions += runge_kutta_4_step(h, k1, k2, k3, k4)
+    def integrate(self, h: float, particles: NeighboringParticles) -> None:
+        npos = particles.positions.shape
+
+        # Lazily allocate working buffers
+        if self._k1 is None or self._k1.shape != npos:
+            self._k1 = np.empty_like(particles.positions)
+            self._k2 = np.empty_like(particles.positions)
+            self._k3 = np.empty_like(particles.positions)
+            self._k4 = np.empty_like(particles.positions)
+            self._tmp = np.empty_like(particles.positions)
+
+        k1 = cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, self._k1)
+        k2 = cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, self._k2)
+        k3 = cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, self._k3)
+        k4 = cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, self._k4)
+        tmp = cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, self._tmp)
+
+        # k1 = f(t, y)
+        np.copyto(k1, self.interpolator.interpolate(particles.positions))
+
+        # k2 = f(t + h/2, y + h/2 * k1)
+        np.copyto(tmp, particles.positions)
+        tmp += 0.5 * h * k1
+        np.copyto(k2, self.interpolator.interpolate(tmp))
+
+        # k3 = f(t + h/2, y + h/2 * k2)
+        np.copyto(tmp, particles.positions)
+        tmp += 0.5 * h * k2
+        np.copyto(k3, self.interpolator.interpolate(tmp))
+
+        # k4 = f(t + h, y + h * k3)
+        np.copyto(tmp, particles.positions)
+        tmp += h * k3
+        np.copyto(k4, self.interpolator.interpolate(tmp))
+
+        # In-place RK4 update
+        runge_kutta_4_step_inplace(particles.positions, h, k1, k2, k3, k4)
+
+
+# ============================================================
+# Factory
+# ============================================================
 
 
 def create_integrator(integrator_name: str, interpolator: Interpolator) -> Integrator:
