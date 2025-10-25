@@ -1,5 +1,5 @@
 name: Python Tests
-on: [push]
+on: [push, pull_request]
 jobs:
   lock_file:
     runs-on: ubuntu-latest
@@ -22,10 +22,17 @@ jobs:
           uv pip install -e '.[dev,test]'
           uv pip list
 
-      - name: Add src to PYTHONPATH
-        run: echo "PYTHONPATH=$(pwd)/src:$PYTHONPATH" >> $GITHUB_ENV
+      - name: Build package (C++ extension via scikit-build-core)
+        shell: bash
+        run: |
+          uv build
+          ls -lh dist/
+          uv pip install dist/*.whl
+          ls -lh src/pyftle/*.so || true
 
       - name: Run Tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
         run: uv run pytest -v --durations=0 --cov --cov-report=xml
 
       - name: Upload Coverage to Codecov
