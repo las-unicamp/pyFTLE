@@ -26,6 +26,7 @@ class Interpolator(ABC):
         self.interpolator = None  # Placeholder for the actual interpolator instance
         self.velocity_fn: Optional[Callable] = None  # Used only by AnalyticalInterp
         self.grid_shape: Optional[tuple[int, ...]] = None  # Used only by GridInterp
+        self._velocities_buffer: Optional[np.ndarray] = None  # in-place ops
 
     def _initialize_interpolator(self) -> None:
         """Initialize the actual interpolator object based on velocity and points."""
@@ -82,6 +83,7 @@ class CubicInterpolator(Interpolator):
     """
 
     def __init__(self):
+        super().__init__()
         self.tri: Optional[Delaunay] = None  # pre-computed Delaunay for faster updates
 
     def _initialize_interpolator(self) -> None:
@@ -101,9 +103,20 @@ class CubicInterpolator(Interpolator):
         else:
             self.interpolator = CloughTocher2DInterpolator(self.tri, velocities_cmplx)
 
-    def interpolate(self, new_points: ArrayFloat64Nx2) -> ArrayFloat64Nx2:
+    def interpolate(
+        self,
+        new_points: ArrayFloat64Nx2,
+        out: Optional[ArrayFloat64Nx2] = None,
+    ) -> ArrayFloat64Nx2:
+        if out is None:
+            out = np.empty((len(new_points), 2), dtype=float)
+
         interp_velocities = self.interpolator(new_points)
-        return np.column_stack((interp_velocities.real, interp_velocities.imag))
+
+        out[:, 0] = interp_velocities.real
+        out[:, 1] = interp_velocities.imag
+
+        return out
 
 
 class LinearInterpolator(Interpolator):
@@ -119,6 +132,7 @@ class LinearInterpolator(Interpolator):
     """
 
     def __init__(self):
+        super().__init__()
         self.tri: Optional[Delaunay] = None  # pre-computed Delaunay for faster updates
 
     def _initialize_interpolator(self) -> None:
@@ -139,17 +153,26 @@ class LinearInterpolator(Interpolator):
             self.interpolator_z = LinearNDInterpolator(self.tri, self.velocities[:, 2])
 
     def interpolate(
-        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+        if out is None:
+            if new_points.shape[1] == 2:
+                out = np.empty((len(new_points), 2), dtype=float)
+            else:
+                out = np.empty((len(new_points), 3), dtype=float)
+
         interp_velocities = self.interpolator(new_points)
 
         if new_points.shape[1] == 2:
-            return np.column_stack((interp_velocities.real, interp_velocities.imag))
+            out[:, 0] = interp_velocities.real
+            out[:, 1] = interp_velocities.imag
         else:
-            interp_velocities_z = self.interpolator_z(new_points)
-            return np.column_stack(
-                (interp_velocities.real, interp_velocities.imag, interp_velocities_z)
-            )
+            interp_z = self.interpolator_z(new_points)
+            out[:, 0] = interp_velocities.real
+            out[:, 1] = interp_velocities.imag
+            out[:, 2] = interp_z
+
+        return out
 
 
 class NearestNeighborInterpolator(Interpolator):
@@ -176,15 +199,28 @@ class NearestNeighborInterpolator(Interpolator):
             )
 
     def interpolate(
-        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
+        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
     ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+        if out is None:
+            if new_points.shape[1] == 2:
+                out = np.empty((len(new_points), 2), dtype=float)
+            else:
+                out = np.empty((len(new_points), 3), dtype=float)
+
         interp_velocities = self.interpolator(new_points)
+
         if new_points.shape[1] == 2:
-            return np.column_stack((interp_velocities.real, interp_velocities.imag))
+            out[:, 0] = interp_velocities.real
+            out[:, 1] = interp_velocities.imag
         else:
-            interp_velocities_z = self.interpolator_z(new_points)
-            return np.column_stack(
-                (interp_velocities.real, interp_velocities.imag, interp_velocities_z)
+            interp_z = self.interpolator_z(new_points)
+            out[:, 0] = interp_velocities.real
+            out[:, 1] = interp_velocities.imag
+            out[:, 2] = interp_z
+
+        return out
+
+
             )
 
 
@@ -206,6 +242,7 @@ class GridInterpolator(Interpolator):
         grid_shape: tuple[int, ...],
         method: Literal["linear", "nearest", "slinear", "cubic", "quintic"] = "linear",
     ):
+        super().__init__()
         if method not in self.VALID_METHODS:
             raise ValueError(
                 f"Invalid method '{method}'. Must be one of {self.VALID_METHODS}"
