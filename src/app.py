@@ -97,6 +97,7 @@ class MultipleFTLEProcessManager:
     def run(self):
         batches = self._create_batches()
         self.executor.run(batches, self._worker)
+        # self._worker(batches[0], None)  # For debugging purposes
 
 
 # ─────────────────────────────────────────────────────────────
