@@ -23,9 +23,9 @@ def read_velocity(file_path: str) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
     if "velocity_z" in data:
         velocity_z = np.asarray(data["velocity_z"]).flatten()
 
-        return np.stack((velocity_x, velocity_y, velocity_z), axis=-1)
+        return np.stack((velocity_x, velocity_y, velocity_z))
     else:
-        return np.stack((velocity_x, velocity_y), axis=-1)
+        return np.stack((velocity_x, velocity_y))
 
 
 def read_coordinate(file_path: str) -> ArrayFloat64Nx2:
@@ -45,9 +45,9 @@ def read_coordinate(file_path: str) -> ArrayFloat64Nx2:
 
     if "coordinate_z" in data:
         coordinate_z = np.asarray(data["coordinate_z"]).flatten()
-        return np.column_stack((coordinate_x, coordinate_y, coordinate_z))
+        return np.stack((coordinate_x, coordinate_y, coordinate_z))
     else:
-        return np.stack((coordinate_x, coordinate_y), axis=-1)
+        return np.stack((coordinate_x, coordinate_y))
 
 
 def read_seed_particles_coordinates(file_path: str) -> NeighboringParticles:
@@ -84,8 +84,11 @@ def read_seed_particles_coordinates(file_path: str) -> NeighboringParticles:
     if "front" in data and "back" in data:
         front = np.asarray(data["front"])
         back = np.asarray(data["back"])
-        positions = np.vstack((left, right, top, bottom, front, back)).reshape(-1, 3)
+        positions = np.concatenate(
+            (left, right, top, bottom, front, back),  # shape (6*N, 3)
+            axis=0,
+        )
     else:
-        positions = np.vstack((left, right, top, bottom)).reshape(-1, 2)
+        positions = np.concatenate((left, right, top, bottom), axis=0)  # shape (4*N, 2)
 
     return NeighboringParticles(positions=positions)

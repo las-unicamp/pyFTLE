@@ -145,18 +145,16 @@ class VTKWriter(FTLEWriter):
 
             elif len(self.grid_shape) == 3:
                 nx, ny, nz = self.grid_shape
-                x_matrix = particles_centroid[:, 0].reshape((nx, ny, nz), order="C")
-                y_matrix = particles_centroid[:, 1].reshape((nx, ny, nz), order="C")
-                z_matrix = particles_centroid[:, 2].reshape((nx, ny, nz), order="C")
+                particles_centroid = particles_centroid.reshape(nx, ny, nz, self.dim)
 
-                x_cartesian = np.transpose(x_matrix, axes=(1, 0, 2))
-                y_cartesian = np.transpose(y_matrix, axes=(1, 0, 2))
-                z_cartesian = np.transpose(z_matrix, axes=(1, 0, 2))
-                grid = pv.StructuredGrid(x_cartesian, y_cartesian, z_cartesian)
+                x = particles_centroid[..., 0]
+                y = particles_centroid[..., 1]
+                z = particles_centroid[..., 2]
 
-                ftle_matrix = ftle_field.reshape((nx, ny, nz), order="C")
+                grid = pv.StructuredGrid(x, y, z)
+
+                ftle_matrix = ftle_field.reshape((nx, ny, nz))
                 ftle_cartesian = np.transpose(ftle_matrix, axes=(1, 0, 2))
-
                 grid["ftle"] = ftle_cartesian.flatten(order="F")
 
                 grid.save(vtk_filename + ".vts")
