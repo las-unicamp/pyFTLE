@@ -6,7 +6,7 @@ import numpy as np
 import pyvista as pv
 from scipy.io import savemat
 
-from pyftle.my_types import ArrayFloat64N, ArrayFloat64Nx2, ArrayFloat64Nx3
+from pyftle.my_types import ArrayN, ArrayNx2, ArrayNx3
 
 
 class FTLEWriter(ABC):
@@ -28,8 +28,8 @@ class FTLEWriter(ABC):
     def write(
         self,
         filename: str,
-        ftle_field: ArrayFloat64N,
-        particles_centroid: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        ftle_field: ArrayN,
+        particles_centroid: ArrayNx2 | ArrayNx3,
     ) -> None:
         """
         Write the FTLE field to a file.
@@ -53,8 +53,8 @@ class MatWriter(FTLEWriter):
     def write(
         self,
         filename: str,
-        ftle_field: ArrayFloat64N,
-        particles_centroid: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        ftle_field: ArrayN,
+        particles_centroid: ArrayNx2 | ArrayNx3,
     ) -> None:
         # Determine the dimensionality (2D or 3D)
         if self.dim is None:
@@ -117,8 +117,8 @@ class VTKWriter(FTLEWriter):
     def write(
         self,
         filename: str,
-        ftle_field: ArrayFloat64N,
-        particles_centroid: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        ftle_field: ArrayN,
+        particles_centroid: ArrayNx2 | ArrayNx3,
     ) -> None:
         # Determine the dimensionality (2D or 3D)
         if self.dim is None:

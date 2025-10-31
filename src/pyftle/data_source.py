@@ -7,7 +7,7 @@ from pyftle.file_readers import (
     read_velocity,
 )
 from pyftle.interpolate import Interpolator
-from pyftle.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
+from pyftle.my_types import Array2xN, Array3xN
 from pyftle.particles import NeighboringParticles
 
 
@@ -61,9 +61,7 @@ class FileBatchSource(BatchSource):
 
     def get_data_for_step(
         self, step_index: int
-    ) -> Tuple[
-        ArrayFloat64Nx2 | ArrayFloat64Nx3, ArrayFloat64Nx2 | ArrayFloat64Nx3 | None
-    ]:
+    ) -> Tuple[Array2xN | Array3xN, Array2xN | Array3xN | None]:
         vel_file = self.snapshot_files[step_index]
         coord_file = self.coordinate_files[step_index]
 

@@ -1,11 +1,11 @@
 import numpy as np
 from scipy.io import loadmat
 
-from pyftle.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
+from pyftle.my_types import Array2xN, Array3xN
 from pyftle.particles import NeighboringParticles
 
 
-def read_velocity(file_path: str) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+def read_velocity(file_path: str) -> Array2xN | Array3xN:
     """
     Reads velocity data from a MATLAB file.
     """
@@ -28,7 +28,7 @@ def read_velocity(file_path: str) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
         return np.stack((velocity_x, velocity_y))
 
 
-def read_coordinate(file_path: str) -> ArrayFloat64Nx2:
+def read_coordinate(file_path: str) -> Array2xN | Array3xN:
     """
     Reads coordinate data from a MATLAB file.
     """

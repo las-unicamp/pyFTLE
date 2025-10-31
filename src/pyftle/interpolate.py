@@ -13,7 +13,7 @@ from scipy.interpolate import (
 from scipy.spatial import Delaunay
 
 from pyftle.grid_interp.ginterp import Interp2D, Interp3D
-from pyftle.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
+from pyftle.my_types import Array2xN, Array3xN
 
 
 class Interpolator(ABC):
@@ -22,8 +22,8 @@ class Interpolator(ABC):
         points are available
         """
 
-        self.velocities: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None
-        self.points: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None
+        self.velocities: Optional[Array2xN | Array3xN] = None
+        self.points: Optional[Array2xN | Array3xN] = None
         self.interpolator = None  # Placeholder for the actual interpolator instance
         self.velocity_fn: Optional[Callable] = None  # Used only by AnalyticalInterp
         self.grid_shape: Optional[tuple[int, ...]] = None  # Used only by GridInterp
@@ -43,8 +43,8 @@ class Interpolator(ABC):
 
     def update(
         self,
-        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-        points: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None,
+        velocities: Array2xN | Array3xN,
+        points: Optional[Array2xN | Array3xN] = None,
     ) -> None:
         """Updates the interpolation function for a new field."""
 
@@ -57,8 +57,8 @@ class Interpolator(ABC):
     @abstractmethod
     def interpolate(
         self,
-        new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+        new_points: Array2xN | Array3xN,
+    ) -> Array2xN | Array3xN:
         """Implements the interpolation strategy."""
         pass
 
@@ -106,9 +106,9 @@ class CubicInterpolator(Interpolator):
 
     def interpolate(
         self,
-        new_points: ArrayFloat64Nx2,
-        out: Optional[ArrayFloat64Nx2] = None,
-    ) -> ArrayFloat64Nx2:
+        new_points: Array2xN,
+        out: Optional[Array2xN] = None,
+    ) -> Array2xN:
         if out is None:
             out = np.empty_like(new_points)
 
@@ -154,8 +154,8 @@ class LinearInterpolator(Interpolator):
             self.interpolator_z = LinearNDInterpolator(self.tri, self.velocities[2])
 
     def interpolate(
-        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
-    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+        self, new_points: Array2xN | Array3xN, out=None
+    ) -> Array2xN | Array3xN:
         if out is None:
             out = np.empty_like(new_points)
 
@@ -193,8 +193,8 @@ class NearestNeighborInterpolator(Interpolator):
             )
 
     def interpolate(
-        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3, out=None
-    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+        self, new_points: Array2xN | Array3xN, out=None
+    ) -> Array2xN | Array3xN:
         if out is None:
             out = np.empty_like(new_points)
 
@@ -331,9 +331,9 @@ class HighPerfInterpolator(Interpolator):
     # ------------------------------------------------------------------
     def interpolate(
         self,
-        new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+        new_points: Array2xN | Array3xN,
         out=None,
-    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+    ) -> Array2xN | Array3xN:
         """Interpolates velocity field at given Cartesian points."""
         dim = new_points.shape[1]
         n = new_points.shape[0]
@@ -483,9 +483,7 @@ class GridInterpolator(Interpolator):
                 fill_value=0.0,  # type: ignore[arg-type]
             )
 
-    def interpolate(
-        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
-    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+    def interpolate(self, new_points: Array2xN | Array3xN) -> Array2xN | Array3xN:
         """Interpolates velocity field at given Cartesian points."""
         if self.interpolator_x is None:
             raise ValueError(
@@ -504,8 +502,8 @@ class GridInterpolator(Interpolator):
 
     def update(
         self,
-        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-        points: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None,
+        velocities: Array2xN | Array3xN,
+        points: Optional[Array2xN | Array3xN] = None,
     ) -> None:
         # If interp already initialized and don't need to update grid, then
         # just update the velocity field
@@ -533,9 +531,7 @@ class AnalyticalInterpolator(Interpolator):
         self.velocity_fn = velocity_fn
         self.time = 0.0
 
-    def interpolate(
-        self, new_points: ArrayFloat64Nx2 | ArrayFloat64Nx3
-    ) -> ArrayFloat64Nx2 | ArrayFloat64Nx3:
+    def interpolate(self, new_points: Array2xN | Array3xN) -> Array2xN | Array3xN:
         """Evaluates the velocity field at the given coordinates."""
         if not callable(self.velocity_fn):
             raise ExecutableNotFoundError("velocity_fn was not assigned properly")
@@ -543,8 +539,8 @@ class AnalyticalInterpolator(Interpolator):
 
     def update(
         self,
-        velocities: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-        points: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3] = None,
+        velocities: Array2xN | Array3xN,
+        points: Optional[Array2xN | Array3xN] = None,
     ) -> None:
         """Override parent to do nothing (no state update necessary).
         Arguments are required by the interface, but they are not used here."""

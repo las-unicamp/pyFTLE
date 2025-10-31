@@ -5,7 +5,7 @@ import numpy as np
 from numba import njit  # type: ignore
 
 from pyftle.interpolate import Interpolator
-from pyftle.my_types import ArrayFloat64Nx2, ArrayFloat64Nx3
+from pyftle.my_types import Array2xN, Array3xN, ArrayNx2, ArrayNx3
 from pyftle.particles import NeighboringParticles
 
 # ============================================================
@@ -15,9 +15,9 @@ from pyftle.particles import NeighboringParticles
 
 @njit(inline="always")
 def euler_step_inplace(
-    positions: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    positions: ArrayNx2 | ArrayNx3,
     h: float,
-    velocity: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    velocity: Array2xN | Array3xN,
 ):
     """In-place Euler step: positions += h * velocity"""
     positions += h * velocity
@@ -25,10 +25,10 @@ def euler_step_inplace(
 
 @njit(inline="always")
 def adams_bashforth_2_step_inplace(
-    positions: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    positions: ArrayNx2 | ArrayNx3,
     h: float,
-    v_current: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    v_prev: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    v_current: Array2xN | Array3xN,
+    v_prev: Array2xN | Array3xN,
 ):
     """In-place AB2 step: positions += h * (1.5*v_current - 0.5*v_prev)"""
     positions += h * (1.5 * v_current - 0.5 * v_prev)
@@ -36,12 +36,12 @@ def adams_bashforth_2_step_inplace(
 
 @njit(inline="always")
 def runge_kutta_4_step_inplace(
-    positions: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    positions: ArrayNx2 | ArrayNx3,
     h: float,
-    k1: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    k2: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    k3: ArrayFloat64Nx2 | ArrayFloat64Nx3,
-    k4: ArrayFloat64Nx2 | ArrayFloat64Nx3,
+    k1: ArrayNx2 | ArrayNx3,
+    k2: ArrayNx2 | ArrayNx3,
+    k3: ArrayNx2 | ArrayNx3,
+    k4: ArrayNx2 | ArrayNx3,
 ):
     """In-place RK4 update: positions += (h/6)*(k1 + 2*k2 + 2*k3 + k4)"""
     positions += (h / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
@@ -181,12 +181,12 @@ class RungeKutta4Integrator(Integrator):
     def __init__(self, interpolator: Interpolator, **kwargs) -> None:
         super().__init__(interpolator, **kwargs)
         # Preallocate buffers for intermediate slopes
-        self._k1: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3 | None] = None
-        self._k2: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3 | None] = None
-        self._k3: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3 | None] = None
-        self._k4: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3 | None] = None
+        self._k1: Optional[ArrayNx2 | ArrayNx3 | None] = None
+        self._k2: Optional[ArrayNx2 | ArrayNx3 | None] = None
+        self._k3: Optional[ArrayNx2 | ArrayNx3 | None] = None
+        self._k4: Optional[ArrayNx2 | ArrayNx3 | None] = None
         # temporary array for intermediate positions
-        self._tmp: Optional[ArrayFloat64Nx2 | ArrayFloat64Nx3 | None] = None
+        self._tmp: Optional[ArrayNx2 | ArrayNx3 | None] = None
 
     def integrate(self, h: float, particles: NeighboringParticles) -> None:
         npos = particles.positions.shape
@@ -199,11 +199,11 @@ class RungeKutta4Integrator(Integrator):
             self._k4 = np.empty_like(particles.positions)
             self._tmp = np.empty_like(particles.positions)
 
-        k1 = cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, self._k1)
-        k2 = cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, self._k2)
-        k3 = cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, self._k3)
-        k4 = cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, self._k4)
-        tmp = cast(ArrayFloat64Nx2 | ArrayFloat64Nx3, self._tmp)
+        k1 = cast(ArrayNx2 | ArrayNx3, self._k1)
+        k2 = cast(ArrayNx2 | ArrayNx3, self._k2)
+        k3 = cast(ArrayNx2 | ArrayNx3, self._k3)
+        k4 = cast(ArrayNx2 | ArrayNx3, self._k4)
+        tmp = cast(ArrayNx2 | ArrayNx3, self._tmp)
 
         # k1 = f(t, y)
         np.copyto(k1, self.interpolator.interpolate(particles.positions))

@@ -2,40 +2,40 @@ import numpy as np
 from numba import njit  # type: ignore
 
 from pyftle.my_types import (
-    ArrayFloat64N4x2,
-    ArrayFloat64N6x3,
-    ArrayFloat64Nx2,
-    ArrayFloat64Nx2x2,
-    ArrayFloat64Nx3,
-    ArrayFloat64Nx3x3,
+    Array4Nx2,
+    Array6Nx3,
+    ArrayNx2,
+    ArrayNx2x2,
+    ArrayNx3,
+    ArrayNx3x3,
 )
 from pyftle.particles import NeighboringParticles
 
 
 @njit
 def _compute_flow_map_jacobian_in_numba(
-    particles_positions: ArrayFloat64N4x2,
-    delta_right_left: ArrayFloat64Nx2,
-    initial_delta_right_left: ArrayFloat64Nx2,
-    delta_top_bottom: ArrayFloat64Nx2,
-    initial_delta_top_bottom: ArrayFloat64Nx2,
-) -> ArrayFloat64Nx2x2:
+    particles_positions: Array4Nx2,
+    delta_right_left: ArrayNx2,
+    initial_delta_right_left: ArrayNx2,
+    delta_top_bottom: ArrayNx2,
+    initial_delta_top_bottom: ArrayNx2,
+) -> ArrayNx2x2:
     """
     Compute the flow map Jacobian (deformation gradient) based on the the initial
     and deformed positions.
 
     Args:
-    - particles_positions (ArrayFloat64Nx2): The positions at forward or backward
+    - particles_positions (ArrayNx2): The positions at forward or backward
           time.
-    - delta_right_left (ArrayFloat64Nx2): Change in right-left positions.
-    - initial_delta_right_left (ArrayFloat64Nx2): Initial change in right-left
+    - delta_right_left (ArrayNx2): Change in right-left positions.
+    - initial_delta_right_left (ArrayNx2): Initial change in right-left
           positions.
-    - delta_top_bottom (ArrayFloat64Nx2): Change in top-bottom positions.
-    - initial_delta_top_bottom (ArrayFloat64Nx2): Initial change in top-bottom
+    - delta_top_bottom (ArrayNx2): Change in top-bottom positions.
+    - initial_delta_top_bottom (ArrayNx2): Initial change in top-bottom
           positions.
 
     Returns:
-    - jacobian (ArrayFloat64Nx2x2): The flow map Jacobian.
+    - jacobian (ArrayNx2x2): The flow map Jacobian.
     """
     num_particles = particles_positions.shape[0] // 4  # Number of particle groups (N)
     jacobian = np.empty((num_particles, 2, 2))
@@ -51,34 +51,34 @@ def _compute_flow_map_jacobian_in_numba(
 
 @njit
 def _compute_flow_map_jacobian_in_numba_3x3(
-    particles_positions: ArrayFloat64N6x3,
-    delta_right_left: ArrayFloat64Nx3,
-    initial_delta_right_left: ArrayFloat64Nx3,
-    delta_top_bottom: ArrayFloat64Nx3,
-    initial_delta_top_bottom: ArrayFloat64Nx3,
-    delta_front_back: ArrayFloat64Nx3,
-    initial_delta_front_back: ArrayFloat64Nx3,
-) -> ArrayFloat64Nx3x3:
+    particles_positions: Array6Nx3,
+    delta_right_left: ArrayNx3,
+    initial_delta_right_left: ArrayNx3,
+    delta_top_bottom: ArrayNx3,
+    initial_delta_top_bottom: ArrayNx3,
+    delta_front_back: ArrayNx3,
+    initial_delta_front_back: ArrayNx3,
+) -> ArrayNx3x3:
     """
     Compute the flow map Jacobian (deformation gradient) based on the the initial
     and deformed positions.
 
     Args:
-    - particles_positions (ArrayFloat64Nx3): The positions at forward or backward
+    - particles_positions (ArrayNx3): The positions at forward or backward
           time.
-    - delta_right_left (ArrayFloat64Nx3): Change in right-left positions.
-    - initial_delta_right_left (ArrayFloat64Nx3): Initial change in right-left
+    - delta_right_left (ArrayNx3): Change in right-left positions.
+    - initial_delta_right_left (ArrayNx3): Initial change in right-left
           positions.
-    - delta_top_bottom (ArrayFloat64Nx3): Change in top-bottom positions.
-    - initial_delta_top_bottom (ArrayFloat64Nx3): Initial change in top-bottom
+    - delta_top_bottom (ArrayNx3): Change in top-bottom positions.
+    - initial_delta_top_bottom (ArrayNx3): Initial change in top-bottom
           positions.
-    - delta_front_back (ArrayFloat64Nx3): Change in front-back positions.
-    - initial_delta_front_back (ArrayFloat64Nx3): Initial change in front-back
+    - delta_front_back (ArrayNx3): Change in front-back positions.
+    - initial_delta_front_back (ArrayNx3): Initial change in front-back
           positions.
 
 
     Returns:
-    - jacobian (ArrayFloat64Nx3x3): The flow map Jacobian.
+    - jacobian (ArrayNx3x3): The flow map Jacobian.
     """
     num_particles = particles_positions.shape[0] // 6  # Number of particle groups (N)
     jacobian = np.empty((num_particles, 3, 3))
@@ -102,8 +102,7 @@ def _compute_flow_map_jacobian_in_numba_3x3(
 # Wrapper function for the NeighboringParticles dataclass
 def compute_flow_map_jacobian_2x2(
     particles: NeighboringParticles,
-) -> ArrayFloat64Nx2x2:
-    # print('here')
+) -> ArrayNx2x2:
     return _compute_flow_map_jacobian_in_numba(
         particles.positions,
         particles.delta_right_left,
@@ -115,7 +114,7 @@ def compute_flow_map_jacobian_2x2(
 
 def compute_flow_map_jacobian_3x3(
     particles: NeighboringParticles,
-) -> ArrayFloat64Nx3x3:
+) -> ArrayNx3x3:
     return _compute_flow_map_jacobian_in_numba_3x3(
         particles.positions,
         particles.delta_right_left,

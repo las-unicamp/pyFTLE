@@ -3,11 +3,11 @@
 import numpy as np
 from numba import njit  # type: ignore
 
-from pyftle.my_types import ArrayFloat64N, ArrayFloat64Nx2x2, ArrayFloat64Nx3x3
+from pyftle.my_types import ArrayN, ArrayNx2x2, ArrayNx3x3
 
 
 @njit
-def compute_cauchy_green_2x2(flow_map_jacobian: ArrayFloat64Nx2x2) -> ArrayFloat64Nx2x2:
+def compute_cauchy_green_2x2(flow_map_jacobian: ArrayNx2x2) -> ArrayNx2x2:
     """Compute the Cauchy-Green deformation tensor for each Jacobian."""
     num_particles = flow_map_jacobian.shape[0]
     cauchy_green_tensor = np.empty((num_particles, 2, 2))
@@ -22,19 +22,21 @@ def compute_cauchy_green_2x2(flow_map_jacobian: ArrayFloat64Nx2x2) -> ArrayFloat
     return cauchy_green_tensor
 
 
-def compute_cauchy_green_3x3(flow_map_jacobian: ArrayFloat64Nx3x3) -> ArrayFloat64Nx3x3:
+def compute_cauchy_green_3x3(flow_map_jacobian: ArrayNx3x3) -> ArrayNx3x3:
     """Compute the Cauchy-Green deformation tensor for each Jacobian."""
 
     return flow_map_jacobian @ np.transpose(flow_map_jacobian, (0, 2, 1))
 
 
-def max_eigenvalue_3x3(cauchy_green_tensor: ArrayFloat64Nx3x3) -> ArrayFloat64N:
+def max_eigenvalue_3x3(cauchy_green_tensor: ArrayNx3x3) -> ArrayN:
+    """Compute the Cauchy-Green deformation tensor for each Jacobian."""
+
     eigenvalues = np.linalg.eigvals(cauchy_green_tensor)
     return np.max(eigenvalues, axis=1)
 
 
 @njit
-def max_eigenvalue_2x2(cauchy_green_tensor: ArrayFloat64Nx2x2) -> ArrayFloat64N:
+def max_eigenvalue_2x2(cauchy_green_tensor: ArrayNx2x2) -> ArrayN:
     """Compute the maximum eigenvalue for each 2x2 Cauchy-Green tensor."""
     num_particles = cauchy_green_tensor.shape[0]
     max_eigvals = np.empty(num_particles)
@@ -57,18 +59,14 @@ def max_eigenvalue_2x2(cauchy_green_tensor: ArrayFloat64Nx2x2) -> ArrayFloat64N:
 
 
 @njit
-def compute_ftle_2x2(
-    flow_map_jacobian: ArrayFloat64Nx2x2, map_period: float
-) -> ArrayFloat64N:
+def compute_ftle_2x2(flow_map_jacobian: ArrayNx2x2, map_period: float) -> ArrayN:
     """Compute FTLE using a Numba-optimized approach."""
     cauchy_green_tensor = compute_cauchy_green_2x2(flow_map_jacobian)
     max_eigvals = max_eigenvalue_2x2(cauchy_green_tensor)
     return (1 / map_period) * np.log(np.sqrt(max_eigvals))
 
 
-def compute_ftle_3x3(
-    flow_map_jacobian: ArrayFloat64Nx3x3, map_period: float
-) -> ArrayFloat64N:
+def compute_ftle_3x3(flow_map_jacobian: ArrayNx3x3, map_period: float) -> ArrayN:
     """Compute FTLE using a Numba-optimized approach."""
     cauchy_green_tensor = compute_cauchy_green_3x3(flow_map_jacobian)
     max_eigvals = max_eigenvalue_3x3(cauchy_green_tensor)

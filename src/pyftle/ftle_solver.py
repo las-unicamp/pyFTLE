@@ -9,7 +9,7 @@ from pyftle.data_source import BatchSource
 from pyftle.file_writers import FTLEWriter
 from pyftle.ftle import compute_ftle_2x2, compute_ftle_3x3
 from pyftle.integrate import Integrator
-from pyftle.my_types import ArrayFloat64N
+from pyftle.my_types import ArrayN
 
 
 class FTLESolver:
@@ -67,7 +67,7 @@ class FTLESolver:
         else:
             return ftle_field
 
-    def _compute_ftle(self) -> ArrayFloat64N:
+    def _compute_ftle(self) -> ArrayN:
         """Computes FTLE and saves the results."""
         num_steps = self.source.num_steps
         timestep = self.source.timestep
