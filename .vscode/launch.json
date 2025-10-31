@@ -27,6 +27,9 @@
                 "--integrator=rk4",
                 "--interpolator=cubic",
                 "--num_processes=6"
+                "--output_format=vtk",
+                // "--flow_grid_shape=128,128,256", //, 256  # comment this line for unstructured data"
+                // "--particles_grid_shape=128,128,256" //, 256  # comment this line for unstructured d
             ],
             "purpose": [
                 "debug-in-terminal"

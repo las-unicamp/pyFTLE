@@ -8,4 +8,5 @@ integrator: rk4
 interpolator: cubic
 num_processes: 8
 output_format: "vtk"
-grid_shape: 100, 100, 100  # comment this line for unstructured data
+flow_grid_shape: 128, 128 , 256  # comment this line for unstructured data
+particles_grid_shape: 128, 128, 256  # comment this line for unstructured data
