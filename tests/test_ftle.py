@@ -10,16 +10,13 @@ from pyftle.ftle import (
     max_eigenvalue_2x2,
     max_eigenvalue_3x3,
 )
-from pyftle.my_types import (
-    ArrayFloat64Nx2x2,
-    ArrayFloat64Nx3x3,
-)
+from pyftle.my_types import ArrayNx2x2, ArrayNx3x3
 
 
 # -------------------------
 # Helpers
 # -------------------------
-def generate_2x2_jacobians() -> ArrayFloat64Nx2x2:
+def generate_2x2_jacobians() -> ArrayNx2x2:
     """Return a small array of 2×2 Jacobians for testing."""
     return np.array(
         [
@@ -30,7 +27,7 @@ def generate_2x2_jacobians() -> ArrayFloat64Nx2x2:
     )
 
 
-def generate_3x3_jacobians() -> ArrayFloat64Nx3x3:
+def generate_3x3_jacobians() -> ArrayNx3x3:
     """Return a small array of 3×3 Jacobians for testing."""
     return np.array(
         [

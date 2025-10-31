@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pyftle.my_types import ArrayFloat64N4x2, ArrayFloat64N6x3
+from pyftle.my_types import Array4Nx2, Array6Nx3
 from pyftle.particles import NeighboringParticles
 
 
@@ -9,17 +9,17 @@ from pyftle.particles import NeighboringParticles
 def sample_particles(request):
     """Creates a NeighboringParticles object for 2D or 3D test cases."""
     if request.param == "2D":
-        positions: ArrayFloat64N4x2 = np.array(
+        positions: Array4Nx2 = np.array(
             [
                 [0.0, 0.0],  # Left neighbor
                 [1.0, 0.0],  # Right neighbor
                 [0.5, 1.0],  # Top neighbor
                 [0.5, 0.0],  # Bottom neighbor
             ],
-            dtype=ArrayFloat64N4x2,
+            dtype=Array4Nx2,
         )
     else:  # 3D
-        positions: ArrayFloat64N6x3 = np.array(
+        positions: Array6Nx3 = np.array(
             [
                 [0.0, 0.0, 0.0],  # Left
                 [1.0, 0.0, 0.0],  # Right
@@ -28,7 +28,7 @@ def sample_particles(request):
                 [0.5, 0.0, 1.0],  # Front
                 [0.5, 0.0, -1.0],  # Back
             ],
-            dtype=ArrayFloat64N6x3,
+            dtype=Array6Nx3,
         )
     return NeighboringParticles(positions=positions)
 

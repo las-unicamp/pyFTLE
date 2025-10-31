@@ -8,61 +8,44 @@ from pyftle.interpolate import (
     NearestNeighborInterpolator,
     create_interpolator,
 )
-from pyftle.my_types import (
-    ArrayFloat64Nx2,
-    ArrayFloat64Nx3,
-)
+from pyftle.my_types import Array2xN, Array3xN
 
 
 # -----------------------
 # Helper: mock data
 # -----------------------
-def generate_mock_data_2d() -> tuple[ArrayFloat64Nx2, ArrayFloat64Nx2]:
+def generate_mock_data_2d() -> tuple[Array2xN, Array2xN]:
     points = np.array(
         [
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [0.0, 1.0],
-            [1.0, 1.0],
+            [0.0, 1.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0, 1.0],
         ],
         dtype=np.float64,
     )
     velocities = np.array(
         [
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [0.0, 1.0],
-            [1.0, 1.0],
+            [0.0, 1.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0, 1.0],
         ],
         dtype=np.float64,
     )
     return points, velocities
 
 
-def generate_mock_data_3d() -> tuple[ArrayFloat64Nx3, ArrayFloat64Nx3]:
+def generate_mock_data_3d() -> tuple[Array3xN, Array3xN]:
     points = np.array(
         [
-            [0.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [1.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0],
-            [1.0, 0.0, 1.0],
-            [0.0, 1.0, 1.0],
-            [1.0, 1.0, 1.0],
+            [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0],
+            [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
         ],
         dtype=np.float64,
     )
     velocities = np.array(
         [
-            [0.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [1.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0],
-            [1.0, 0.0, 1.0],
-            [0.0, 1.0, 1.0],
-            [1.0, 1.0, 1.0],
+            [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0],
+            [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
         ],
         dtype=np.float64,
     )
@@ -85,7 +68,7 @@ def test_interpolators_2d(strategy_class):
     interpolator = strategy_class()
     interpolator.update(velocities, points)
 
-    new_points = np.array([[0.5, 0.5], [0.25, 0.75]], dtype=np.float64)
+    new_points = np.array([[0.5, 0.5], [0.25, 0.75]])
     interpolated_values = interpolator.interpolate(new_points)
 
     assert interpolated_values.shape == (new_points.shape[0], 2)
@@ -107,7 +90,7 @@ def test_interpolators_3d(strategy_class):
     interpolator = strategy_class()
     interpolator.update(velocities, points)
 
-    new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.25, 0.75]], dtype=np.float64)
+    new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.25, 0.75]])
     interpolated_values = interpolator.interpolate(new_points)
 
     assert interpolated_values.shape == (new_points.shape[0], 3)
@@ -121,16 +104,16 @@ def test_grid_interpolator_2d():
     grid_x, grid_y = np.mgrid[0:1:3j, 0:1:3j]
     grid_shape = grid_x.shape  # (3, 3)
 
-    # Flatten grid points to shape (n_points, ndim)
-    points = np.column_stack((grid_x.ravel(), grid_y.ravel()))
+    # Flatten grid points to shape (ndim, n_points)
+    points = np.stack((grid_x.ravel(), grid_y.ravel()))
 
-    # Create velocities array shape (n_points, ndim)
-    velocities = np.column_stack((grid_x.ravel(), grid_y.ravel()))
+    # Create velocities array shape (ndim, n_points)
+    velocities = np.stack((grid_x.ravel(), grid_y.ravel()))
 
     interpolator = GridInterpolator(grid_shape=grid_shape, method="linear")
     interpolator.update(velocities, points)
 
-    new_points = np.array([[0.5, 0.5], [0.25, 0.75]], dtype=np.float64)
+    new_points = np.array([[0.5, 0.5], [0.25, 0.75]])
     interpolated_values = interpolator.interpolate(new_points)
 
     assert interpolated_values.shape == (new_points.shape[0], 2)
@@ -141,13 +124,13 @@ def test_grid_interpolator_3d():
     grid_x, grid_y, grid_z = np.mgrid[0:1:3j, 0:1:3j, 0:1:3j]
     grid_shape = grid_x.shape  # (3, 3, 3)
 
-    points = np.column_stack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel()))
-    velocities = np.column_stack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel()))
+    points = np.stack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel()))
+    velocities = np.stack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel()))
 
     interpolator = GridInterpolator(grid_shape=grid_shape, method="linear")
     interpolator.update(velocities, points)
 
-    new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.25, 0.75]], dtype=np.float64)
+    new_points = np.array([[0.5, 0.5, 0.5], [0.25, 0.25, 0.75]])
     interpolated_values = interpolator.interpolate(new_points)
 
     assert interpolated_values.shape == (new_points.shape[0], 3)
