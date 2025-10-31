@@ -17,15 +17,15 @@ def read_velocity(file_path: str) -> Array2xN | Array3xN:
             "'velocity_y'."
         )
 
-    velocity_x = np.asarray(data["velocity_x"]).flatten()
-    velocity_y = np.asarray(data["velocity_y"]).flatten()
+    velocity_x = np.asarray(data["velocity_x"]).ravel()
+    velocity_y = np.asarray(data["velocity_y"]).ravel()
 
     if "velocity_z" in data:
-        velocity_z = np.asarray(data["velocity_z"]).flatten()
+        velocity_z = np.asarray(data["velocity_z"]).ravel()
 
         return np.stack((velocity_x, velocity_y, velocity_z))
-    else:
-        return np.stack((velocity_x, velocity_y))
+
+    return np.stack((velocity_x, velocity_y))
 
 
 def read_coordinate(file_path: str) -> Array2xN | Array3xN:
@@ -40,14 +40,14 @@ def read_coordinate(file_path: str) -> Array2xN | Array3xN:
             "'coordinate_y'."
         )
 
-    coordinate_x = np.asarray(data["coordinate_x"]).flatten()
-    coordinate_y = np.asarray(data["coordinate_y"]).flatten()
+    coordinate_x = np.asarray(data["coordinate_x"]).ravel()
+    coordinate_y = np.asarray(data["coordinate_y"]).ravel()
 
     if "coordinate_z" in data:
-        coordinate_z = np.asarray(data["coordinate_z"]).flatten()
+        coordinate_z = np.asarray(data["coordinate_z"]).ravel()
         return np.stack((coordinate_x, coordinate_y, coordinate_z))
-    else:
-        return np.stack((coordinate_x, coordinate_y))
+
+    return np.stack((coordinate_x, coordinate_y))
 
 
 def read_seed_particles_coordinates(file_path: str) -> NeighboringParticles:

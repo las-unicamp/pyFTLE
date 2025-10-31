@@ -95,7 +95,7 @@ class MatWriter(FTLEWriter):
         else:
             # Unstructured grid
             data = {
-                "ftle": ftle_field.flatten(),
+                "ftle": ftle_field.ravel(),
                 "x": particles_centroid[:, 0],
                 "y": particles_centroid[:, 1],
             }
@@ -140,7 +140,7 @@ class VTKWriter(FTLEWriter):
                 z = np.zeros_like(x)
 
                 grid = pv.StructuredGrid(x, y, z)
-                grid["ftle"] = ftle_field.flatten(order="F")
+                grid["ftle"] = ftle_field.ravel(order="F")
                 grid.save(vtk_filename + ".vts")
 
             elif len(self.grid_shape) == 3:
@@ -155,7 +155,7 @@ class VTKWriter(FTLEWriter):
 
                 ftle_matrix = ftle_field.reshape((nx, ny, nz))
                 ftle_cartesian = np.transpose(ftle_matrix, axes=(1, 0, 2))
-                grid["ftle"] = ftle_cartesian.flatten(order="F")
+                grid["ftle"] = ftle_cartesian.ravel(order="F")
 
                 grid.save(vtk_filename + ".vts")
             else:
@@ -170,7 +170,7 @@ class VTKWriter(FTLEWriter):
             else:
                 points = particles_centroid
             mesh = pv.PolyData(points)
-            mesh["ftle"] = ftle_field.flatten()
+            mesh["ftle"] = ftle_field.ravel()
             mesh.save(vtk_filename + ".vtp")
 
 
