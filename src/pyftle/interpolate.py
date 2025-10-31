@@ -240,71 +240,65 @@ class HighPerfInterpolator(Interpolator):
         grid_shape = cast(tuple[int, ...], self.grid_shape)
         dim = len(grid_shape)
 
-        coordinates = self.points.reshape((*grid_shape, dim))
-        velocities = self.velocities.reshape((*grid_shape, dim))
+        coordinates = self.points.reshape((dim, *grid_shape))
 
         # ---------------------------------------------------------------
         if dim == 2:
+            velocities = self.velocities.reshape((dim, *grid_shape), order="F")
+
             grid_x = np.linspace(
-                np.min(coordinates[..., 0]),
-                np.max(coordinates[..., 0]),
+                np.min(coordinates[0]),
+                np.max(coordinates[0]),
                 grid_shape[0],
             )
             grid_y = np.linspace(
-                np.min(coordinates[..., 1]),
-                np.max(coordinates[..., 1]),
+                np.min(coordinates[1]),
+                np.max(coordinates[1]),
                 grid_shape[1],
             )
 
-            grid_x = np.ascontiguousarray(grid_x)
-            grid_y = np.ascontiguousarray(grid_y)
-
             # Initialize 2D interpolators
-            self.interpolator_x = Interp2D(
-                np.ascontiguousarray(velocities[..., 0]), grid_x, grid_y
-            )
-            self.interpolator_y = Interp2D(
-                np.ascontiguousarray(velocities[..., 1]), grid_x, grid_y
-            )
+            self.interpolator_x = Interp2D(velocities[0], grid_x, grid_y)
+            self.interpolator_y = Interp2D(velocities[1], grid_x, grid_y)
             self.interpolator_z = None  # not used in 2D
 
         # ---------------------------------------------------------------
         elif dim == 3:
+            velocities = np.transpose(
+                self.velocities.reshape((dim, *grid_shape)), axes=(0, 2, 1, 3)
+            )
+
             grid_x = np.linspace(
-                np.min(coordinates[..., 0]),
-                np.max(coordinates[..., 0]),
+                np.min(coordinates[0]),
+                np.max(coordinates[0]),
                 grid_shape[0],
             )
             grid_y = np.linspace(
-                np.min(coordinates[..., 1]),
-                np.max(coordinates[..., 1]),
+                np.min(coordinates[1]),
+                np.max(coordinates[1]),
                 grid_shape[1],
             )
             grid_z = np.linspace(
-                np.min(coordinates[..., 2]),
-                np.max(coordinates[..., 2]),
+                np.min(coordinates[2]),
+                np.max(coordinates[2]),
                 grid_shape[2],
             )
 
-            grid_x = np.ascontiguousarray(grid_x)
-            grid_y = np.ascontiguousarray(grid_y)
-            grid_z = np.ascontiguousarray(grid_z)
-
             # Initialize 3D interpolators
             self.interpolator_x = Interp3D(
-                np.ascontiguousarray(velocities[..., 0]),
+                velocities[0],
                 grid_x,
                 grid_y,
                 grid_z,
             )
             self.interpolator_y = Interp3D(
-                np.ascontiguousarray(velocities[..., 1]),
+                velocities[1],
                 grid_x,
                 grid_y,
                 grid_z,
             )
             self.interpolator_z = Interp3D(
-                np.ascontiguousarray(velocities[..., 2]),
+                velocities[2],
                 grid_x,
                 grid_y,
                 grid_z,
@@ -312,12 +306,6 @@ class HighPerfInterpolator(Interpolator):
 
         else:
             raise ValueError(f"Unsupported grid dimensionality: {dim}")
-
-        # print("grid_shape:", grid_shape)
-        # print("coordinates.shape:", coordinates.shape)  # should be (*grid_shape, dim)
-        # print("velocities.shape:", velocities.shape)  # should be (*grid_shape, dim)
-        # print("interpolator_x.v.shape:", self.interpolator_x.v.shape)
-        # print("interpolator_x.v.flags:", self.interpolator_x.v.flags)
 
     # ------------------------------------------------------------------
     def _ensure_buffers(self, n: int, dim: int) -> None:
