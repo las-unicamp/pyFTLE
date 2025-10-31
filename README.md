@@ -9,25 +9,41 @@
 
 ## **OVERVIEW**
 
+pyFTLE is a modular, high-performance package for computing FTLE fields. It tracks particle positions over time by integrating trajectories in a velocity field. Then, the flow map Jacobian is computed, and the largest eigenvalue of the Cauchy-Green deformation tensor determines the FTLE field.
+
 <div align="center">
-  <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/integration.gif" width="45%" />
-  <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/ftle.gif" width="45%" />
-</div>
-<div align="center">
-  <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/ftle_3d_abc_flow.gif" width="45%" />
+  <table border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td style="text-align: center; width: 45%;">
+        <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/ftle.gif" alt="FTLE field over airfoil" width="100%">
+      </td>
+      <td style="text-align: center; width: 45%;">
+        <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/ftle_3d_abc_flow.gif" alt="3D ABC flow FTLE field" width="100%">
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align: center; width: 45%;">
+        <em>Figure 1: FTLE field over an airfoil.</em>
+      </td>
+      <td style="text-align: center; width: 45%;">
+        <em>Figure 2: FTLE field of a 3D ABC flow.</em>
+      </td>
+    </tr>
+  </table>
 </div>
 
-
-pyFTLE provides a robust and modular implementation for computing FTLE fields. It tracks particle positions over time by interpolating a given velocity field and integrating their motion. After a specified integration period, the flow map Jacobian is computed, and the largest eigenvalue of the Cauchy-Green deformation tensor determines the FTLE field.
 
 ### **Key Features**
-- Customizable particle integration strategies.
-- Interpolation of velocity fields to particle positions.
+- Supports both 2D and 3D velocity fields (structured or unstructured).
+- Parallel computation of FTLE fields.
+- Flexible particle integration strategies.
+- Multiple velocity interpolation methods for particle positions.
+- SIMD-optimized C++ backend for efficient 2D and 3D interpolations on regular grids.
 - Extensible design supporting multiple file formats.
-- Modular and well-structured codebase for easy modifications.
+- Modular, well-structured codebase for easy customization and extension.
 
 > [!NOTE]
-> The current implementation supports MATLAB file formats for input data. However, additional formats can be integrated with minimal effort due to the modular design. The code accepts VTK and MATLAB formats as output.
+> The current implementation supports MATLAB files for input and MATLAB or VTK files for output. Thanks to its modular architecture, additional file formats can be integrated with minimal effort.
 
 ---
 
@@ -48,13 +64,15 @@ pyFTLE provides a robust and modular implementation for computing FTLE fields. I
    ```
 2. Install dependencies using UV:
    ```bash
-   uv sync
+   uv sync --all-extras
    ```
-3. Install src/ directory as an "editable" package within .venv to overcome import issues:
+3. Install `src/` directory as an editable package:
    ```bash
    uv pip install -e '.[dev,test]' --verbose
    ```
-   This will make src directory a first-class citizen in the Python environment, which uv respects.
+   - This installs `src/` as an editable package, allowing you to import modules directly and modify the code during development.
+   - The command also automatically installs the SIMD-optimized C++/Eigen backend.
+   - Installing in editable mode helps avoid common import issues during development.
 
 ---
 
@@ -63,7 +81,7 @@ pyFTLE provides a robust and modular implementation for computing FTLE fields. I
 The code features both a clean, CLI-oriented architecture (utilizing configuration files and
 file-based I/O) and a lightweight, notebook-friendly API. The latter allows you to run small-scale
 examples entirely in memory, eliminating the need to handle intermediate files, which makes it
-perfect for demonstrating in Jupyter notebooks. Several such notebooks, located in the examples
+perfect for demonstrating in Jupyter notebooks. Several such notebooks, located in the `examples/`
 folder, combine analytical velocity fields with visual explanations to illustrate the FTLE
 solver’s execution.
 
@@ -85,19 +103,38 @@ from the file system (HD/SSD). In this case, the [file-based CLI](#anchor-point-
 
 
 <div align="center">
-  <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/particles.png" alt="Particles Group Image" style="width: 50%; margin-right: 20px;">
+  <table border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td style="text-align: center; width: 45%;">
+        <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/particles.png" alt="Particles Group Image" width="100%">
+      </td>
+      <td style="text-align: center; width: 45%;">
+        <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/integration.gif" alt="Particle tracking over airfoil" width="100%">
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align: center; width: 45%;">
+        <em>Figure 3: A single group of neighboring particles.</em>
+      </td>
+      <td style="text-align: center; width: 45%;">
+        <em>Figure 4: Particles centroids being tracked.</em>
+      </td>
+    </tr>
+  </table>
 </div>
 
 
+
 Instead of passing individual MATLAB files directly to the solver, the interface expects a set of
-plain text (.txt) files—one for each data type: velocity, coordinate, and particle data. Each of
-these .txt files should contain a list of file paths to the corresponding .mat files, with one path
-per line. For example, the velocity .txt file will list all the velocity MATLAB files (one per line),
-and similarly for the coordinate and particle .txt files. This approach allows the solver to process
+plain text (`.txt`) files—one for each data type: velocity, coordinate, and particle data. Each of
+these `.txt` files should contain a list of file paths to the corresponding `.mat` files, with one path
+per line. For example, the velocity `.txt` file will list all the velocity MATLAB files (one per line),
+and similarly for the coordinate and particle `.txt` files. This approach allows the solver to process
 sequences of time-resolved data more easily and keeps the input interface clean and scalable.
 
 > [!TIP]
-> The `create_list_of_input_files.py` facilitates the creation of these .txt files. 
+> - The `create_list_of_input_files.py` facilitates the creation of these `.txt` files.
+> - An complete example of file-based I/O workflow is provided in the Jupyter Notebooks in the `example/` folder.
 
 
 <a name="anchor-point-running-via-CLI"></a>
@@ -105,7 +142,7 @@ sequences of time-resolved data more easily and keeps the input interface clean 
 ### **Running the code via CLI**
 
 The script requires several parameters, which can be passed through the command line or a configuration
-file (`config.yaml`) located in the root directory. Among these parameters are .txt files that
+file (`config.yaml`) located in the root directory. Among these parameters are `.txt` files that
 indicates the location of the input files in Matlab format (the velocity field, coordinates and
 particles).
 
@@ -130,11 +167,17 @@ PYTHONPATH=${PWD} uv run python app.py \
     --interpolator "cubic" \
     --num_processes 4 \
     --output_format "vtk" \
-    --grid_shape 100,100,100  # comment this line for unstructured data
+    --flow_grid_shape 100,100,100 \  # comment this line for unstructured data
+    --particles_grid_shape 100,100,100  # comment this line for unstructured data
 ```
 
 For VSCode users, the script execution can be streamlined via `.vscode/launch.json`.
 
+
+<details>
+<summary><b>⚙️ Full List of CLI Parameters (click to expand)</b></summary>
+
+<br>
 
 ### **Required Parameters**
 
@@ -146,17 +189,35 @@ For VSCode users, the script execution can be streamlined via `.vscode/launch.js
 | `list_particle_files`   | `str`   | Path to a text file listing particle data files.                                              |
 | `snapshot_timestep`     | `float` | Timestep between snapshots (positive for forward-time FTLE, negative for backward-time FTLE). |
 | `flow_map_period`       | `float` | Integration period for computing the flow map.                                                |
-| `integrator`            | `str`   | Time-stepping method (`rk4`, `euler`, `ab2`).                                                 |
+| `integrator`            | `str`   | Time-stepping method (`euler`, `ab2`, `rk4`).                                                 |
 | `interpolator`          | `str`   | Interpolation method (`cubic`, `linear`, `nearest`, `grid`).                                  |
-| `num_processes`         | `int`   | Number of workers in the multiprocessing pool. Each worker computes the FTLE of a snapshot.    |
+| `num_processes`         | `int`   | Number of workers in the multiprocessing pool. Each worker computes the FTLE of a snapshot.   |
 | `output_format`         | `str`   | Output format (`mat`, `vtk`).                                                                 |
 
 ### **Optional Parameters**
 
-| Parameter               | Type    | Description                                                                                   |
-| ----------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `grid_shape`            | `int`   | Grid shape for structured points. It must be a comma-separated tuple of integers.             |
+| Parameter               | Type        | Description                                                                                     |
+| ----------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
+| `flow_grid_shape`       | `list[int]` | Grid shape for structured velocity measurements. It must be a comma-separated list of integers. |
+| `particles_grid_shape`  | `list[int]` | Grid shape for structured particle points. It must be a comma-separated list of integers.       |
 
+
+Interpolation behavior depends on whether your velocity data is structured or unstructured:
+
+- If `flow_grid_shape` is **not provided**, the velocity field is treated as **unstructured**.
+  In this case, you can use the `cubic`, `linear`, or `nearest` interpolators, which rely on Delaunay triangulations.
+  This approach offers flexibility but comes with higher computational cost.
+
+- If `flow_grid_shape` **is provided**, the velocity field is considered **structured**.
+  You can still choose `cubic`, `linear`, or `nearest`, but interpolation becomes significantly faster because it exploits the rectilinear grid structure of the data.
+
+- For **maximum performance** on regular structured grids, `pyFTLE` includes custom **bi- and trilinear interpolators** implemented in **C++/Eigen**, achieving up to **10× speedup** compared to SciPy’s implementation.
+  To use this optimized backend, specify `flow_grid_shape` and set `interpolator` to `grid`.
+
+The parameter `particles_grid_shape` is optional and mainly affects how results are written to disk.
+If the particle centroids form a regular grid, defining this parameter enables structured output—making post-processing and visualization more straightforward.
+
+</details>
 
 ---
 
@@ -165,10 +226,10 @@ For VSCode users, the script execution can be streamlined via `.vscode/launch.js
 
 A list of scientific works using pyFTLE includes:
 
-- de Souza, Miotto, Wolf. _Active flow control of vertical-axis wind turbines: Insights from large-eddy simulation and finite-time resolvent analysis_. Journal of Fluids and Structures, 2025.
-- de Souza, Wolf, Safari, Yeh. _Control of Deep Dynamic Stall by Duty-Cycle Actuation Informed by Stability Analysis_. AIAA Journal, 2025.
-- Lui, Wolf. _Interplay between streaks and vortices in shock-boundary layer interactions with conditional bubble events over a turbine airfoil_. Physical Review Fluids, 2025.
-- Lui, Wolf, Ricciardi, Gaitonde. _Analysis of Streamwise Vortices in a Supersonic Turbine Cascade_. AIAA Aviation Forum and Ascend, 2024.
+1. [de Souza, Miotto, Wolf. _Active flow control of vertical-axis wind turbines: Insights from large-eddy simulation and finite-time resolvent analysis_. Journal of Fluids and Structures, 2025.](https://doi.org/10.1016/j.jfluidstructs.2025.104410)
+2. [de Souza, Wolf, Safari, Yeh. _Control of Deep Dynamic Stall by Duty-Cycle Actuation Informed by Stability Analysis_. AIAA Journal, 2025.](https://doi.org/10.2514/1.J064980)
+3. Lui, Wolf. _Interplay between streaks and vortices in shock-boundary layer interactions with conditional bubble events over a turbine airfoil_. Physical Review Fluids, 2025.
+4. [Lui, Wolf, Ricciardi, Gaitonde. _Analysis of Streamwise Vortices in a Supersonic Turbine Cascade_. AIAA Aviation Forum and Ascend, 2024.](https://doi.org/10.2514/6.2024-3800)
 
 
 ---
@@ -181,12 +242,18 @@ This project is licensed under the **MIT License**.
 
 ## **CONTRIBUTING**
 
-When contributing to this repository, please make sure to keep the code well tested.
+When contributing to this repository, please make sure to follow the guidelines from the [CONTRIBUTING file](CONTRIBUTING.md).
 
-To run the entire test suit, we recommend the following approach:
+We use `pytest` for unit tests. To run the entire test suit, we recommend the following command in the base directory of the repository:
 ```bash
 PYTHONPATH=${PWD} uv run python -m pytest
 ```
+
+---
+
+## **FUNDING**
+
+The authors acknowledge Fundação de Amparo à Pesquisa do Estado de São Paulo, FAPESP, for supporting the present work under research grants No. 2013/08293-7, 2019/17874-0, 2021/06448-0, 2022/09196-4, 2022/08567-9, and 2024/20547-9. Conselho Nacional de Desenvolvimento Científico e Tecnológico (CNPq) is also acknowledged for supporting this research under grant No. 304320/2024-2.
 
 ---
 
