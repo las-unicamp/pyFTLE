@@ -3,6 +3,8 @@
 [![Python Code Quality](https://github.com/las-unicamp/pyFTLE/actions/workflows/tests.yaml/badge.svg)](https://github.com/las-unicamp/pyFTLE/actions/workflows/tests.yaml)
 [![Python Code Quality](https://github.com/las-unicamp/pyFTLE/actions/workflows/code-style.yaml/badge.svg)](https://github.com/las-unicamp/pyFTLE/actions/workflows/code-style.yaml)
 
+[![DOI](https://zenodo.org/badge/931585059.svg)](https://doi.org/10.5281/zenodo.17497582)
+
 `pyFTLE` computes hyperbolic Lagrangian Coherent Structures (LCS) from velocity flow field data using Finite-Time Lyapunov Exponents (FTLE).
 
 ---
