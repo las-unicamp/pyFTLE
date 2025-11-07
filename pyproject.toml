@@ -1,9 +1,14 @@
+# ==============================================
+#        pyFTLE — Finite-Time Lyapunov Exponents
+# ==============================================
+
 [project]
 name = "pyFTLE"
-version = "0.2.0"
+version = "1.0.0"
 description = "Python package to compute Finite Time Lyapunov Exponents (FTLE)."
 readme = "README.md"
 requires-python = ">=3.10"
+
 dependencies = [
     "colorama>=0.4.6",
     "configargparse>=1.7",
@@ -18,18 +23,19 @@ dependencies = [
     "tqdm>=4.67.1",
 ]
 
+# Optional extras for development and testing
 [project.optional-dependencies]
 dev = [
     "ruff>=0.9.9",
-    "scipy-stubs>=1.15.2.0",
-    "pandas-stubs>=2.2.3.241126",
-    "types-tqdm>=4.67.0.20241221",
     "pyright>=1.1.395",
     "typos>=1.29.10",
     "pybind11",
     "cmake",
     "ninja",
     "pybind11-stubgen>=2.5.5",
+    "scipy-stubs>=1.15.2.0",
+    "pandas-stubs>=2.2.3.241126",
+    "types-tqdm>=4.67.0.20241221",
 ]
 test = [
     "pytest>=8.3.4",
@@ -37,23 +43,116 @@ test = [
     "pytest-cov>=6.0.0",
 ]
 
+# CLI entrypoints
+[project.scripts]
+generate-stubs = "scripts.generate_stubs:main"
+
+# Dependency groups (non-standard, used by UV)
+[dependency-groups]
+dev = ["jupyter>=1.1.1"]
+
+# ==============================================
+#                   BUILD
+# ==============================================
+
 [build-system]
-requires = ["scikit-build-core", "pybind11"]
+requires = ["scikit-build-core", "pybind11", "cmake"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
 minimum-version = "0.9"
 build-dir = "build"
 wheel.packages = ["src/pyftle"]
-sdist.include = ["src/pyftle/grid_interp/GridInterp.cpp", "CMakeLists.txt"]
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
-
-[dependency-groups]
-dev = [
-    "jupyter>=1.1.1",
+sdist.include = [
+    "src/pyftle/grid_interp/GridInterp.cpp",
+    "src/pyftle/ginterp.pyi",
+    "src/pyftle/__init__.py",
+    "CMakeLists.txt",
 ]
 
-[project.scripts]
-generate-stubs = "scripts.generate_stubs:main"
+# ==============================================
+#                   TESTING
+# ==============================================
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = [
+    "ignore::DeprecationWarning:.*nptyping.*",
+    "ignore::DeprecationWarning:nptyping.*:",
+    "ignore::UserWarning:.*pyvista.*",
+]
+
+# ==============================================
+#                   TYPE CHECKING
+# ==============================================
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/__pycache__", "src/typestubs"]
+ignore = ["src/oldstuff"]
+stubPath = "src/stubs"
+defineConstant = { DEBUG = true }
+reportMissingImports = "error"
+reportMissingTypeStubs = false
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+executionEnvironments = [
+    { root = "./", extraPaths = ["src"] },
+]
+
+# ==============================================
+#                   LINTING / FORMATTING
+# ==============================================
+
+[tool.ruff]
+exclude = [
+    ".bzr", ".direnv", ".eggs", ".git", ".git-rewrite", ".hg", "*.ipynb",
+    ".ipynb_checkpoints", ".mypy_cache", ".nox", ".pants.d", ".pyenv",
+    ".pytest_cache", ".pytype", ".ruff_cache", ".svn", ".tox", ".venv",
+    ".vscode", "__pypackages__", "_build", "buck-out", "build", "dist",
+    "node_modules", "site-packages", "venv",
+]
+target-version = "py310"
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "Q", "I", "N", "ARG"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.pylint]
+max-args = 5
+max-bool-expr = 10
+max-branches = 100
+max-locals = 15
+max-nested-blocks = 5
+max-positional-args = 10
+max-public-methods = 30
+max-returns = 10
+max-statements = 1000
+
+# ==============================================
+#                   SPELL CHECKER
+# ==============================================
+
+[tool.typos]
+[tool.typos.files]
+extend-exclude = [".git/", ".tox/", ".venv/", "docs/", "joss-paper/"]
+
+[tool.typos.default.extend-identifiers]
+LinearNDInterpolator = "LinearNDInterpolator"
+NearestNDInterpolator = "NearestNDInterpolator"
