@@ -12,7 +12,7 @@ from scipy.interpolate import (
 )
 from scipy.spatial import Delaunay
 
-from pyftle.grid_interp.ginterp import Interp2D, Interp3D
+from pyftle.grid_interp.grid_interp import Interp2D, Interp3D
 from pyftle.my_types import Array2xN, Array3xN
 
 

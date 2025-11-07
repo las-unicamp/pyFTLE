@@ -1,6 +1,5 @@
 import numpy as np
 
-# Import the new in-place function
 from pyftle.ginterp import interp2d_vec_inplace, interp3d_vec_inplace
 
 
