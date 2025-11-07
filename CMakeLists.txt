@@ -42,12 +42,5 @@ add_custom_target(
     COMMENT "Copying compile_commands.json to project root for clangd"
 )
 
-# --- Copy built .so to src/pyftle so Python can import ---
-add_custom_command(TARGET ginterp POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:ginterp>
-        ${CMAKE_SOURCE_DIR}/src/pyftle/
-)
-
-# --- Install target (editable install via pip will use this) ---
-install(TARGETS ginterp LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME})
+# --- Install target ---
+install(TARGETS ginterp DESTINATION pyftle)
