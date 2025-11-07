@@ -5,7 +5,7 @@ from typing import List
 from colorama import Fore, Style
 
 from pyftle.data_source import BatchSource, FileBatchSource
-from pyftle.decorators import timeit
+from pyftle.decorators import time_it
 from pyftle.file_utils import get_files_list
 from pyftle.file_writers import create_writer
 from pyftle.ftle_solver import FTLESolver
@@ -209,14 +209,14 @@ class MultipleFTLEProcessManager:
 # ─────────────────────────────────────────────────────────────
 
 
-@timeit
+@time_it
 def main():
     """
     Entry point for running the multiple FTLE process manager.
 
     Initializes the manager, creates the necessary components, and executes
     all FTLE computations in parallel. The total runtime is measured using
-    the `@timeit` decorator.
+    the `@time_it` decorator.
 
     Raises
     ------

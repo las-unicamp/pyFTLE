@@ -58,7 +58,7 @@ def dhms_from_seconds(seconds: int) -> tuple[int, int, int, int]:
     return days, hours, minutes, seconds
 
 
-def timeit(func: F) -> F:
+def time_it(func: F) -> F:
     """
     Decorator that measures and prints the execution time of a function.
 
@@ -76,7 +76,7 @@ def timeit(func: F) -> F:
 
     Examples
     --------
-    >>> @timeit
+    >>> @time_it
     ... def slow_function():
     ...     import time; time.sleep(2)
     ...
