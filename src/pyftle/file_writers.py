@@ -10,6 +10,25 @@ from pyftle.my_types import ArrayN, ArrayNx2, ArrayNx3
 
 
 class FTLEWriter(ABC):
+    """
+    Abstract base class for writing Finite-Time Lyapunov Exponent (FTLE)
+    fields to different file formats.
+
+    This class defines a unified interface for exporting computed FTLE data
+    along with particle centroid coordinates, either as structured or
+    unstructured datasets.
+
+    Parameters
+    ----------
+    directory_path : str or os.PathLike
+        Directory where output files will be saved. The folder will be created
+        automatically if it does not exist.
+    grid_shape : tuple of int, optional
+        Shape of the underlying grid (e.g., ``(nx, ny)`` or ``(nx, ny, nz)``).
+        If omitted, the data are assumed to represent an unstructured point
+        cloud.
+    """
+
     def __init__(
         self,
         directory_path: Union[str, os.PathLike],
@@ -34,15 +53,35 @@ class FTLEWriter(ABC):
         """
         Write the FTLE field to a file.
 
-        Args:
-            filename (str): Full name/path to the file.
-            ftle_field: Array of the FTLE field to be saved.
-            particles_centroid: Centroid coordinates of the particles.
+        Parameters
+        ----------
+        filename : str
+            File name (without extension) or full file path for the output.
+        ftle_field : ArrayN
+            Array containing FTLE scalar values for all particle centroids.
+        particles_centroid : ArrayNx2 or ArrayNx3
+            Coordinates of particle centroids in 2D or 3D space.
         """
         ...
 
 
 class MatWriter(FTLEWriter):
+    """
+    Writer class to export FTLE fields to MATLAB ``.mat`` files.
+
+    The writer supports both structured and unstructured datasets. Structured
+    grids are reshaped according to the specified ``grid_shape`` and saved as
+    multidimensional arrays. Unstructured data are saved as flattened arrays.
+
+    Parameters
+    ----------
+    directory_path : str or os.PathLike
+        Directory where the ``.mat`` files will be stored.
+    grid_shape : tuple of int, optional
+        Shape of the computational grid (``(nx, ny)`` or ``(nx, ny, nz)``).
+        If not provided, data are assumed to be unstructured.
+    """
+
     def __init__(
         self,
         directory_path: Union[str, os.PathLike],
@@ -56,6 +95,25 @@ class MatWriter(FTLEWriter):
         ftle_field: ArrayN,
         particles_centroid: ArrayNx2 | ArrayNx3,
     ) -> None:
+        """
+        Save the FTLE field and particle centroid coordinates in a MATLAB
+        ``.mat`` file.
+
+        Parameters
+        ----------
+        filename : str
+            Base name (without extension) for the output file.
+        ftle_field : ArrayN
+            Flattened FTLE values corresponding to each particle centroid.
+        particles_centroid : ArrayNx2 or ArrayNx3
+            Array of centroid coordinates in 2D or 3D space.
+
+        Raises
+        ------
+        ValueError
+            If ``grid_shape`` is provided but its length is not 2 or 3.
+        """
+
         # Determine the dimensionality (2D or 3D)
         if self.dim is None:
             self.dim = particles_centroid.shape[1]
@@ -107,6 +165,22 @@ class MatWriter(FTLEWriter):
 
 
 class VTKWriter(FTLEWriter):
+    """
+    Writer class to export FTLE fields to VTK files for visualization with
+    ParaView or other visualization tools.
+
+    Structured grids are written as ``.vts`` files (VTK StructuredGrid),
+    whereas unstructured data are written as ``.vtp`` files (VTK PolyData).
+
+    Parameters
+    ----------
+    directory_path : str or os.PathLike
+        Directory where the VTK files will be saved.
+    grid_shape : tuple of int, optional
+        Shape of the computational grid (``(nx, ny)`` or ``(nx, ny, nz)``).
+        If omitted, data are treated as an unstructured cloud of points.
+    """
+
     def __init__(
         self,
         directory_path: Union[str, os.PathLike],
@@ -120,6 +194,24 @@ class VTKWriter(FTLEWriter):
         ftle_field: ArrayN,
         particles_centroid: ArrayNx2 | ArrayNx3,
     ) -> None:
+        """
+        Save the FTLE field and particle centroid coordinates as a VTK file.
+
+        Parameters
+        ----------
+        filename : str
+            Base name (without extension) for the output file.
+        ftle_field : ArrayN
+            Flattened FTLE values corresponding to each particle centroid.
+        particles_centroid : ArrayNx2 or ArrayNx3
+            Array of centroid coordinates in 2D or 3D space.
+
+        Raises
+        ------
+        ValueError
+            If ``grid_shape`` is provided but its length is not 2 or 3.
+        """
+
         # Determine the dimensionality (2D or 3D)
         if self.dim is None:
             self.dim = particles_centroid.shape[1]
@@ -180,15 +272,27 @@ def create_writer(
     grid_shape: Optional[tuple[int, ...]] = None,
 ) -> FTLEWriter:
     """
-    Creates an FTLE writer based on the specified output format.
+    Factory function to create an FTLE writer for the desired output format.
 
-    Args:
-        output_format (str): The output format, either "mat" or "vtk".
-        directory_path (str): Directory path to store output files.
-        grid_shape (tuple): Shape of the grid-based data (optional, default is None).
+    Parameters
+    ----------
+    output_format : str
+        Output format for the FTLE data. Must be either ``"mat"`` or ``"vtk"``.
+    directory_path : str
+        Directory path where the output files will be stored.
+    grid_shape : tuple of int, optional
+        Shape of the structured grid (``(nx, ny)`` or ``(nx, ny, nz)``).
+        If omitted, the writer assumes an unstructured dataset.
 
-    Returns:
-        FTLEWriter: The corresponding writer object (MatWriter or VTKWriter).
+    Returns
+    -------
+    FTLEWriter
+        An instance of either :class:`MatWriter` or :class:`VTKWriter`.
+
+    Raises
+    ------
+    ValueError
+        If ``output_format`` is not recognized.
     """
     if output_format == "mat":
         return MatWriter(directory_path, grid_shape)
