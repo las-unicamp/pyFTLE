@@ -46,6 +46,7 @@ test = [
 # CLI entrypoints
 [project.scripts]
 generate-stubs = "scripts.generate_stubs:main"
+pyftle = "pyftle.__main__:main"
 
 # Dependency groups (non-standard, used by UV)
 [dependency-groups]

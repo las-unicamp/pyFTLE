@@ -64,17 +64,23 @@ pyFTLE is a modular, high-performance package for computing FTLE fields. It trac
    git clone https://github.com/las-unicamp/pyFTLE.git
    cd pyFTLE
    ```
-2. Install dependencies using UV:
+2. Install the package (this automatically installs the SIMD-optimized C++/Eigen backend):
    ```bash
-   uv sync --all-extras
+   uv tool install .
    ```
-3. Install `src/` directory as an editable package:
-   ```bash
-   uv pip install -e '.[dev,test]' --verbose
-   ```
-   - This installs `src/` as an editable package, allowing you to import modules directly and modify the code during development.
-   - The command also automatically installs the SIMD-optimized C++/Eigen backend.
-   - Installing in editable mode helps avoid common import issues during development.
+
+After installation, `pyftle` is available globally.
+This means you can import it in Python scripts or notebooks using:
+```python
+import pyftle
+```
+and also run the CLI tool directly from the terminal with:
+```
+pyftle -c config.yaml
+```
+
+
+To uninstall, just run `uv tool uninstall pyftle`
 
 ---
 
@@ -152,13 +158,13 @@ particles).
 > Once the parameters are properly set, the solver can be executed from the root directory with the following command:
 >
 > ```bash
-> PYTHONPATH=${PWD} uv run python src/app.py -c config.yaml
+> pyftle -c config.yaml
 > ```
 
 Alternatively, you can run the script from the CLI as:
 
 ```bash
-PYTHONPATH=${PWD} uv run python app.py \
+pyftle \
     --experiment_name "my_experiment" \
     --list_velocity_files "velocity_files.txt" \
     --list_coordinate_files "coordinate_files.txt" \
@@ -245,6 +251,21 @@ This project is licensed under the **MIT License**.
 ## **CONTRIBUTING**
 
 When contributing to this repository, please make sure to follow the guidelines from the [CONTRIBUTING file](CONTRIBUTING.md).
+
+To make sure the Language Server Protocol (LSP) is going to work as expected, one can install the package as follows:
+
+1. Install dependencies using UV:
+   ```bash
+   uv sync --all-extras
+   ```
+2. Install `src/` directory as an editable package:
+   ```bash
+   uv pip install -e '.[dev,test]' --verbose
+   ```
+   - This installs `src/` as an editable package, allowing you to import modules directly and modify the code during development.
+   - The command also automatically installs the SIMD-optimized C++/Eigen backend.
+   - Installing in editable mode helps avoid common import issues during development.
+
 
 We use `pytest` for unit tests. To run the entire test suit, we recommend the following command in the base directory of the repository:
 ```bash
