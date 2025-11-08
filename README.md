@@ -44,9 +44,6 @@ pyFTLE is a modular, high-performance package for computing FTLE fields. It trac
 - Extensible design supporting multiple file formats.
 - Modular, well-structured codebase for easy customization and extension.
 
-> [!NOTE]
-> The current implementation supports MATLAB files for input and MATLAB or VTK files for output. Thanks to its modular architecture, additional file formats can be integrated with minimal effort.
-
 ---
 
 ## **INSTALLATION**
@@ -97,9 +94,13 @@ solver’s execution.
 > For production runs, it is often more practical to read velocity and coordinate data directly
 from the file system (HD/SSD). In this case, the [file-based CLI](#anchor-point-running-via-CLI) offers greater convenience and flexibility.
 
+> [!NOTE]
+> At present, the solver accepts MATLAB (.mat) files as input and exports results in MATLAB (.mat) or VTK (.vts, .vtp) formats.
+> File I/O is implemented using SciPy, so MATLAB itself is not required.
+> The modular I/O subsystem allows developers to integrate additional file formats with minimal changes.
 
 > [!IMPORTANT]
-> As previously mentioned, the current implementation only supports MATLAB file formats for input data. These files consist of three types: velocity, coordinate, and particle files.
+> Input data is provided in MATLAB file format, grouped into three types: velocity, coordinate, and particle files.
 >
 > - **Velocity files** contain the velocity field data, where each scalar component (e.g., velocity in the x, y, and z directions) is provided in separate columns. Each column header must be properly labeled (`velocity_x`, `velocity_y`, and `velocity_z` for 3D cases), with the corresponding scalar velocity values at each point in the grid.
 >
@@ -182,10 +183,20 @@ pyftle \
 For VSCode users, the script execution can be streamlined via `.vscode/launch.json`.
 
 
+<br>
+
+To see the complete list of command-line options and their descriptions, simply run:
+```bash
+pyftle --help
+# or equivalently
+pyftle -h
+```
+This will display all available parameters, their default values, and usage examples directly in the terminal.
+
+
 <details>
 <summary><b>⚙️ Full List of CLI Parameters (click to expand)</b></summary>
 
-<br>
 
 ### **Required Parameters**
 
@@ -226,6 +237,26 @@ The parameter `particles_grid_shape` is optional and mainly affects how results 
 If the particle centroids form a regular grid, defining this parameter enables structured output—making post-processing and visualization more straightforward.
 
 </details>
+
+
+### **FTLE Computation Details**
+
+The parameters `snapshot_timestep` and `flow_map_period` together define the temporal window used to compute each FTLE field.
+The number of FTLE fields that will be produced is determined by the number of available velocity snapshots and the integration period of the flow map:
+
+`N_FTLE = N_snapshots - (flow_map_period / snapshot_timestep)`
+
+For example, suppose:
+
+* `list_velocity_files` lists **100** velocity files,
+* `snapshot_timestep = 0.01`, and
+* `flow_map_period = 0.1`.
+
+In this case, each FTLE field requires **10** consecutive velocity snapshots to integrate the flow map, so only
+**90 FTLE fields** will be computed (one for each valid starting snapshot).
+
+This ensures that the temporal integration for each FTLE remains consistent with the specified flow map period.
+
 
 ---
 
