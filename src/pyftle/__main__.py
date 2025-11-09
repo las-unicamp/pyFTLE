@@ -9,7 +9,7 @@ from pyftle.decorators import time_it
 from pyftle.file_utils import get_files_list
 from pyftle.file_writers import create_writer
 from pyftle.ftle_solver import FTLESolver
-from pyftle.hyperparameters import args
+from pyftle.hyperparameters import parse_args
 from pyftle.integrate import create_integrator
 from pyftle.interpolate import create_interpolator
 from pyftle.parallel import ParallelExecutor
@@ -66,10 +66,13 @@ class MultipleFTLEProcessManager:
         and determines whether computation will run forward or backward
         in time based on the sign of `args.snapshot_timestep`.
         """
+        args = parse_args()
+
         self.snapshot_files: List[str] = get_files_list(args.list_velocity_files)
         self.coordinate_files: List[str] = get_files_list(args.list_coordinate_files)
         self.particle_files: List[str] = get_files_list(args.list_particle_files)
         self.timestep: float = args.snapshot_timestep
+        self.flow_map_period = args.flow_map_period
         self.executor = ParallelExecutor(n_processes=args.num_processes)
         self.flow_grid_shape = args.flow_grid_shape
         self.particles_grid_shape = args.particles_grid_shape
@@ -130,7 +133,7 @@ class MultipleFTLEProcessManager:
         """
         num_snapshots_total = len(self.snapshot_files)
         num_snapshots_in_flow_map_period = (
-            int(args.flow_map_period / abs(args.snapshot_timestep)) + 1
+            int(self.flow_map_period / abs(self.timestep)) + 1
         )
 
         p = num_snapshots_in_flow_map_period

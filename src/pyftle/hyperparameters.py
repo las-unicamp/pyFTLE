@@ -246,7 +246,13 @@ parser.add_argument(
     "Leave empty for unstructured point distribution (default).",
 )
 
-raw_args = vars(parser.parse_args())
-raw_args.pop("config", None)
 
-args = MyProgramArgs(**raw_args)
+def parse_args() -> MyProgramArgs:
+    """
+    Parse command-line arguments and return a `MyProgramArgs` dataclass instance.
+    This function should be called explicitly by the main entry point, so that
+    importing this module does not trigger parsing automatically.
+    """
+    raw_args = vars(parser.parse_args())
+    raw_args.pop("config", None)
+    return MyProgramArgs(**raw_args)
