@@ -52,23 +52,28 @@ def adams_bashforth_2_step_inplace(
     v_prev: Array2xN | Array3xN,
 ):
     """
-    Perform an in-place second-order Adams-Bashforth (AB2) integration step.
+    Perform an in-place second-order Adams–Bashforth (AB2) integration step.
 
     Updates particle positions according to:
 
     .. math::
-        x_{n+1} = x_n + h \\left( \tfrac{3}{2} v_n - \tfrac{1}{2} v_{n-1} \right)
+
+        x_{n+1} = x_n + h \\left( \\tfrac{3}{2} v_n - \\tfrac{1}{2} v_{n-1} \\right)
 
     Parameters
     ----------
-    positions : ArrayNx2 | ArrayNx3
+    positions : ArrayNx2 or ArrayNx3
         Particle positions at the current time. Updated in-place.
+
     h : float
         Time step size.
-    v_current : Array2xN | Array3xN
+
+    v_current : Array2xN or Array3xN
         Velocity field evaluated at the current positions.
-    v_prev : Array2xN | Array3xN
+
+    v_prev : Array2xN or Array3xN
         Velocity field evaluated at the previous positions.
+
     """
     positions += h * (1.5 * v_current - 0.5 * v_prev)
 
@@ -88,7 +93,8 @@ def runge_kutta_4_step_inplace(
     Updates particle positions according to:
 
     .. math::
-        x_{n+1} = x_n + \frac{h}{6}(k_1 + 2k_2 + 2k_3 + k_4)
+
+        x_{n+1} = x_n + \\frac{h}{6}(k_1 + 2k_2 + 2k_3 + k_4)
 
     Parameters
     ----------
@@ -98,6 +104,7 @@ def runge_kutta_4_step_inplace(
         Time step size.
     k1, k2, k3, k4 : ArrayNx2 | ArrayNx3
         Intermediate slope (velocity) evaluations for RK4.
+
     """
     positions += (h / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
 

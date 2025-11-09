@@ -36,6 +36,13 @@ dev = [
     "scipy-stubs>=1.15.2.0",
     "pandas-stubs>=2.2.3.241126",
     "types-tqdm>=4.67.0.20241221",
+    "jupyter>=1.1.1",
+]
+docs = [
+    "furo>=2025.9.25",
+    "myst-parser>=4.0.1",
+    "sphinx>=8.1.3",
+    "sphinx-autodoc-typehints>=3.0.1",
 ]
 test = [
     "pytest>=8.3.4",
@@ -45,12 +52,7 @@ test = [
 
 # CLI entrypoints
 [project.scripts]
-generate-stubs = "scripts.generate_stubs:main"
 pyftle = "pyftle.__main__:main"
-
-# Dependency groups (non-standard, used by UV)
-[dependency-groups]
-dev = ["jupyter>=1.1.1"]
 
 # ==============================================
 #                   BUILD
@@ -70,6 +72,7 @@ sdist.include = [
     "src/pyftle/__init__.py",
     "CMakeLists.txt",
 ]
+sdist.exclude = ["scripts"]
 
 # ==============================================
 #                   TESTING

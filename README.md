@@ -2,6 +2,7 @@
 
 [![Python Code Quality](https://github.com/las-unicamp/pyFTLE/actions/workflows/tests.yaml/badge.svg)](https://github.com/las-unicamp/pyFTLE/actions/workflows/tests.yaml)
 [![Python Code Quality](https://github.com/las-unicamp/pyFTLE/actions/workflows/code-style.yaml/badge.svg)](https://github.com/las-unicamp/pyFTLE/actions/workflows/code-style.yaml)
+[![Documentation Status](https://readthedocs.org/projects/pyftle/badge/?version=latest)](https://pyftle.readthedocs.io/en/latest/)
 
 [![DOI](https://zenodo.org/badge/931585059.svg)](https://doi.org/10.5281/zenodo.17497582)
 
@@ -13,27 +14,20 @@
 
 pyFTLE is a modular, high-performance package for computing FTLE fields. It tracks particle positions over time by integrating trajectories in a velocity field. Then, the flow map Jacobian is computed, and the largest eigenvalue of the Cauchy-Green deformation tensor determines the FTLE field.
 
-<div align="center">
-  <table border="0" cellspacing="0" cellpadding="0">
-    <tr>
-      <td style="text-align: center; width: 45%;">
-        <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/ftle.gif" alt="FTLE field over airfoil" width="100%">
-      </td>
-      <td style="text-align: center; width: 45%;">
-        <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/ftle_3d_abc_flow.gif" alt="3D ABC flow FTLE field" width="100%">
-      </td>
-    </tr>
-    <tr>
-      <td style="text-align: center; width: 45%;">
-        <em>Figure 1: FTLE field over an airfoil.</em>
-      </td>
-      <td style="text-align: center; width: 45%;">
-        <em>Figure 2: FTLE field of a 3D ABC flow.</em>
-      </td>
-    </tr>
-  </table>
-</div>
-
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/las-unicamp/pyFTLE/main/.github/ftle.gif" alt="FTLE field over airfoil" width="100%">
+      <br>
+      <em>Figure 1: FTLE field over an airfoil.</em>
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/las-unicamp/pyFTLE/main/.github/ftle_3d_abc_flow.gif" alt="3D ABC flow FTLE field" width="100%">
+      <br>
+      <em>Figure 2: FTLE field of a 3D ABC flow.</em>
+    </td>
+  </tr>
+</table>
 
 ### **Key Features**
 - Supports both 2D and 3D velocity fields (structured or unstructured).
@@ -92,7 +86,7 @@ solver’s execution.
 
 > [!TIP]
 > For production runs, it is often more practical to read velocity and coordinate data directly
-from the file system (HD/SSD). In this case, the [file-based CLI](#anchor-point-running-via-CLI) offers greater convenience and flexibility.
+from the file system (HD/SSD). In this case, the **[file-based CLI](#running-the-code-via-cli)** offers greater convenience and flexibility.
 
 > [!NOTE]
 > At present, the solver accepts MATLAB (.mat) files as input and exports results in MATLAB (.mat) or VTK (.vts, .vtp) formats.
@@ -110,29 +104,20 @@ from the file system (HD/SSD). In this case, the [file-based CLI](#anchor-point-
 >
 > This structure ensures that the velocity data, coordinate information, and neighboring particle relations are clearly organized and ready for FTLE computation.
 
-
-<div align="center">
-  <table border="0" cellspacing="0" cellpadding="0">
-    <tr>
-      <td style="text-align: center; width: 45%;">
-        <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/particles.png" alt="Particles Group Image" width="100%">
-      </td>
-      <td style="text-align: center; width: 45%;">
-        <img src="https://github.com/las-unicamp/pyFTLE/blob/main/.github/integration.gif" alt="Particle tracking over airfoil" width="100%">
-      </td>
-    </tr>
-    <tr>
-      <td style="text-align: center; width: 45%;">
-        <em>Figure 3: A single group of neighboring particles.</em>
-      </td>
-      <td style="text-align: center; width: 45%;">
-        <em>Figure 4: Particles centroids being tracked.</em>
-      </td>
-    </tr>
-  </table>
-</div>
-
-
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/las-unicamp/pyFTLE/main/.github/particles.png" alt="Particles Group Image" width="450">
+      <br>
+      <em>Figure 3: A single group of neighboring particles.</em>
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/las-unicamp/pyFTLE/main/.github/integration.gif" alt="Particle tracking over airfoil" width="450">
+      <br>
+      <em>Figure 4: Particles centroids being tracked.</em>
+    </td>
+  </tr>
+</table>
 
 Instead of passing individual MATLAB files directly to the solver, the interface expects a set of
 plain text (`.txt`) files—one for each data type: velocity, coordinate, and particle data. Each of
@@ -145,8 +130,6 @@ sequences of time-resolved data more easily and keeps the input interface clean 
 > - The `create_list_of_input_files.py` facilitates the creation of these `.txt` files.
 > - An complete example of file-based I/O workflow is provided in the Jupyter Notebooks in the `example/` folder.
 
-
-<a name="anchor-point-running-via-CLI"></a>
 
 ### **Running the code via CLI**
 
@@ -281,7 +264,7 @@ This project is licensed under the **MIT License**.
 
 ## **CONTRIBUTING**
 
-When contributing to this repository, please make sure to follow the guidelines from the [CONTRIBUTING file](CONTRIBUTING.md).
+When contributing to this repository, please make sure to follow the guidelines from the [CONTRIBUTING file](https://github.com/las-unicamp/pyFTLE/blob/main/CONTRIBUTING.md).
 
 To make sure the Language Server Protocol (LSP) is going to work as expected, one can install the package as follows:
 
