@@ -70,6 +70,9 @@ sdist.include = [
     "src/pyftle/__init__.py",
     "CMakeLists.txt",
 ]
+[project.scripts]
+pyftle = "src.app:main"
+generate-stubs = "scripts.generate_stubs:main"
 
 # ==============================================
 #                   TESTING
