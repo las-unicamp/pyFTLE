@@ -76,6 +76,34 @@ pyFTLE is a modular, high-performance package for computing FTLE fields. It trac
    - The command also automatically installs the SIMD-optimized C++/Eigen backend.
    - Installing in editable mode helps avoid common import issues during development.
 
+### **Using Docker Image**
+
+You can run `pyFTLE` using the public Docker image available on Docker Hub. This provides a consistent environment without needing to install Python dependencies directly.
+
+1.  **Pull the Docker Image:**
+    ```bash
+    docker pull mycompanyname/pyftle:latest
+    ```
+
+2.  **Run the Application:**
+    You can run the `pyftle` command directly within the Docker container. Replace `[YOUR_ARGUMENTS]` with the actual arguments you would pass to the `pyftle` CLI.
+
+    ```bash
+    docker run --rm mycompanyname/pyftle [YOUR_ARGUMENTS]
+    ```
+
+    For example, to see the help message:
+    ```bash
+    docker run --rm mycompanyname/pyftle --help
+    ```
+
+    If your input files (e.g., `config.yaml`, `velocity_files.txt`, etc.) are located on your host machine, you will need to mount them into the Docker container using the `-v` flag. For example:
+
+    ```bash
+    docker run --rm -v /path/to/your/input_files:/app/input_files mycompanyname/pyftle --config /app/input_files/config.yaml
+    ```
+    Replace `/path/to/your/input_files` with the actual path to your input files on your host machine.
+
 ---
 
 ## **USAGE**
