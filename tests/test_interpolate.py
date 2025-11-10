@@ -10,9 +10,6 @@ from pyftle.interpolate import (
 )
 
 
-# -----------------------
-# Interpolator tests (2D)
-# -----------------------
 @pytest.mark.parametrize(
     "strategy_class",
     [
@@ -33,9 +30,6 @@ def test_interpolators_2d(strategy_class, generate_mock_data_2d):
     assert np.isfinite(interpolated_values).all()
 
 
-# -----------------------
-# Interpolator tests (3D)
-# -----------------------
 @pytest.mark.parametrize(
     "strategy_class",
     [
@@ -55,17 +49,12 @@ def test_interpolators_3d(strategy_class, generate_mock_data_3d):
     assert np.isfinite(interpolated_values).all()
 
 
-# -----------------------
-# GridInterpolator tests
-# -----------------------
 def test_grid_interpolator_2d():
     grid_x, grid_y = np.mgrid[0:1:3j, 0:1:3j]
-    grid_shape = grid_x.shape  # (3, 3)
+    grid_shape = grid_x.shape
 
-    # Flatten grid points to shape (ndim, n_points)
     points = np.stack((grid_x.ravel(), grid_y.ravel()))
 
-    # Create velocities array shape (ndim, n_points)
     velocities = np.stack((grid_x.ravel(), grid_y.ravel()))
 
     interpolator = GridInterpolator(grid_shape=grid_shape, method="linear")
@@ -80,7 +69,7 @@ def test_grid_interpolator_2d():
 
 def test_grid_interpolator_3d():
     grid_x, grid_y, grid_z = np.mgrid[0:1:3j, 0:1:3j, 0:1:3j]
-    grid_shape = grid_x.shape  # (3, 3, 3)
+    grid_shape = grid_x.shape
 
     points = np.stack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel()))
     velocities = np.stack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel()))
@@ -103,9 +92,6 @@ def test_create_interpolator_with_grid_shape():
     assert interpolator.method == "linear"
 
 
-# -----------------------
-# Factory tests
-# -----------------------
 @pytest.mark.parametrize("kind", ["cubic", "linear", "nearest"])
 def test_create_interpolator_returns_correct_type(kind):
     interpolator = create_interpolator(kind)

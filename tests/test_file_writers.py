@@ -10,13 +10,11 @@ from pyftle.file_writers import MatWriter, VTKWriter
 
 class TestFTLEWriter(unittest.TestCase):
     def setUp(self):
-        # Prepare mock directory path
         self.test_dir = "test_output"
         os.makedirs(self.test_dir, exist_ok=True)
 
-        # Mock particle centroids (2D and 3D)
         self.particles_centroid_2d = np.array(
-            [[0, 0], [1, 0], [0, 1], [1, 1]]  # 4 particles in 2D
+            [[0, 0], [1, 0], [0, 1], [1, 1]]
         )
         self.particles_centroid_3d = np.array(
             [
@@ -28,22 +26,17 @@ class TestFTLEWriter(unittest.TestCase):
                 [1, 0, 1],
                 [0, 1, 1],
                 [1, 1, 1],
-            ]  # 8 particles in 3D
+            ]
         )
 
-        # Mock FTLE fields
         self.ftle_field_2d = np.array([1.0, 2.0, 3.0, 4.0])
         self.ftle_field_3d = np.array([1, 2, 3, 4, 5, 6, 7, 8], dtype=float)
 
     def tearDown(self):
-        # Clean up test directory after test
         for file in os.listdir(self.test_dir):
             os.remove(os.path.join(self.test_dir, file))
         os.rmdir(self.test_dir)
 
-    # ----------------------------
-    # Tests for MatWriter
-    # ----------------------------
     @patch("pyftle.file_writers.savemat")
     def test_mat_writer_2d(self, mock_savemat):
         writer = MatWriter(self.test_dir, grid_shape=(2, 2, 1))
@@ -57,7 +50,7 @@ class TestFTLEWriter(unittest.TestCase):
         self.assertIn("ftle", saved_data)
         self.assertIn("x", saved_data)
         self.assertIn("y", saved_data)
-        self.assertNotIn("z", saved_data)  # Should not save z data
+        self.assertNotIn("z", saved_data)
         self.assertEqual(saved_data["ftle"].shape, (2, 2, 1))
 
     @patch("pyftle.file_writers.savemat")
@@ -86,13 +79,9 @@ class TestFTLEWriter(unittest.TestCase):
         args, _ = mock_savemat.call_args
         _, saved_data = args
 
-        # Unstructured case → 1D arrays
         self.assertEqual(saved_data["x"].ndim, 1)
         self.assertEqual(saved_data["y"].ndim, 1)
 
-    # ----------------------------
-    # Tests for VTKWriter
-    # ----------------------------
     @patch.object(pv.StructuredGrid, "save")
     def test_vtk_writer_2d(self, mock_save):
         writer = VTKWriter(self.test_dir, grid_shape=(2, 2))
@@ -122,9 +111,6 @@ class TestFTLEWriter(unittest.TestCase):
         saved_path = mock_save.call_args[0][0]
         self.assertTrue(saved_path.endswith(".vtp"))
 
-    # ----------------------------
-    # Edge case: empty centroid
-    # ----------------------------
     @patch("pyftle.file_writers.savemat")
     def test_empty_particles_centroid(self, mock_savemat):
         writer = MatWriter(self.test_dir, grid_shape=None)

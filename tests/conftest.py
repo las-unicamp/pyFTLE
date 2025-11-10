@@ -8,17 +8,10 @@ from pyftle.my_types import Array2xN, Array3xN, Array4Nx2, Array6Nx3
 from pyftle.particles import NeighboringParticles
 
 
-# ==========================================================
-# Helper functions for creating mock files
-# ==========================================================
 def create_mock_matlab_file(file_path, data):
-    """Utility to write a MATLAB .mat file with given data."""
     savemat(file_path, data)
 
 
-# ==========================================================
-# Fixtures for file readers
-# ==========================================================
 @pytest.fixture
 def mock_velocity_file_2d(tmp_path):
     file_path = tmp_path / "velocity_2d.mat"
@@ -93,12 +86,8 @@ def mock_seed_particle_file_3d(tmp_path):
     return file_path
 
 
-# ==========================================================
-# Fixtures for FTLE calculations
-# ==========================================================
 @pytest.fixture
 def generate_2x2_jacobians() -> Array2xN:
-    """Return a small array of 2×2 Jacobians for testing."""
     return np.array(
         [
             [[2.0, 0.0], [0.0, 1.0]],
@@ -110,7 +99,6 @@ def generate_2x2_jacobians() -> Array2xN:
 
 @pytest.fixture
 def generate_3x3_jacobians() -> Array3xN:
-    """Return a small array of 3×3 Jacobians for testing."""
     return np.array(
         [
             np.eye(3),
@@ -120,37 +108,30 @@ def generate_3x3_jacobians() -> Array3xN:
     )
 
 
-# ==========================================================
-# Fixtures for Integrator tests
-# ==========================================================
 @pytest.fixture
 def mock_interpolator():
     mock = MagicMock(spec=Interpolator)
-    mock.interpolate.side_effect = lambda x: x * 0.1  # Fake velocity field
+    mock.interpolate.side_effect = lambda x: x * 0.1
     return mock
 
 
 @pytest.fixture
 def initial_conditions():
-    # Create a positions array with shape (4 * N, 2)
     positions = np.array(
         [
             [1.0, 2.0],
-            [3.0, 4.0],  # Left neighbors
+            [3.0, 4.0],
             [5.0, 6.0],
-            [7.0, 8.0],  # Right neighbors
+            [7.0, 8.0],
             [9.0, 10.0],
-            [11.0, 12.0],  # Top neighbors
+            [11.0, 12.0],
             [13.0, 14.0],
-            [15.0, 16.0],  # Bottom neighbors
+            [15.0, 16.0],
         ]
     )
     return NeighboringParticles(positions=positions)
 
 
-# ==========================================================
-# Fixtures for Interpolator tests
-# ==========================================================
 @pytest.fixture
 def generate_mock_data_2d() -> tuple[Array2xN, Array2xN]:
     points = np.array(
@@ -191,31 +172,27 @@ def generate_mock_data_3d() -> tuple[Array3xN, Array3xN]:
     return points, velocities
 
 
-# ==========================================================
-# Fixtures for NeighboringParticles tests
-# ==========================================================
 @pytest.fixture(params=["2D", "3D"])
 def sample_particles(request):
-    """Creates a NeighboringParticles object for 2D or 3D test cases."""
     if request.param == "2D":
         positions: Array4Nx2 = np.array(
             [
-                [0.0, 0.0],  # Left neighbor
-                [1.0, 0.0],  # Right neighbor
-                [0.5, 1.0],  # Top neighbor
-                [0.5, 0.0],  # Bottom neighbor
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [0.5, 1.0],
+                [0.5, 0.0],
             ],
             dtype=Array4Nx2,
         )
-    else:  # 3D
+    else:
         positions: Array6Nx3 = np.array(
             [
-                [0.0, 0.0, 0.0],  # Left
-                [1.0, 0.0, 0.0],  # Right
-                [0.5, 1.0, 0.0],  # Top
-                [0.5, -1.0, 0.0],  # Bottom
-                [0.5, 0.0, 1.0],  # Front
-                [0.5, 0.0, -1.0],  # Back
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.5, 1.0, 0.0],
+                [0.5, -1.0, 0.0],
+                [0.5, 0.0, 1.0],
+                [0.5, 0.0, -1.0],
             ],
             dtype=Array6Nx3,
         )

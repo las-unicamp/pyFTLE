@@ -12,9 +12,6 @@ from pyftle.ftle import (
 )
 
 
-# -------------------------
-# compute_cauchy_green tests
-# -------------------------
 def test_compute_cauchy_green_2x2_matches_FT_FTt(generate_2x2_jacobians):
     jacobians = generate_2x2_jacobians
     computed = compute_cauchy_green_2x2(jacobians)
@@ -31,9 +28,6 @@ def test_compute_cauchy_green_3x3_matches_FT_FTt(generate_3x3_jacobians):
     np.testing.assert_allclose(computed, expected, rtol=1e-12)
 
 
-# -------------------------
-# max_eigenvalue tests
-# -------------------------
 def test_max_eigenvalue_2x2_matches_numpy(generate_2x2_jacobians):
     jacobians = generate_2x2_jacobians
     cg = compute_cauchy_green_2x2(jacobians)
@@ -52,9 +46,6 @@ def test_max_eigenvalue_3x3_matches_numpy(generate_3x3_jacobians):
     np.testing.assert_allclose(computed, expected, rtol=1e-10)
 
 
-# -------------------------
-# compute_ftle tests
-# -------------------------
 def test_compute_ftle_2x2_matches_manual(generate_2x2_jacobians):
     flow_map_jacobian = generate_2x2_jacobians
     map_period = 1.0
@@ -81,18 +72,13 @@ def test_compute_ftle_3x3_matches_manual(generate_3x3_jacobians):
     np.testing.assert_allclose(computed_ftle, expected_ftle, rtol=1e-8)
 
 
-# -------------------------
-# Edge and numerical stability tests
-# -------------------------
 def test_zero_deformation_returns_zero_ftle():
-    """If flow map Jacobian is identity, FTLE must be zero."""
     F = np.repeat(np.eye(2)[None, :, :], 3, axis=0)
     ftle = compute_ftle_2x2(F, map_period=1.0)
     np.testing.assert_allclose(ftle, np.zeros(3), atol=1e-12)
 
 
 def test_large_deformation_increases_ftle():
-    """Larger stretching should increase FTLE magnitude."""
     F_small = np.repeat(np.eye(2)[None, :, :], 1, axis=0)
     F_large = np.repeat((2.0 * np.eye(2))[None, :, :], 1, axis=0)
 

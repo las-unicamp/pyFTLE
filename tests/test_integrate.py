@@ -42,7 +42,6 @@ def test_adams_bashforth2_integrator(mock_interpolator, initial_conditions):
 
 
 def test_get_integrator(mock_interpolator):
-    # Valid names
     assert isinstance(
         create_integrator("ab2", mock_interpolator), AdamsBashforth2Integrator
     )
@@ -51,7 +50,6 @@ def test_get_integrator(mock_interpolator):
         create_integrator("rk4", mock_interpolator), RungeKutta4Integrator
     )
 
-    # Case-insensitivity
     assert isinstance(
         create_integrator("AB2", mock_interpolator), AdamsBashforth2Integrator
     )
@@ -60,7 +58,6 @@ def test_get_integrator(mock_interpolator):
         create_integrator("rK4", mock_interpolator), RungeKutta4Integrator
     )
 
-    # Invalid input
     with pytest.raises(ValueError, match="Invalid integrator name 'invalid'.*"):
         create_integrator("invalid", mock_interpolator)
     with pytest.raises(ValueError, match="Invalid integrator name ''.*"):
