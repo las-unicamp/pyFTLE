@@ -14,7 +14,8 @@ def create_mock_matlab_file(file_path, data):
 
     Args:
         file_path (Path): The path to the .mat file.
-        data (dict): A dictionary where keys are variable names and values are numpy arrays.
+        data (dict): A dictionary where keys are variable names and values
+            are numpy arrays.
     """
     savemat(file_path, data)
 
@@ -214,10 +215,12 @@ def mock_interpolator():
 
 @pytest.fixture
 def initial_conditions():
-    """Fixture to create a NeighboringParticles object with predefined initial positions.
+    """Fixture to create a NeighboringParticles object with predefined
+    initial positions.
 
     Returns:
-        NeighboringParticles: An instance of NeighboringParticles with mock positions.
+        NeighboringParticles: An instance of NeighboringParticles with mock
+            positions.
 
     Flow:
         None -> NeighboringParticles
@@ -242,7 +245,8 @@ def generate_mock_data_2d() -> tuple[Array2xN, Array2xN]:
     """Fixture to generate mock 2D points and velocities.
 
     Returns:
-        tuple[Array2xN, Array2xN]: A tuple containing mock 2D points and velocities.
+        tuple[Array2xN, Array2xN]: A tuple containing mock 2D points and
+            velocities.
 
     Flow:
         None -> (mock 2D points, mock 2D velocities)
@@ -269,7 +273,8 @@ def generate_mock_data_3d() -> tuple[Array3xN, Array3xN]:
     """Fixture to generate mock 3D points and velocities.
 
     Returns:
-        tuple[Array3xN, Array3xN]: A tuple containing mock 3D points and velocities.
+        tuple[Array3xN, Array3xN]: A tuple containing mock 3D points and
+            velocities.
 
     Flow:
         None -> (mock 3D points, mock 3D velocities)
@@ -298,11 +303,12 @@ def sample_particles(request):
     """Fixture to create a NeighboringParticles object for 2D or 3D test cases.
 
     Args:
-        request (FixtureRequest): Pytest's fixture request object to access parameters.
+        request (FixtureRequest): Pytest's fixture request object to access
+            parameters.
 
     Returns:
-        NeighboringParticles: An instance of NeighboringParticles with mock positions
-                              based on the '2D' or '3D' parameter.
+        NeighboringParticles: An instance of NeighboringParticles with mock
+            positions based on the '2D' or '3D' parameter.
 
     Flow:
         request.param ('2D' or '3D') -> numpy array of positions -> NeighboringParticles

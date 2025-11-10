@@ -12,7 +12,8 @@ from pyftle.ftle import (
 
 
 def test_compute_cauchy_green_2x2_matches_FT_FTt(generate_2x2_jacobians):
-    """Tests that compute_cauchy_green_2x2 correctly computes the Cauchy-Green tensor.
+    """Tests that compute_cauchy_green_2x2 correctly computes the
+    Cauchy-Green tensor.
 
     Args:
         generate_2x2_jacobians (np.ndarray): Fixture providing 2x2 Jacobian matrices.
@@ -29,7 +30,8 @@ def test_compute_cauchy_green_2x2_matches_FT_FTt(generate_2x2_jacobians):
 
 
 def test_compute_cauchy_green_3x3_matches_FT_FTt(generate_3x3_jacobians):
-    """Tests that compute_cauchy_green_3x3 correctly computes the Cauchy-Green tensor.
+    """Tests that compute_cauchy_green_3x3 correctly computes the
+    Cauchy-Green tensor.
 
     Args:
         generate_3x3_jacobians (np.ndarray): Fixture providing 3x3 Jacobian matrices.
@@ -84,7 +86,8 @@ def test_max_eigenvalue_3x3_matches_numpy(generate_3x3_jacobians):
 
 
 def test_compute_ftle_2x2_matches_manual(generate_2x2_jacobians):
-    """Tests that compute_ftle_2x2 correctly computes the FTLE field for 2x2 Jacobians.
+    """Tests that compute_ftle_2x2 correctly computes the FTLE field for
+    2x2 Jacobians.
 
     Args:
         generate_2x2_jacobians (np.ndarray): Fixture providing 2x2 Jacobian matrices.
@@ -107,7 +110,8 @@ def test_compute_ftle_2x2_matches_manual(generate_2x2_jacobians):
 
 
 def test_compute_ftle_3x3_matches_manual(generate_3x3_jacobians):
-    """Tests that compute_ftle_3x3 correctly computes the FTLE field for 3x3 Jacobians.
+    """Tests that compute_ftle_3x3 correctly computes the FTLE field for
+    3x3 Jacobians.
 
     Args:
         generate_3x3_jacobians (np.ndarray): Fixture providing 3x3 Jacobian matrices.

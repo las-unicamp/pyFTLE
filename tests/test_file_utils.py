@@ -20,7 +20,8 @@ class TestFileUtils(unittest.TestCase):
             mock_rglob (MagicMock): Mock object for pathlib.Path.rglob.
 
         Flow:
-            mock_rglob.return_value (list of Paths) -> find_files_with_pattern -> result (list of strings)
+            mock_rglob.return_value (list of Paths) -> find_files_with_pattern
+            -> result (list of strings)
             result == expected list of strings
             mock_rglob.assert_called_with("*file*")
         """
@@ -66,7 +67,8 @@ class TestFileUtils(unittest.TestCase):
 
         Flow:
             mock_exists.return_value = True
-            mock_read_csv.return_value (DataFrame) -> get_files_list -> result (list)
+            mock_read_csv.return_value (DataFrame) -> get_files_list
+            -> result (list)
             result == expected list
             mock_exists.assert_called_once_with
             mock_read_csv.assert_called_once_with
@@ -86,13 +88,15 @@ class TestFileUtils(unittest.TestCase):
 
     @patch("os.path.exists")
     def test_get_files_list_not_exists(self, mock_exists):
-        """Tests that get_files_list raises FileNotFoundError when the file does not exist.
+        """Tests that get_files_list raises FileNotFoundError when the file
+        does not exist.
 
         Args:
             mock_exists (MagicMock): Mock object for os.path.exists.
 
         Flow:
-            mock_exists.return_value = False -> get_files_list -> raises FileNotFoundError
+            mock_exists.return_value = False -> get_files_list
+            -> raises FileNotFoundError
         """
         mock_exists.return_value = False
 

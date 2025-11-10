@@ -23,10 +23,12 @@ def test_interpolators_2d(strategy_class, generate_mock_data_2d):
 
     Args:
         strategy_class (type): The interpolator class to test.
-        generate_mock_data_2d (tuple): Fixture providing mock 2D points and velocities.
+        generate_mock_data_2d (tuple): Fixture providing mock 2D points and
+            velocities.
 
     Flow:
-        generate_mock_data_2d -> interpolator.update -> interpolator.interpolate -> interpolated_values
+        generate_mock_data_2d -> interpolator.update -> interpolator.interpolate
+        -> interpolated_values
         interpolated_values shape == expected shape
         All interpolated_values are finite.
     """
@@ -53,10 +55,12 @@ def test_interpolators_3d(strategy_class, generate_mock_data_3d):
 
     Args:
         strategy_class (type): The interpolator class to test.
-        generate_mock_data_3d (tuple): Fixture providing mock 3D points and velocities.
+        generate_mock_data_3d (tuple): Fixture providing mock 3D points and
+            velocities.
 
     Flow:
-        generate_mock_data_3d -> interpolator.update -> interpolator.interpolate -> interpolated_values
+        generate_mock_data_3d -> interpolator.update -> interpolator.interpolate
+        -> interpolated_values
         interpolated_values shape == expected shape
         All interpolated_values are finite.
     """
@@ -75,7 +79,8 @@ def test_grid_interpolator_2d():
     """Tests the 2D GridInterpolator.
 
     Flow:
-        Generate 2D grid data -> GridInterpolator initialized -> interpolator.update -> interpolator.interpolate -> interpolated_values
+        Generate 2D grid data -> GridInterpolator initialized
+        -> interpolator.update -> interpolator.interpolate -> interpolated_values
         interpolated_values shape == expected shape
         All interpolated_values are finite.
     """
@@ -100,7 +105,8 @@ def test_grid_interpolator_3d():
     """Tests the 3D GridInterpolator.
 
     Flow:
-        Generate 3D grid data -> GridInterpolator initialized -> interpolator.update -> interpolator.interpolate -> interpolated_values
+        Generate 3D grid data -> GridInterpolator initialized
+        -> interpolator.update -> interpolator.interpolate -> interpolated_values
         interpolated_values shape == expected shape
         All interpolated_values are finite.
     """
@@ -121,7 +127,8 @@ def test_grid_interpolator_3d():
 
 
 def test_create_interpolator_with_grid_shape():
-    """Tests that create_interpolator returns a GridInterpolator when grid_shape is provided.
+    """Tests that create_interpolator returns a GridInterpolator when
+    grid_shape is provided.
 
     Flow:
         grid_shape, "linear" -> create_interpolator -> interpolator
@@ -138,7 +145,8 @@ def test_create_interpolator_with_grid_shape():
 
 @pytest.mark.parametrize("kind", ["cubic", "linear", "nearest"])
 def test_create_interpolator_returns_correct_type(kind):
-    """Tests that create_interpolator returns the correct interpolator type for various kinds.
+    """Tests that create_interpolator returns the correct interpolator type
+    for various kinds.
 
     Args:
         kind (str): The interpolation type string.
@@ -160,7 +168,8 @@ def test_create_interpolator_returns_correct_type(kind):
 
 
 def test_create_interpolator_invalid_type():
-    """Tests that create_interpolator raises ValueError for an invalid interpolation type.
+    """Tests that create_interpolator raises ValueError for an invalid
+    interpolation type.
 
     Flow:
         "nonsense" -> create_interpolator -> raises ValueError

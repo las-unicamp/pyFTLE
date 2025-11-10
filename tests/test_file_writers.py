@@ -92,7 +92,8 @@ class TestFTLEWriter(unittest.TestCase):
             mock_savemat (MagicMock): Mock object for scipy.io.savemat.
 
         Flow:
-            MatWriter initialized (unstructured) -> writer.write -> mock_savemat.assert_called_once
+            MatWriter initialized (unstructured) -> writer.write
+            -> mock_savemat.assert_called_once
             Verify dimensions of saved x and y data.
         """
         writer = MatWriter(self.test_dir, grid_shape=None)
@@ -151,7 +152,8 @@ class TestFTLEWriter(unittest.TestCase):
             mock_save (MagicMock): Mock object for pv.PolyData.save.
 
         Flow:
-            VTKWriter initialized (unstructured) -> writer.write -> mock_save.assert_called_once
+            VTKWriter initialized (unstructured) -> writer.write
+            -> mock_save.assert_called_once
             Verify filename extension.
         """
         writer = VTKWriter(self.test_dir, grid_shape=None)
@@ -171,7 +173,8 @@ class TestFTLEWriter(unittest.TestCase):
             mock_savemat (MagicMock): Mock object for scipy.io.savemat.
 
         Flow:
-            MatWriter initialized -> writer.write with empty data -> mock_savemat.assert_called_once
+            MatWriter initialized -> writer.write with empty data
+            -> mock_savemat.assert_called_once
         """
         writer = MatWriter(self.test_dir, grid_shape=None)
         empty_centroid = np.empty((0, 2))

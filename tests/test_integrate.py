@@ -14,10 +14,12 @@ def test_euler_integrator(mock_interpolator, initial_conditions):
 
     Args:
         mock_interpolator (MagicMock): Mock object for Interpolator.
-        initial_conditions (NeighboringParticles): Fixture providing initial particle conditions.
+        initial_conditions (NeighboringParticles): Fixture providing initial
+            particle conditions.
 
     Flow:
-        EulerIntegrator initialized with mock_interpolator -> integrator.integrate with initial_conditions
+        EulerIntegrator initialized with mock_interpolator
+        -> integrator.integrate with initial_conditions
         initial_conditions.positions == expected_positions (calculated manually)
     """
     integrator = EulerIntegrator(mock_interpolator)
@@ -36,10 +38,12 @@ def test_runge_kutta4_integrator(mock_interpolator, initial_conditions):
 
     Args:
         mock_interpolator (MagicMock): Mock object for Interpolator.
-        initial_conditions (NeighboringParticles): Fixture providing initial particle conditions.
+        initial_conditions (NeighboringParticles): Fixture providing initial
+            particle conditions.
 
     Flow:
-        RungeKutta4Integrator initialized with mock_interpolator -> integrator.integrate with initial_conditions
+        RungeKutta4Integrator initialized with mock_interpolator
+        -> integrator.integrate with initial_conditions
         All positions in initial_conditions.positions are finite.
     """
     integrator = RungeKutta4Integrator(mock_interpolator)
@@ -54,10 +58,12 @@ def test_adams_bashforth2_integrator(mock_interpolator, initial_conditions):
 
     Args:
         mock_interpolator (MagicMock): Mock object for Interpolator.
-        initial_conditions (NeighboringParticles): Fixture providing initial particle conditions.
+        initial_conditions (NeighboringParticles): Fixture providing initial
+            particle conditions.
 
     Flow:
-        AdamsBashforth2Integrator initialized with mock_interpolator -> integrator.integrate with initial_conditions
+        AdamsBashforth2Integrator initialized with mock_interpolator
+        -> integrator.integrate with initial_conditions
         All positions in initial_conditions.positions are finite.
     """
     integrator = AdamsBashforth2Integrator(mock_interpolator)
@@ -75,7 +81,8 @@ def test_get_integrator(mock_interpolator):
 
     Flow:
         create_integrator with valid names -> returns correct integrator type
-        create_integrator with case-insensitive names -> returns correct integrator type
+        create_integrator with case-insensitive names -> returns correct
+            integrator type
         create_integrator with invalid names -> raises ValueError
     """
     assert isinstance(
