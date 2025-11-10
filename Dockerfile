@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y build-essential cmake git
 
 # Install any needed packages specified in pyproject.toml
 RUN pip install --no-cache-dir uv && \
-    uv pip install --system --no-cache .[dev]
+    uv pip install --system --no-cache .
 
 # Define the entrypoint for the container
 ENTRYPOINT ["pyftle"]
