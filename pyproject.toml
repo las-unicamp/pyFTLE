@@ -49,6 +49,10 @@ sdist.include = ["src/pyftle/grid_interp/GridInterp.cpp", "CMakeLists.txt"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+filterwarnings = [
+    "ignore::DeprecationWarning:.*nptyping.*",
+    "ignore::UserWarning:.*pyvista.*",
+]
 
 [dependency-groups]
 dev = [
@@ -58,3 +62,63 @@ dev = [
 [project.scripts]
 pyftle = "src.app:main"
 generate-stubs = "scripts.generate_stubs:main"
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    "*.ipynb",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+target-version = "py310"
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "Q", "I", "N", "ARG"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.pylint]
+max-args = 5
+max-bool-expr = 10
+max-branches = 100
+max-locals = 15
+max-nested-blocks = 5
+max-positional-args = 10
+max-public-methods = 30
+max-returns = 10
+max-statements = 1000
