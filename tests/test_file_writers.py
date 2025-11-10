@@ -37,6 +37,15 @@ class TestFTLEWriter(unittest.TestCase):
 
     @patch("pyftle.file_writers.savemat")
     def test_mat_writer_2d(self, mock_savemat):
+        """Tests that MatWriter correctly writes 2D data to a .mat file.
+
+        Args:
+            mock_savemat (MagicMock): Mock object for scipy.io.savemat.
+
+        Flow:
+            MatWriter initialized -> writer.write -> mock_savemat.assert_called_once
+            Verify filename, data keys, and shape of saved data.
+        """
         writer = MatWriter(self.test_dir, grid_shape=(2, 2, 1))
         writer.write("test_2d", self.ftle_field_2d, self.particles_centroid_2d)
 
@@ -53,6 +62,15 @@ class TestFTLEWriter(unittest.TestCase):
 
     @patch("pyftle.file_writers.savemat")
     def test_mat_writer_3d(self, mock_savemat):
+        """Tests that MatWriter correctly writes 3D data to a .mat file.
+
+        Args:
+            mock_savemat (MagicMock): Mock object for scipy.io.savemat.
+
+        Flow:
+            MatWriter initialized -> writer.write -> mock_savemat.assert_called_once
+            Verify filename, data keys, and shape of saved data.
+        """
         writer = MatWriter(self.test_dir, grid_shape=(2, 2, 2))
         writer.write("test_3d", self.ftle_field_3d, self.particles_centroid_3d)
 
@@ -68,6 +86,15 @@ class TestFTLEWriter(unittest.TestCase):
 
     @patch("pyftle.file_writers.savemat")
     def test_mat_writer_unstructured(self, mock_savemat):
+        """Tests that MatWriter correctly writes unstructured data to a .mat file.
+
+        Args:
+            mock_savemat (MagicMock): Mock object for scipy.io.savemat.
+
+        Flow:
+            MatWriter initialized (unstructured) -> writer.write -> mock_savemat.assert_called_once
+            Verify dimensions of saved x and y data.
+        """
         writer = MatWriter(self.test_dir, grid_shape=None)
         writer.write(
             "test_unstructured", self.ftle_field_2d, self.particles_centroid_2d
@@ -82,6 +109,15 @@ class TestFTLEWriter(unittest.TestCase):
 
     @patch.object(pv.StructuredGrid, "save")
     def test_vtk_writer_2d(self, mock_save):
+        """Tests that VTKWriter correctly writes 2D data to a .vts file.
+
+        Args:
+            mock_save (MagicMock): Mock object for pv.StructuredGrid.save.
+
+        Flow:
+            VTKWriter initialized -> writer.write -> mock_save.assert_called_once
+            Verify filename extension.
+        """
         writer = VTKWriter(self.test_dir, grid_shape=(2, 2))
         writer.write("test_3d", self.ftle_field_2d, self.particles_centroid_2d)
 
@@ -91,6 +127,15 @@ class TestFTLEWriter(unittest.TestCase):
 
     @patch.object(pv.StructuredGrid, "save")
     def test_vtk_writer_3d(self, mock_save):
+        """Tests that VTKWriter correctly writes 3D data to a .vts file.
+
+        Args:
+            mock_save (MagicMock): Mock object for pv.StructuredGrid.save.
+
+        Flow:
+            VTKWriter initialized -> writer.write -> mock_save.assert_called_once
+            Verify filename extension.
+        """
         writer = VTKWriter(self.test_dir, grid_shape=(2, 2, 2))
         writer.write("test_3d", self.ftle_field_3d, self.particles_centroid_3d)
 
@@ -100,6 +145,15 @@ class TestFTLEWriter(unittest.TestCase):
 
     @patch.object(pv.PolyData, "save")
     def test_vtk_writer_unstructured(self, mock_save):
+        """Tests that VTKWriter correctly writes unstructured data to a .vtp file.
+
+        Args:
+            mock_save (MagicMock): Mock object for pv.PolyData.save.
+
+        Flow:
+            VTKWriter initialized (unstructured) -> writer.write -> mock_save.assert_called_once
+            Verify filename extension.
+        """
         writer = VTKWriter(self.test_dir, grid_shape=None)
         writer.write(
             "test_unstructured", self.ftle_field_2d, self.particles_centroid_2d
@@ -111,6 +165,14 @@ class TestFTLEWriter(unittest.TestCase):
 
     @patch("pyftle.file_writers.savemat")
     def test_empty_particles_centroid(self, mock_savemat):
+        """Tests that MatWriter handles empty particle centroids gracefully.
+
+        Args:
+            mock_savemat (MagicMock): Mock object for scipy.io.savemat.
+
+        Flow:
+            MatWriter initialized -> writer.write with empty data -> mock_savemat.assert_called_once
+        """
         writer = MatWriter(self.test_dir, grid_shape=None)
         empty_centroid = np.empty((0, 2))
         writer.write("test_empty", np.array([]), empty_centroid)

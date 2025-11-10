@@ -10,11 +10,28 @@ from pyftle.particles import NeighboringParticles
 
 
 def create_mock_matlab_file(file_path, data):
+    """Utility to write a MATLAB .mat file with given data.
+
+    Args:
+        file_path (Path): The path to the .mat file.
+        data (dict): A dictionary where keys are variable names and values are numpy arrays.
+    """
     savemat(file_path, data)
 
 
 @pytest.fixture
 def mock_velocity_file_2d(tmp_path):
+    """Fixture to create a mock 2D velocity .mat file.
+
+    Args:
+        tmp_path (Path): pytest fixture for a temporary directory.
+
+    Returns:
+        Path: The path to the created mock 2D velocity file.
+
+    Flow:
+        tmp_path -> create_mock_matlab_file -> file_path
+    """
     file_path = tmp_path / "velocity_2d.mat"
     data = {
         "velocity_x": np.array([1.0, 2.0, 3.0]),
@@ -26,6 +43,17 @@ def mock_velocity_file_2d(tmp_path):
 
 @pytest.fixture
 def mock_velocity_file_3d(tmp_path):
+    """Fixture to create a mock 3D velocity .mat file.
+
+    Args:
+        tmp_path (Path): pytest fixture for a temporary directory.
+
+    Returns:
+        Path: The path to the created mock 3D velocity file.
+
+    Flow:
+        tmp_path -> create_mock_matlab_file -> file_path
+    """
     file_path = tmp_path / "velocity_3d.mat"
     data = {
         "velocity_x": np.array([1.0, 2.0, 3.0]),
@@ -38,6 +66,17 @@ def mock_velocity_file_3d(tmp_path):
 
 @pytest.fixture
 def mock_coordinate_file_2d(tmp_path):
+    """Fixture to create a mock 2D coordinate .mat file.
+
+    Args:
+        tmp_path (Path): pytest fixture for a temporary directory.
+
+    Returns:
+        Path: The path to the created mock 2D coordinate file.
+
+    Flow:
+        tmp_path -> create_mock_matlab_file -> file_path
+    """
     file_path = tmp_path / "coordinate_2d.mat"
     data = {
         "coordinate_x": np.array([10.0, 11.0, 12.0]),
@@ -49,6 +88,17 @@ def mock_coordinate_file_2d(tmp_path):
 
 @pytest.fixture
 def mock_coordinate_file_3d(tmp_path):
+    """Fixture to create a mock 3D coordinate .mat file.
+
+    Args:
+        tmp_path (Path): pytest fixture for a temporary directory.
+
+    Returns:
+        Path: The path to the created mock 3D coordinate file.
+
+    Flow:
+        tmp_path -> create_mock_matlab_file -> file_path
+    """
     file_path = tmp_path / "coordinate_3d.mat"
     data = {
         "coordinate_x": np.array([10.0, 11.0, 12.0]),
@@ -61,6 +111,17 @@ def mock_coordinate_file_3d(tmp_path):
 
 @pytest.fixture
 def mock_seed_particle_file_2d(tmp_path):
+    """Fixture to create a mock 2D seed particle .mat file.
+
+    Args:
+        tmp_path (Path): pytest fixture for a temporary directory.
+
+    Returns:
+        Path: The path to the created mock 2D seed particle file.
+
+    Flow:
+        tmp_path -> create_mock_matlab_file -> file_path
+    """
     file_path = tmp_path / "seed_particles_2d.mat"
     data = {
         "top": np.array([[1.0, 2.0], [3.0, 4.0]]),
@@ -74,6 +135,17 @@ def mock_seed_particle_file_2d(tmp_path):
 
 @pytest.fixture
 def mock_seed_particle_file_3d(tmp_path):
+    """Fixture to create a mock 3D seed particle .mat file.
+
+    Args:
+        tmp_path (Path): pytest fixture for a temporary directory.
+
+    Returns:
+        Path: The path to the created mock 3D seed particle file.
+
+    Flow:
+        tmp_path -> create_mock_matlab_file -> file_path
+    """
     file_path = tmp_path / "seed_particles_3d.mat"
     data = {
         "top": np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]),
@@ -89,6 +161,14 @@ def mock_seed_particle_file_3d(tmp_path):
 
 @pytest.fixture
 def generate_2x2_jacobians() -> Array2xN:
+    """Fixture to generate a small array of 2x2 Jacobians for testing.
+
+    Returns:
+        Array2xN: A numpy array of 2x2 Jacobians.
+
+    Flow:
+        None -> numpy array of 2x2 Jacobians
+    """
     return np.array(
         [
             [[2.0, 0.0], [0.0, 1.0]],
@@ -100,6 +180,14 @@ def generate_2x2_jacobians() -> Array2xN:
 
 @pytest.fixture
 def generate_3x3_jacobians() -> Array3xN:
+    """Fixture to generate a small array of 3x3 Jacobians for testing.
+
+    Returns:
+        Array3xN: A numpy array of 3x3 Jacobians.
+
+    Flow:
+        None -> numpy array of 3x3 Jacobians
+    """
     return np.array(
         [
             np.eye(3),
@@ -111,6 +199,14 @@ def generate_3x3_jacobians() -> Array3xN:
 
 @pytest.fixture
 def mock_interpolator():
+    """Fixture to create a mock Interpolator object.
+
+    Returns:
+        MagicMock: A mock Interpolator object with a fake velocity field.
+
+    Flow:
+        None -> MagicMock(Interpolator)
+    """
     mock = MagicMock(spec=Interpolator)
     mock.interpolate.side_effect = lambda x: x * 0.1
     return mock
@@ -118,6 +214,14 @@ def mock_interpolator():
 
 @pytest.fixture
 def initial_conditions():
+    """Fixture to create a NeighboringParticles object with predefined initial positions.
+
+    Returns:
+        NeighboringParticles: An instance of NeighboringParticles with mock positions.
+
+    Flow:
+        None -> NeighboringParticles
+    """
     positions = np.array(
         [
             [1.0, 2.0],
@@ -135,6 +239,14 @@ def initial_conditions():
 
 @pytest.fixture
 def generate_mock_data_2d() -> tuple[Array2xN, Array2xN]:
+    """Fixture to generate mock 2D points and velocities.
+
+    Returns:
+        tuple[Array2xN, Array2xN]: A tuple containing mock 2D points and velocities.
+
+    Flow:
+        None -> (mock 2D points, mock 2D velocities)
+    """
     points = np.array(
         [
             [0.0, 1.0, 0.0, 1.0],
@@ -154,6 +266,14 @@ def generate_mock_data_2d() -> tuple[Array2xN, Array2xN]:
 
 @pytest.fixture
 def generate_mock_data_3d() -> tuple[Array3xN, Array3xN]:
+    """Fixture to generate mock 3D points and velocities.
+
+    Returns:
+        tuple[Array3xN, Array3xN]: A tuple containing mock 3D points and velocities.
+
+    Flow:
+        None -> (mock 3D points, mock 3D velocities)
+    """
     points = np.array(
         [
             [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0],
@@ -175,6 +295,18 @@ def generate_mock_data_3d() -> tuple[Array3xN, Array3xN]:
 
 @pytest.fixture(params=["2D", "3D"])
 def sample_particles(request):
+    """Fixture to create a NeighboringParticles object for 2D or 3D test cases.
+
+    Args:
+        request (FixtureRequest): Pytest's fixture request object to access parameters.
+
+    Returns:
+        NeighboringParticles: An instance of NeighboringParticles with mock positions
+                              based on the '2D' or '3D' parameter.
+
+    Flow:
+        request.param ('2D' or '3D') -> numpy array of positions -> NeighboringParticles
+    """
     if request.param == "2D":
         positions: Array4Nx2 = np.array(
             [

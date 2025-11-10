@@ -2,10 +2,28 @@ import numpy as np
 
 
 def test_len(sample_particles):
+    """Tests that len() correctly returns the number of particle groups.
+
+    Args:
+        sample_particles (NeighboringParticles): Fixture providing sample particle data.
+
+    Flow:
+        len(sample_particles) -> result
+        result == 1
+    """
     assert len(sample_particles) == 1
 
 
 def test_initial_deltas(sample_particles):
+    """Tests that initial delta vectors are correctly computed.
+
+    Args:
+        sample_particles (NeighboringParticles): Fixture providing sample particle data.
+
+    Flow:
+        sample_particles.positions -> initial_delta_top_bottom, initial_delta_right_left, initial_delta_front_back
+        Each initial_delta == expected (calculated manually)
+    """
     dim = sample_particles.positions.shape[1]
 
     if dim == 2:
@@ -30,6 +48,16 @@ def test_initial_deltas(sample_particles):
 
 
 def test_dynamic_delta_properties(sample_particles):
+    """Tests that delta properties dynamically update with positions.
+
+    Args:
+        sample_particles (NeighboringParticles): Fixture providing sample particle data.
+
+    Flow:
+        sample_particles.positions -> delta_top_bottom, delta_right_left, delta_front_back
+        Each delta == expected (calculated manually)
+        Modify sample_particles.positions -> re-check deltas -> deltas update correctly
+    """
     dim = sample_particles.positions.shape[1]
 
     if dim == 2:
@@ -82,6 +110,17 @@ def test_dynamic_delta_properties(sample_particles):
 
 
 def test_independence_of_initial_deltas(sample_particles):
+    """Tests that initial deltas remain constant after modifying positions.
+
+    Args:
+        sample_particles (NeighboringParticles): Fixture providing sample particle data.
+
+    Flow:
+        Store initial deltas -> Modify sample_particles.positions ->
+        initial_delta_top_bottom == original_tb
+        initial_delta_right_left == original_rl
+        initial_delta_front_back == original_fb (if 3D)
+    """
     original_tb = sample_particles.initial_delta_top_bottom.copy()
     original_rl = sample_particles.initial_delta_right_left.copy()
     original_fb = None
@@ -105,11 +144,30 @@ def test_independence_of_initial_deltas(sample_particles):
 
 
 def test_initial_centroid(sample_particles):
+    """Tests initial centroid computation.
+
+    Args:
+        sample_particles (NeighboringParticles): Fixture providing sample particle data.
+
+    Flow:
+        sample_particles.positions -> initial_centroid
+        initial_centroid == expected (calculated manually)
+    """
     expected = np.mean(sample_particles.positions, axis=0).reshape(1, -1)
     np.testing.assert_array_equal(sample_particles.initial_centroid, expected)
 
 
 def test_dynamic_centroid(sample_particles):
+    """Tests that the centroid updates dynamically with positions.
+
+    Args:
+        sample_particles (NeighboringParticles): Fixture providing sample particle data.
+
+    Flow:
+        sample_particles.positions -> centroid
+        centroid == expected (calculated manually)
+        Modify sample_particles.positions -> re-check centroid -> centroid updates correctly
+    """
     expected = np.mean(sample_particles.positions, axis=0).reshape(1, -1)
     np.testing.assert_array_equal(sample_particles.centroid, expected)
 
