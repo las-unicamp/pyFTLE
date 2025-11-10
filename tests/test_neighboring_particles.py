@@ -5,34 +5,6 @@ from pyftle.my_types import Array4Nx2, Array6Nx3
 from pyftle.particles import NeighboringParticles
 
 
-@pytest.fixture(params=["2D", "3D"])
-def sample_particles(request):
-    """Creates a NeighboringParticles object for 2D or 3D test cases."""
-    if request.param == "2D":
-        positions: Array4Nx2 = np.array(
-            [
-                [0.0, 0.0],  # Left neighbor
-                [1.0, 0.0],  # Right neighbor
-                [0.5, 1.0],  # Top neighbor
-                [0.5, 0.0],  # Bottom neighbor
-            ],
-            dtype=Array4Nx2,
-        )
-    else:  # 3D
-        positions: Array6Nx3 = np.array(
-            [
-                [0.0, 0.0, 0.0],  # Left
-                [1.0, 0.0, 0.0],  # Right
-                [0.5, 1.0, 0.0],  # Top
-                [0.5, -1.0, 0.0],  # Bottom
-                [0.5, 0.0, 1.0],  # Front
-                [0.5, 0.0, -1.0],  # Back
-            ],
-            dtype=Array6Nx3,
-        )
-    return NeighboringParticles(positions=positions)
-
-
 def test_len(sample_particles):
     """Ensure len() correctly returns number of particle groups."""
     assert len(sample_particles) == 1

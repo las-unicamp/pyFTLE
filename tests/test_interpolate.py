@@ -8,48 +8,6 @@ from pyftle.interpolate import (
     NearestNeighborInterpolator,
     create_interpolator,
 )
-from pyftle.my_types import Array2xN, Array3xN
-
-
-# -----------------------
-# Helper: mock data
-# -----------------------
-def generate_mock_data_2d() -> tuple[Array2xN, Array2xN]:
-    points = np.array(
-        [
-            [0.0, 1.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-    velocities = np.array(
-        [
-            [0.0, 1.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-    return points, velocities
-
-
-def generate_mock_data_3d() -> tuple[Array3xN, Array3xN]:
-    points = np.array(
-        [
-            [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0],
-            [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-    velocities = np.array(
-        [
-            [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0],
-            [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-    return points, velocities
 
 
 # -----------------------
@@ -63,8 +21,8 @@ def generate_mock_data_3d() -> tuple[Array3xN, Array3xN]:
         NearestNeighborInterpolator,
     ],
 )
-def test_interpolators_2d(strategy_class):
-    points, velocities = generate_mock_data_2d()
+def test_interpolators_2d(strategy_class, generate_mock_data_2d):
+    points, velocities = generate_mock_data_2d
     interpolator = strategy_class()
     interpolator.update(velocities, points)
 
@@ -85,8 +43,8 @@ def test_interpolators_2d(strategy_class):
         NearestNeighborInterpolator,
     ],
 )
-def test_interpolators_3d(strategy_class):
-    points, velocities = generate_mock_data_3d()
+def test_interpolators_3d(strategy_class, generate_mock_data_3d):
+    points, velocities = generate_mock_data_3d
     interpolator = strategy_class()
     interpolator.update(velocities, points)
 
