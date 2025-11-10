@@ -19,7 +19,28 @@ def euler_step_inplace(
     h: float,
     velocity: Array2xN | Array3xN,
 ):
-    """In-place Euler step: positions += h * velocity"""
+    r"""
+    Perform an in-place Euler integration step.
+
+    Updates particle positions according to:
+
+    .. math::
+        x_{n+1} = x_n + h \, v_n
+
+    Parameters
+    ----------
+    positions : ArrayNx2 | ArrayNx3
+        Particle positions at the current time. Updated in-place.
+    h : float
+        Time step size.
+    velocity : Array2xN | Array3xN
+        Velocity field evaluated at the current positions.
+
+    Notes
+    -----
+    This is a low-level kernel designed for performance with Numba.
+    It does not allocate memory or perform error checking.
+    """
     positions += h * velocity
 
 
@@ -30,7 +51,25 @@ def adams_bashforth_2_step_inplace(
     v_current: Array2xN | Array3xN,
     v_prev: Array2xN | Array3xN,
 ):
-    """In-place AB2 step: positions += h * (1.5*v_current - 0.5*v_prev)"""
+    """
+    Perform an in-place second-order Adams-Bashforth (AB2) integration step.
+
+    Updates particle positions according to:
+
+    .. math::
+        x_{n+1} = x_n + h \\left( \tfrac{3}{2} v_n - \tfrac{1}{2} v_{n-1} \right)
+
+    Parameters
+    ----------
+    positions : ArrayNx2 | ArrayNx3
+        Particle positions at the current time. Updated in-place.
+    h : float
+        Time step size.
+    v_current : Array2xN | Array3xN
+        Velocity field evaluated at the current positions.
+    v_prev : Array2xN | Array3xN
+        Velocity field evaluated at the previous positions.
+    """
     positions += h * (1.5 * v_current - 0.5 * v_prev)
 
 
@@ -43,7 +82,23 @@ def runge_kutta_4_step_inplace(
     k3: ArrayNx2 | ArrayNx3,
     k4: ArrayNx2 | ArrayNx3,
 ):
-    """In-place RK4 update: positions += (h/6)*(k1 + 2*k2 + 2*k3 + k4)"""
+    """
+    Perform an in-place fourth-order Runge-Kutta (RK4) integration step.
+
+    Updates particle positions according to:
+
+    .. math::
+        x_{n+1} = x_n + \frac{h}{6}(k_1 + 2k_2 + 2k_3 + k_4)
+
+    Parameters
+    ----------
+    positions : ArrayNx2 | ArrayNx3
+        Particle positions at the current time. Updated in-place.
+    h : float
+        Time step size.
+    k1, k2, k3, k4 : ArrayNx2 | ArrayNx3
+        Intermediate slope (velocity) evaluations for RK4.
+    """
     positions += (h / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
 
 
@@ -53,31 +108,40 @@ def runge_kutta_4_step_inplace(
 
 
 class Integrator(ABC):
-    def __init__(self, interpolator: Interpolator, **kwargs) -> None:  # noqa: ARG002
-        """
-        Constructor for the Integrator. All integrators must receive an
-        interpolator during initialization.
+    """
+    Abstract base class for numerical ODE integrators.
 
-        Args:
-            interpolator (Interpolator): The interpolator used to compute
-                velocity based on particle positions.
-            **kwargs: Additional parameters specific to the integrator type.
-        """
+    All specific integrator implementations (Euler, AB2, RK4)
+    must derive from this class and implement the :meth:`integrate`
+    method.
+
+    Parameters
+    ----------
+    interpolator : Interpolator
+        Interpolator used to evaluate velocity from particle positions.
+    **kwargs
+        Optional extra arguments specific to the integrator implementation.
+    """
+
+    def __init__(self, interpolator: Interpolator, **kwargs) -> None:  # noqa: ARG002
         self.interpolator = interpolator
 
     @abstractmethod
     def integrate(self, h: float, particles: NeighboringParticles) -> None:
         """
-        Perform a single integration step (Euler, Runge-Kutta, Adams-Bashforth 2).
-        WARNING: This method performs in-place mutations of the particle positions.
+        Perform a single integration step.
 
-        Args:
-            h (float): Step size for integration.
-            particles (NeighboringParticles): Dataclass instance containing the
-                coordinates of the particles at the current step.
-            interpolator (Interpolation):
-                An instance of an interpolator that computes the velocity given the
-                position values.
+        Parameters
+        ----------
+        h : float
+            Time step size.
+        particles : NeighboringParticles
+            Dataclass containing particle positions and neighboring data.
+
+        Notes
+        -----
+        This method must mutate ``particles.positions`` in-place.
+        Implementations should use Numba-accelerated kernels for efficiency.
         """
         pass
 
@@ -88,13 +152,14 @@ class Integrator(ABC):
 
 
 class EulerIntegrator(Integrator):
-    """
-    Perform a single step of the Euler method for solving ordinary differential
-    equations (ODEs).
+    r"""
+    First-order explicit Euler integrator.
 
-    The Euler method is a first-order numerical procedure for solving ODEs
-    by approximating the solution using the derivative (velocity) at the current
-    point in time.
+    The Euler method approximates the solution of an ODE by
+    advancing the state using the current derivative (velocity):
+
+    .. math::
+        x_{n+1} = x_n + h \, v_n
     """
 
     def __init__(self, interpolator: Interpolator, **kwargs) -> None:
@@ -103,6 +168,16 @@ class EulerIntegrator(Integrator):
         self._velocity = None
 
     def integrate(self, h: float, particles: NeighboringParticles) -> None:
+        """
+        Perform a single Euler integration step in-place.
+
+        Parameters
+        ----------
+        h : float
+            Time step size.
+        particles : NeighboringParticles
+            Particle data with current positions to be updated.
+        """
         # Get or allocate buffer
         if self._velocity is None or self._velocity.shape != particles.positions.shape:
             self._velocity = np.empty_like(particles.positions)
@@ -121,19 +196,16 @@ class EulerIntegrator(Integrator):
 
 class AdamsBashforth2Integrator(Integrator):
     """
-    Perform a single step of the second-order Adams-Bashforth method
-    for solving ordinary differential equations (ODEs).
+    Second-order explicit Adams-Bashforth (AB2) integrator.
 
-    The Adams-Bashforth method is an explicit multistep method that uses the
-    values of the function (velocity) at the current and previous steps to
-    approximate the solution.
+    Uses a linear combination of the current and previous velocities
+    to achieve second-order accuracy:
 
-    y_{n+2} = y_{n+1} + h * [3/2 * f(t_{n+1}, y_{n+1}) - 1/2 * f(t_{n}, y_{n})]
+    .. math::
+        x_{n+1} = x_n + h \\left( \\frac{3}{2} v_n - \\frac{1}{2} v_{n-1} \\right)
 
-    Here we use the convention:
-    - n+2 → Future timestep, to be be stored in `particles` after integration
-    - n+1 → Current timestep, obtained from `particles`
-    - n   → Previous timestep, obtained from `particles_previous`
+    On the first iteration (when no previous velocity is available),
+    it defaults to a single Euler step.
     """
 
     def __init__(self, interpolator: Interpolator, **kwargs) -> None:
@@ -142,6 +214,21 @@ class AdamsBashforth2Integrator(Integrator):
         self._velocity = None
 
     def integrate(self, h: float, particles: NeighboringParticles) -> None:
+        """
+        Perform a single AB2 integration step in-place.
+
+        Parameters
+        ----------
+        h : float
+            Time step size.
+        particles : NeighboringParticles
+            Particle data with current positions to be updated.
+
+        Notes
+        -----
+        Uses Euler integration for the first step, when no
+        previous velocity field is available.
+        """
         if self._velocity is None or self._velocity.shape != particles.positions.shape:
             self._velocity = np.empty_like(particles.positions)
 
@@ -170,12 +257,18 @@ class AdamsBashforth2Integrator(Integrator):
 
 class RungeKutta4Integrator(Integrator):
     """
-    Perform a single step of the 4th-order Runge-Kutta method for solving
-    ordinary differential equations (ODEs).
+    Fourth-order explicit Runge-Kutta (RK4) integrator.
 
-    The Runge-Kutta 4 method is a widely used numerical method for solving ODEs
-    by approximating the solution using four intermediate slopes, providing a
-    higher-order accuracy than the Euler or Adams-Bashforth methods.
+    Uses four slope evaluations per step to achieve fourth-order accuracy:
+
+    .. math::
+        x_{n+1} = x_n + \\frac{h}{6} (k_1 + 2k_2 + 2k_3 + k_4)
+
+    where:
+        k₁ = f(t, x)
+        k₂ = f(t + h/2, x + h k₁/2)
+        k₃ = f(t + h/2, x + h k₂/2)
+        k₄ = f(t + h, x + h k₃)
     """
 
     def __init__(self, interpolator: Interpolator, **kwargs) -> None:
@@ -189,6 +282,21 @@ class RungeKutta4Integrator(Integrator):
         self._tmp: Optional[ArrayNx2 | ArrayNx3 | None] = None
 
     def integrate(self, h: float, particles: NeighboringParticles) -> None:
+        """
+        Perform a single RK4 integration step in-place.
+
+        Parameters
+        ----------
+        h : float
+            Time step size.
+        particles : NeighboringParticles
+            Particle data with current positions to be updated.
+
+        Notes
+        -----
+        This method allocates intermediate buffers lazily and reuses them
+        between calls to minimize memory allocations.
+        """
         npos = particles.positions.shape
 
         # Lazily allocate working buffers
@@ -233,7 +341,27 @@ class RungeKutta4Integrator(Integrator):
 
 
 def create_integrator(integrator_name: str, interpolator: Interpolator) -> Integrator:
-    """Factory to create Integrator instances"""
+    """
+    Factory function to instantiate a numerical integrator.
+
+    Parameters
+    ----------
+    integrator_name : str
+        Name of the integrator to create.
+        Supported values: ``"euler"``, ``"ab2"``, ``"rk4"``.
+    interpolator : Interpolator
+        Interpolator used to compute velocity from particle positions.
+
+    Returns
+    -------
+    Integrator
+        An instance of the requested integrator type.
+
+    Raises
+    ------
+    ValueError
+        If the provided ``integrator_name`` is not recognized.
+    """
 
     integrator_name = integrator_name.lower()  # Normalize input to lowercase
 

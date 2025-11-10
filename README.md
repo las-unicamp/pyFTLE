@@ -44,9 +44,6 @@ pyFTLE is a modular, high-performance package for computing FTLE fields. It trac
 - Extensible design supporting multiple file formats.
 - Modular, well-structured codebase for easy customization and extension.
 
-> [!NOTE]
-> The current implementation supports MATLAB files for input and MATLAB or VTK files for output. Thanks to its modular architecture, additional file formats can be integrated with minimal effort.
-
 ---
 
 ## **INSTALLATION**
@@ -64,17 +61,23 @@ pyFTLE is a modular, high-performance package for computing FTLE fields. It trac
    git clone https://github.com/las-unicamp/pyFTLE.git
    cd pyFTLE
    ```
-2. Install dependencies using UV:
+2. Install the package (this automatically installs the SIMD-optimized C++/Eigen backend):
    ```bash
-   uv sync --all-extras
+   uv tool install .
    ```
-3. Install `src/` directory as an editable package:
-   ```bash
-   uv pip install -e '.[dev,test]' --verbose
-   ```
-   - This installs `src/` as an editable package, allowing you to import modules directly and modify the code during development.
-   - The command also automatically installs the SIMD-optimized C++/Eigen backend.
-   - Installing in editable mode helps avoid common import issues during development.
+
+After installation, `pyftle` is available globally.
+This means you can import it in Python scripts or notebooks using:
+```python
+import pyftle
+```
+and also run the CLI tool directly from the terminal with:
+```
+pyftle -c config.yaml
+```
+
+
+To uninstall, just run `uv tool uninstall pyftle`
 
 ---
 
@@ -91,9 +94,13 @@ solver’s execution.
 > For production runs, it is often more practical to read velocity and coordinate data directly
 from the file system (HD/SSD). In this case, the [file-based CLI](#anchor-point-running-via-CLI) offers greater convenience and flexibility.
 
+> [!NOTE]
+> At present, the solver accepts MATLAB (.mat) files as input and exports results in MATLAB (.mat) or VTK (.vts, .vtp) formats.
+> File I/O is implemented using SciPy, so MATLAB itself is not required.
+> The modular I/O subsystem allows developers to integrate additional file formats with minimal changes.
 
 > [!IMPORTANT]
-> As previously mentioned, the current implementation only supports MATLAB file formats for input data. These files consist of three types: velocity, coordinate, and particle files.
+> Input data is provided in MATLAB file format, grouped into three types: velocity, coordinate, and particle files.
 >
 > - **Velocity files** contain the velocity field data, where each scalar component (e.g., velocity in the x, y, and z directions) is provided in separate columns. Each column header must be properly labeled (`velocity_x`, `velocity_y`, and `velocity_z` for 3D cases), with the corresponding scalar velocity values at each point in the grid.
 >
@@ -152,13 +159,13 @@ particles).
 > Once the parameters are properly set, the solver can be executed from the root directory with the following command:
 >
 > ```bash
-> PYTHONPATH=${PWD} uv run python src/app.py -c config.yaml
+> pyftle -c config.yaml
 > ```
 
 Alternatively, you can run the script from the CLI as:
 
 ```bash
-PYTHONPATH=${PWD} uv run python app.py \
+pyftle \
     --experiment_name "my_experiment" \
     --list_velocity_files "velocity_files.txt" \
     --list_coordinate_files "coordinate_files.txt" \
@@ -176,10 +183,20 @@ PYTHONPATH=${PWD} uv run python app.py \
 For VSCode users, the script execution can be streamlined via `.vscode/launch.json`.
 
 
+<br>
+
+To see the complete list of command-line options and their descriptions, simply run:
+```bash
+pyftle --help
+# or equivalently
+pyftle -h
+```
+This will display all available parameters, their default values, and usage examples directly in the terminal.
+
+
 <details>
 <summary><b>⚙️ Full List of CLI Parameters (click to expand)</b></summary>
 
-<br>
 
 ### **Required Parameters**
 
@@ -221,6 +238,26 @@ If the particle centroids form a regular grid, defining this parameter enables s
 
 </details>
 
+
+### **FTLE Computation Details**
+
+The parameters `snapshot_timestep` and `flow_map_period` together define the temporal window used to compute each FTLE field.
+The number of FTLE fields that will be produced is determined by the number of available velocity snapshots and the integration period of the flow map:
+
+`N_FTLE = N_snapshots - (flow_map_period / snapshot_timestep)`
+
+For example, suppose:
+
+* `list_velocity_files` lists **100** velocity files,
+* `snapshot_timestep = 0.01`, and
+* `flow_map_period = 0.1`.
+
+In this case, each FTLE field requires **10** consecutive velocity snapshots to integrate the flow map, so only
+**90 FTLE fields** will be computed (one for each valid starting snapshot).
+
+This ensures that the temporal integration for each FTLE remains consistent with the specified flow map period.
+
+
 ---
 
 
@@ -245,6 +282,21 @@ This project is licensed under the **MIT License**.
 ## **CONTRIBUTING**
 
 When contributing to this repository, please make sure to follow the guidelines from the [CONTRIBUTING file](CONTRIBUTING.md).
+
+To make sure the Language Server Protocol (LSP) is going to work as expected, one can install the package as follows:
+
+1. Install dependencies using UV:
+   ```bash
+   uv sync --all-extras
+   ```
+2. Install `src/` directory as an editable package:
+   ```bash
+   uv pip install -e '.[dev,test]' --verbose
+   ```
+   - This installs `src/` as an editable package, allowing you to import modules directly and modify the code during development.
+   - The command also automatically installs the SIMD-optimized C++/Eigen backend.
+   - Installing in editable mode helps avoid common import issues during development.
+
 
 We use `pytest` for unit tests. To run the entire test suit, we recommend the following command in the base directory of the repository:
 ```bash
