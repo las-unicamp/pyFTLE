@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock
-
 import numpy as np
 import pytest
 
@@ -9,36 +7,21 @@ from pyftle.integrate import (
     RungeKutta4Integrator,
     create_integrator,
 )
-from pyftle.interpolate import Interpolator
-from pyftle.particles import NeighboringParticles
-
-
-@pytest.fixture
-def mock_interpolator():
-    mock = MagicMock(spec=Interpolator)
-    mock.interpolate.side_effect = lambda x: x * 0.1  # Fake velocity field
-    return mock
-
-
-@pytest.fixture
-def initial_conditions():
-    # Create a positions array with shape (4 * N, 2)
-    positions = np.array(
-        [
-            [1.0, 2.0],
-            [3.0, 4.0],  # Left neighbors
-            [5.0, 6.0],
-            [7.0, 8.0],  # Right neighbors
-            [9.0, 10.0],
-            [11.0, 12.0],  # Top neighbors
-            [13.0, 14.0],
-            [15.0, 16.0],  # Bottom neighbors
-        ]
-    )
-    return NeighboringParticles(positions=positions)
 
 
 def test_euler_integrator(mock_interpolator, initial_conditions):
+    """Tests the Euler integrator.
+
+    Args:
+        mock_interpolator (MagicMock): Mock object for Interpolator.
+        initial_conditions (NeighboringParticles): Fixture providing initial
+            particle conditions.
+
+    Flow:
+        EulerIntegrator initialized with mock_interpolator
+        -> integrator.integrate with initial_conditions
+        initial_conditions.positions == expected_positions (calculated manually)
+    """
     integrator = EulerIntegrator(mock_interpolator)
     h = 0.1
     initial_positions = initial_conditions.positions.copy()
@@ -51,6 +34,18 @@ def test_euler_integrator(mock_interpolator, initial_conditions):
 
 
 def test_runge_kutta4_integrator(mock_interpolator, initial_conditions):
+    """Tests the Runge-Kutta 4 integrator.
+
+    Args:
+        mock_interpolator (MagicMock): Mock object for Interpolator.
+        initial_conditions (NeighboringParticles): Fixture providing initial
+            particle conditions.
+
+    Flow:
+        RungeKutta4Integrator initialized with mock_interpolator
+        -> integrator.integrate with initial_conditions
+        All positions in initial_conditions.positions are finite.
+    """
     integrator = RungeKutta4Integrator(mock_interpolator)
     h = 0.1
     integrator.integrate(h, initial_conditions)
@@ -59,6 +54,18 @@ def test_runge_kutta4_integrator(mock_interpolator, initial_conditions):
 
 
 def test_adams_bashforth2_integrator(mock_interpolator, initial_conditions):
+    """Tests the Adams-Bashforth 2 integrator.
+
+    Args:
+        mock_interpolator (MagicMock): Mock object for Interpolator.
+        initial_conditions (NeighboringParticles): Fixture providing initial
+            particle conditions.
+
+    Flow:
+        AdamsBashforth2Integrator initialized with mock_interpolator
+        -> integrator.integrate with initial_conditions
+        All positions in initial_conditions.positions are finite.
+    """
     integrator = AdamsBashforth2Integrator(mock_interpolator)
     h = 0.1
     integrator.integrate(h, initial_conditions)
@@ -67,7 +74,17 @@ def test_adams_bashforth2_integrator(mock_interpolator, initial_conditions):
 
 
 def test_get_integrator(mock_interpolator):
-    # Valid names
+    """Tests the create_integrator factory function.
+
+    Args:
+        mock_interpolator (MagicMock): Mock object for Interpolator.
+
+    Flow:
+        create_integrator with valid names -> returns correct integrator type
+        create_integrator with case-insensitive names -> returns correct
+            integrator type
+        create_integrator with invalid names -> raises ValueError
+    """
     assert isinstance(
         create_integrator("ab2", mock_interpolator), AdamsBashforth2Integrator
     )
@@ -76,7 +93,6 @@ def test_get_integrator(mock_interpolator):
         create_integrator("rk4", mock_interpolator), RungeKutta4Integrator
     )
 
-    # Case-insensitivity
     assert isinstance(
         create_integrator("AB2", mock_interpolator), AdamsBashforth2Integrator
     )
@@ -85,12 +101,7 @@ def test_get_integrator(mock_interpolator):
         create_integrator("rK4", mock_interpolator), RungeKutta4Integrator
     )
 
-    # Invalid input
     with pytest.raises(ValueError, match="Invalid integrator name 'invalid'.*"):
         create_integrator("invalid", mock_interpolator)
     with pytest.raises(ValueError, match="Invalid integrator name ''.*"):
         create_integrator("", mock_interpolator)
-
-
-if __name__ == "__main__":
-    pytest.main()

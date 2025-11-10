@@ -8,53 +8,8 @@ from pyftle.interpolate import (
     NearestNeighborInterpolator,
     create_interpolator,
 )
-from pyftle.my_types import Array2xN, Array3xN
 
 
-# -----------------------
-# Helper: mock data
-# -----------------------
-def generate_mock_data_2d() -> tuple[Array2xN, Array2xN]:
-    points = np.array(
-        [
-            [0.0, 1.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-    velocities = np.array(
-        [
-            [0.0, 1.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-    return points, velocities
-
-
-def generate_mock_data_3d() -> tuple[Array3xN, Array3xN]:
-    points = np.array(
-        [
-            [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0],
-            [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-    velocities = np.array(
-        [
-            [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0],
-            [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-        ],
-        dtype=np.float64,
-    )
-    return points, velocities
-
-
-# -----------------------
-# Interpolator tests (2D)
-# -----------------------
 @pytest.mark.parametrize(
     "strategy_class",
     [
@@ -63,8 +18,21 @@ def generate_mock_data_3d() -> tuple[Array3xN, Array3xN]:
         NearestNeighborInterpolator,
     ],
 )
-def test_interpolators_2d(strategy_class):
-    points, velocities = generate_mock_data_2d()
+def test_interpolators_2d(strategy_class, generate_mock_data_2d):
+    """Tests various 2D interpolator strategies.
+
+    Args:
+        strategy_class (type): The interpolator class to test.
+        generate_mock_data_2d (tuple): Fixture providing mock 2D points and
+            velocities.
+
+    Flow:
+        generate_mock_data_2d -> interpolator.update -> interpolator.interpolate
+        -> interpolated_values
+        interpolated_values shape == expected shape
+        All interpolated_values are finite.
+    """
+    points, velocities = generate_mock_data_2d
     interpolator = strategy_class()
     interpolator.update(velocities, points)
 
@@ -75,9 +43,6 @@ def test_interpolators_2d(strategy_class):
     assert np.isfinite(interpolated_values).all()
 
 
-# -----------------------
-# Interpolator tests (3D)
-# -----------------------
 @pytest.mark.parametrize(
     "strategy_class",
     [
@@ -85,8 +50,21 @@ def test_interpolators_2d(strategy_class):
         NearestNeighborInterpolator,
     ],
 )
-def test_interpolators_3d(strategy_class):
-    points, velocities = generate_mock_data_3d()
+def test_interpolators_3d(strategy_class, generate_mock_data_3d):
+    """Tests various 3D interpolator strategies.
+
+    Args:
+        strategy_class (type): The interpolator class to test.
+        generate_mock_data_3d (tuple): Fixture providing mock 3D points and
+            velocities.
+
+    Flow:
+        generate_mock_data_3d -> interpolator.update -> interpolator.interpolate
+        -> interpolated_values
+        interpolated_values shape == expected shape
+        All interpolated_values are finite.
+    """
+    points, velocities = generate_mock_data_3d
     interpolator = strategy_class()
     interpolator.update(velocities, points)
 
@@ -97,17 +75,20 @@ def test_interpolators_3d(strategy_class):
     assert np.isfinite(interpolated_values).all()
 
 
-# -----------------------
-# GridInterpolator tests
-# -----------------------
 def test_grid_interpolator_2d():
-    grid_x, grid_y = np.mgrid[0:1:3j, 0:1:3j]
-    grid_shape = grid_x.shape  # (3, 3)
+    """Tests the 2D GridInterpolator.
 
-    # Flatten grid points to shape (ndim, n_points)
+    Flow:
+        Generate 2D grid data -> GridInterpolator initialized
+        -> interpolator.update -> interpolator.interpolate -> interpolated_values
+        interpolated_values shape == expected shape
+        All interpolated_values are finite.
+    """
+    grid_x, grid_y = np.mgrid[0:1:3j, 0:1:3j]
+    grid_shape = grid_x.shape
+
     points = np.stack((grid_x.ravel(), grid_y.ravel()))
 
-    # Create velocities array shape (ndim, n_points)
     velocities = np.stack((grid_x.ravel(), grid_y.ravel()))
 
     interpolator = GridInterpolator(grid_shape=grid_shape, method="linear")
@@ -121,8 +102,16 @@ def test_grid_interpolator_2d():
 
 
 def test_grid_interpolator_3d():
+    """Tests the 3D GridInterpolator.
+
+    Flow:
+        Generate 3D grid data -> GridInterpolator initialized
+        -> interpolator.update -> interpolator.interpolate -> interpolated_values
+        interpolated_values shape == expected shape
+        All interpolated_values are finite.
+    """
     grid_x, grid_y, grid_z = np.mgrid[0:1:3j, 0:1:3j, 0:1:3j]
-    grid_shape = grid_x.shape  # (3, 3, 3)
+    grid_shape = grid_x.shape
 
     points = np.stack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel()))
     velocities = np.stack((grid_x.ravel(), grid_y.ravel(), grid_z.ravel()))
@@ -138,6 +127,15 @@ def test_grid_interpolator_3d():
 
 
 def test_create_interpolator_with_grid_shape():
+    """Tests that create_interpolator returns a GridInterpolator when
+    grid_shape is provided.
+
+    Flow:
+        grid_shape, "linear" -> create_interpolator -> interpolator
+        interpolator is instance of GridInterpolator
+        interpolator.grid_shape == grid_shape
+        interpolator.method == "linear"
+    """
     grid_shape = (3, 3)
     interpolator = create_interpolator("linear", grid_shape=grid_shape)
     assert isinstance(interpolator, GridInterpolator)
@@ -145,11 +143,18 @@ def test_create_interpolator_with_grid_shape():
     assert interpolator.method == "linear"
 
 
-# -----------------------
-# Factory tests
-# -----------------------
 @pytest.mark.parametrize("kind", ["cubic", "linear", "nearest"])
 def test_create_interpolator_returns_correct_type(kind):
+    """Tests that create_interpolator returns the correct interpolator type
+    for various kinds.
+
+    Args:
+        kind (str): The interpolation type string.
+
+    Flow:
+        kind -> create_interpolator -> interpolator
+        interpolator is instance of expected type.
+    """
     interpolator = create_interpolator(kind)
     assert isinstance(
         interpolator,
@@ -163,5 +168,11 @@ def test_create_interpolator_returns_correct_type(kind):
 
 
 def test_create_interpolator_invalid_type():
+    """Tests that create_interpolator raises ValueError for an invalid
+    interpolation type.
+
+    Flow:
+        "nonsense" -> create_interpolator -> raises ValueError
+    """
     with pytest.raises(ValueError, match="Invalid interpolation type"):
         create_interpolator("nonsense")
