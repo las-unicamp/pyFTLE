@@ -13,9 +13,7 @@ class TestFTLEWriter(unittest.TestCase):
         self.test_dir = "test_output"
         os.makedirs(self.test_dir, exist_ok=True)
 
-        self.particles_centroid_2d = np.array(
-            [[0, 0], [1, 0], [0, 1], [1, 1]]
-        )
+        self.particles_centroid_2d = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
         self.particles_centroid_3d = np.array(
             [
                 [0, 0, 0],

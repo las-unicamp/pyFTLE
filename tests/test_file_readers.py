@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from pyftle.file_readers import (
     read_coordinate,

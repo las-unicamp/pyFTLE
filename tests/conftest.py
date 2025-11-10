@@ -1,7 +1,8 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 from scipy.io import savemat
-from unittest.mock import MagicMock
 
 from pyftle.interpolate import Interpolator
 from pyftle.my_types import Array2xN, Array3xN, Array4Nx2, Array6Nx3

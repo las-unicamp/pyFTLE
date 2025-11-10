@@ -1,8 +1,4 @@
 import numpy as np
-import pytest
-
-from pyftle.my_types import Array4Nx2, Array6Nx3
-from pyftle.particles import NeighboringParticles
 
 
 def test_len(sample_particles):

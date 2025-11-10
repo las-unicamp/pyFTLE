@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock
-
 import numpy as np
 import pytest
 
@@ -9,8 +7,6 @@ from pyftle.integrate import (
     RungeKutta4Integrator,
     create_integrator,
 )
-from pyftle.interpolate import Interpolator
-from pyftle.particles import NeighboringParticles
 
 
 def test_euler_integrator(mock_interpolator, initial_conditions):

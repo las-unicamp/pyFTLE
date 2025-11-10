@@ -1,6 +1,5 @@
 # ruff: noqa: N806, N802
 import numpy as np
-import pytest
 
 from pyftle.ftle import (
     compute_cauchy_green_2x2,
