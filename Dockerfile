@@ -22,3 +22,4 @@ RUN pip install --no-cache-dir uv && \
 
 # Define the entrypoint for the container
 ENTRYPOINT ["pyftle"]
+
