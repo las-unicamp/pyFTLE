@@ -1,3 +1,30 @@
+"""
+File readers for velocity, coordinate, and seed particle data.
+
+This module provides utilities for loading MATLAB `.mat` files containing
+velocity fields, spatial coordinates, and seed particle positions used in
+FTLE (Finite-Time Lyapunov Exponent) computations.
+
+Supported data layouts
+----------------------
+Each `.mat` file must contain specific variable names:
+
+- **Velocity data**:
+  - 2D: `velocity_x`, `velocity_y`
+  - 3D: `velocity_x`, `velocity_y`, `velocity_z` (optional)
+
+- **Coordinate data**:
+  - 2D: `coordinate_x`, `coordinate_y`
+  - 3D: `coordinate_x`, `coordinate_y`, `coordinate_z` (optional)
+
+- **Seed particle data**:
+  - 2D: `left`, `right`, `top`, `bottom`
+  - 3D: `left`, `right`, `top`, `bottom`, `front`, `back`
+
+All arrays are automatically flattened and stacked in column-major order to
+produce consistent NumPy arrays compatible with `pyftle`'s internal types.
+"""
+
 import numpy as np
 from scipy.io import loadmat
 
@@ -7,7 +34,28 @@ from pyftle.particles import NeighboringParticles
 
 def read_velocity(file_path: str) -> Array2xN | Array3xN:
     """
-    Reads velocity data from a MATLAB file.
+    Read velocity components from a MATLAB `.mat` file.
+
+    The file must contain at least the keys `'velocity_x'` and `'velocity_y'`.
+    If `'velocity_z'` is also present, the velocity is treated as 3D.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the MATLAB file containing the velocity data.
+
+    Returns
+    -------
+    velocities : Array2xN or Array3xN
+        A 2xN or 3xN array where each row corresponds to one velocity
+        component (`x`, `y`, and optionally `z`), and `N` is the number
+        of spatial grid points.
+
+    Raises
+    ------
+    ValueError
+        If the required keys (`velocity_x`, `velocity_y`) are not present
+        in the `.mat` file.
     """
     data = loadmat(file_path)
 
@@ -30,7 +78,27 @@ def read_velocity(file_path: str) -> Array2xN | Array3xN:
 
 def read_coordinate(file_path: str) -> Array2xN | Array3xN:
     """
-    Reads coordinate data from a MATLAB file.
+    Read coordinate grid data from a MATLAB `.mat` file.
+
+    The file must contain at least the keys `'coordinate_x'` and `'coordinate_y'`.
+    If `'coordinate_z'` is present, the coordinates are treated as 3D.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the MATLAB file containing coordinate data.
+
+    Returns
+    -------
+    coordinates : Array2xN or Array3xN
+        A 2xN or 3xN array where each row corresponds to one spatial
+        component (`x`, `y`, and optionally `z`), and `N` is the number
+        of grid points.
+
+    Raises
+    ------
+    ValueError
+        If the required coordinate keys are missing from the file.
     """
     data = loadmat(file_path)
 
@@ -52,16 +120,36 @@ def read_coordinate(file_path: str) -> Array2xN | Array3xN:
 
 def read_seed_particles_coordinates(file_path: str) -> NeighboringParticles:
     """
-    Reads seeded particle coordinates from a MATLAB file containing `left`, `right`
-    `top` and `bottom` keys to identify the 4 neighboring particles. Then, returns
-    a NeighboringParticles object that holds the coordinate array and other
-    useful attributes.
+    Read seed particle coordinates from a MATLAB `.mat` file and return a
+    `NeighboringParticles` dataclass instance.
 
-    Args:
-        file_path (str): Path to the MATLAB file.
+    The MATLAB file must contain at least the 2D neighbor keys:
+    `'left'`, `'right'`, `'top'`, `'bottom'`.
 
-    Returns:
-        NeighboringParticles: Dataclass of neighboring particles.
+    If `'front'` and `'back'` are also present, the dataset is interpreted as 3D.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the MATLAB file containing seed particle data.
+
+    Returns
+    -------
+    particles : NeighboringParticles
+        Dataclass representing the grouped particle positions. The total shape is:
+        - (4xN, 2) for 2D datasets (left, right, top, bottom)
+        - (6xN, 3) for 3D datasets (left, right, top, bottom, front, back)
+
+    Raises
+    ------
+    ValueError
+        If the required neighbor keys are missing from the `.mat` file.
+
+    Notes
+    -----
+    The returned `NeighboringParticles` object contains the concatenated
+    coordinates of all neighboring particles used to compute flow map
+    Jacobians and FTLE fields.
     """
     data = loadmat(file_path)
 

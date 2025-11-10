@@ -6,8 +6,69 @@ import configargparse  # type: ignore
 @dataclass
 class MyProgramArgs:
     """
-    This is a helper to provide typehints of the arguments.
-    All possible arguments must be declared in this dataclass.
+    Dataclass defining the full set of configuration parameters for the FTLE
+    computation program.
+
+    This class provides type hints for all arguments parsed by the command-line
+    interface (CLI) or YAML configuration file. It ensures that every possible
+    argument is declared explicitly, simplifying IDE autocompletion and static
+    type checking.
+
+    Attributes
+    ----------
+    experiment_name : str
+        Name of the subdirectory inside `root_dir/outputs/` where the output
+        files will be stored.
+
+    list_velocity_files : str
+        Path to a text file containing a list (one per line) of velocity data
+        file paths. The user must ensure a compatible reader exists for the
+        chosen format.
+
+    list_coordinate_files : str
+        Path to a text file containing a list (one per line) of coordinate
+        file paths. The user must ensure a compatible reader exists for the
+        chosen format.
+
+    list_particle_files : str
+        Path to a text file containing a list (one per line) of particle
+        file paths. Each file must contain headers such as `left`, `right`,
+        `top`, and `bottom` that identify groups of neighboring particles used
+        to compute the Cauchy–Green deformation tensor.
+
+    snapshot_timestep : float
+        Time interval between consecutive snapshots. A positive value computes
+        forward-time FTLE; a negative value computes backward-time FTLE.
+
+    flow_map_period : float
+        Approximate time period over which the flow map is evaluated. The
+        integration length (in number of snapshots) is computed as
+        `flow_map_period / snapshot_timestep`.
+
+    integrator : str
+        Name of the time-integration scheme. Options are:
+        `'rk4'`, `'euler'`, or `'ab2'`.
+
+    interpolator : str
+        Name of the interpolation strategy to evaluate particle velocity at
+        arbitrary positions. Options are: `'cubic'`, `'linear'`, `'nearest'`,
+        or `'grid'`.
+
+    num_processes : int
+        Number of parallel worker processes used for multiprocessing. Each
+        process computes the FTLE field for one snapshot. Default is 1
+        (serial execution).
+
+    output_format : str
+        Output file format. Options are `'mat'` or `'vtk'`.
+
+    flow_grid_shape : tuple[int, ...]
+        Shape of the regular grid used to interpolate flow fields. Must contain
+        2 or 3 integers. If empty, the code assumes unstructured data.
+
+    particles_grid_shape : tuple[int, ...]
+        Shape of the regular grid used to save particle-based results. Must
+        contain 2 or 3 integers. If empty, the code assumes unstructured data.
     """
 
     # logger parameters
@@ -34,9 +95,37 @@ parser = configargparse.ArgumentParser()
 
 def parse_tuple(value: str):
     """
-    Convert a string of integers separated by commas into a tuple of integers.
-    It ensures that the tuple contains either 2 or 3 positive integers.
-    If the last element is 1, it is ignored.
+    Convert a comma-separated string into a tuple of positive integers.
+
+    This function is used to parse command-line arguments representing grid
+    shapes (e.g., `--grid_shape 10,20,30`). It validates that the input contains
+    either two or three positive integers. If the last integer equals `1`, it
+    is automatically removed to handle degenerate dimensions.
+
+    Parameters
+    ----------
+    value : str
+        A string of comma-separated integers, such as `"10,20,30"` or `"32,32"`.
+
+    Returns
+    -------
+    tuple[int, ...]
+        A tuple of two or three positive integers. If the last element is `1`,
+        it is omitted.
+
+    Raises
+    ------
+    ValueError
+        If the input does not contain exactly 2 or 3 integers, or if any
+        integer is non-positive.
+
+    Examples
+    --------
+    >>> parse_tuple("10,20,30")
+    (10, 20, 30)
+
+    >>> parse_tuple("10,20,1")
+    (10, 20)
     """
     # Convert string to a list of integers
     parsed_values = list(map(int, value.split(",")))
@@ -157,7 +246,13 @@ parser.add_argument(
     "Leave empty for unstructured point distribution (default).",
 )
 
-raw_args = vars(parser.parse_args())
-raw_args.pop("config", None)
 
-args = MyProgramArgs(**raw_args)
+def parse_args() -> MyProgramArgs:
+    """
+    Parse command-line arguments and return a `MyProgramArgs` dataclass instance.
+    This function should be called explicitly by the main entry point, so that
+    importing this module does not trigger parsing automatically.
+    """
+    raw_args = vars(parser.parse_args())
+    raw_args.pop("config", None)
+    return MyProgramArgs(**raw_args)

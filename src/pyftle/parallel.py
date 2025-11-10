@@ -1,4 +1,29 @@
-"""Infrastructure Layer (handles parallelism, tqdm, and errors)"""
+"""
+Infrastructure Layer
+
+This module provides utilities for parallel task execution, real-time progress
+monitoring, and robust error handling in multiprocessing contexts. It is
+designed for scientific computations (e.g., FTLE batch processing) where
+multiple independent tasks need to be executed concurrently with visual feedback
+through progress bars.
+
+Features
+--------
+- Seamless integration with both terminal and Jupyter environments via `tqdm`.
+- Graceful handling of errors during multiprocessing (with traceback display).
+- Live monitoring of per-task and global progress using multiple progress bars.
+- Clean shutdown and interruption handling across processes.
+
+Classes
+-------
+ParallelExecutor
+    Handles parallel task execution, progress tracking, and error reporting.
+
+Functions
+---------
+get_tqdm()
+    Detects environment and returns the appropriate tqdm class (terminal or notebook).
+"""
 
 import multiprocessing as mp
 import time
@@ -15,7 +40,24 @@ colorama_init(autoreset=True)
 
 
 def get_tqdm():
-    """Return tqdm suitable for notebooks or terminal environments."""
+    """
+    Return a tqdm-compatible progress bar for the current environment.
+
+    This function automatically detects whether the code is running inside a
+    Jupyter/IPython environment or a standard terminal, and imports the
+    appropriate `tqdm` variant accordingly.
+
+    Returns
+    -------
+    tqdm_class : type
+        The appropriate tqdm class:
+        - `tqdm.notebook.tqdm` if running in Jupyter/IPython.
+        - `tqdm.tqdm` for standard terminal environments.
+
+    Notes
+    -----
+    This ensures consistent progress bar rendering across environments.
+    """
     try:
         from IPython.core.getipython import get_ipython
 
@@ -36,7 +78,28 @@ tqdm = get_tqdm()
 
 
 class ParallelExecutor:
-    """Handles multiprocessing and live progress monitoring."""
+    """
+    Manage multiprocessing execution with live progress monitoring.
+
+    The `ParallelExecutor` is responsible for executing multiple independent
+    tasks in parallel using `concurrent.futures.ProcessPoolExecutor`, while
+    providing live progress visualization and robust error handling.
+
+    Parameters
+    ----------
+    n_processes : int, optional
+        Number of parallel worker processes to launch (default is 4).
+
+    Attributes
+    ----------
+    n_processes : int
+        Number of concurrent worker processes.
+    progress_queue : multiprocessing.Queue
+        Shared queue used to communicate task progress between worker processes
+        and the monitor process.
+    _stop_event : multiprocessing.Event
+        Event flag used to signal the monitor process to terminate.
+    """
 
     def __init__(self, n_processes: int = 4):
         self.n_processes = n_processes
@@ -45,7 +108,28 @@ class ParallelExecutor:
         self._stop_event = manager.Event()
 
     def _monitor_progress(self, total_tasks: int, steps_per_task: int):
-        """Monitor progress in a separate process."""
+        """
+        Display real-time progress for all parallel tasks.
+
+        This method runs in a dedicated process and continuously listens to the
+        shared progress queue. It maintains:
+        - One global progress bar tracking total completed tasks.
+        - Individual progress bars for active tasks.
+
+        Parameters
+        ----------
+        total_tasks : int
+            Total number of tasks to monitor.
+        steps_per_task : int
+            Expected number of progress updates (e.g., time steps) per task.
+
+        Notes
+        -----
+        - Each task reports its progress as `(task_id, step)` tuples to the queue.
+        - When a task is complete, it sends `(task_id, "done")`.
+        - The method terminates when all tasks are done or `_stop_event` is set.
+        """
+
         global_bar = tqdm(
             total=total_tasks, desc="Global", position=0, dynamic_ncols=True
         )
@@ -85,7 +169,44 @@ class ParallelExecutor:
             bar.close()
 
     def run(self, tasks: list[BatchSource], worker_fn):
-        """Run worker_fn(task, queue) in parallel and handle errors."""
+        """
+        Execute multiple tasks in parallel and collect results.
+
+        Each task is executed in a separate process via the provided `worker_fn`.
+        Progress updates are collected asynchronously and displayed via tqdm bars.
+
+        Parameters
+        ----------
+        tasks : list of BatchSource
+            List of task objects to process. Each `BatchSource` must contain
+            attributes such as `id` and `num_steps`, representing the task's
+            identity and number of progress steps, respectively.
+        worker_fn : callable
+            Function with signature `worker_fn(task, queue)` that performs the
+            actual work for each task. The function must:
+            - Report progress by placing `(task.id, step)` or `(task.id, "done")`
+              messages into the shared queue.
+            - Return a result (e.g., NumPy array) or raise an exception on failure.
+
+        Returns
+        -------
+        results : list of np.ndarray or None
+            List of task results in the same order as the input tasks.
+
+        Raises
+        ------
+        RuntimeError
+            If one or more tasks fail during execution. Errors are printed with
+            traceback details, and all remaining tasks are immediately canceled.
+
+        Notes
+        -----
+        - Progress is displayed live for all tasks.
+        - If an error occurs in any task, all ongoing computations are stopped.
+        - The method ensures that monitor processes and worker pools terminate
+          cleanly even in error conditions.
+        """
+
         steps_per_task = tasks[0].num_steps  # num snapshots in flow map period
 
         monitor_proc = mp.Process(
