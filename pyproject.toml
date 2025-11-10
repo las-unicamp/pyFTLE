@@ -56,4 +56,5 @@ dev = [
 ]
 
 [project.scripts]
+pyftle = "src.app:main"
 generate-stubs = "scripts.generate_stubs:main"

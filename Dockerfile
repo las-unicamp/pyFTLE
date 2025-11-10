@@ -4,6 +4,10 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
+# Add the local bin directory to the PATH
+ENV PATH="/root/.local/bin:${PATH}"
+ENV PYTHONPATH="${PYTHONPATH}:/app"
+
 # Copy the dependency management files
 COPY pyproject.toml uv.lock README.md CMakeLists.txt ./
 COPY src/ ./src/
@@ -15,9 +19,5 @@ RUN apt-get update && apt-get install -y build-essential cmake git
 RUN pip install --no-cache-dir uv && \
     uv pip install --system --no-cache .
 
-# Copy the rest of the application's code
-COPY . .
-
 # Define the entrypoint for the container
 ENTRYPOINT ["pyftle"]
-
