@@ -1,6 +1,6 @@
 import os
 
-from src.file_utils import find_files_with_pattern, write_list_to_txt
+from pyftle.file_utils import find_files_with_pattern, write_list_to_txt
 
 ROOT_DIR = "./inputs/double_gyre"
 SAVE_TXT_DIR = "./inputs"
