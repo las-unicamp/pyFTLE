@@ -1,0 +1,37 @@
+# Required configuration file for Read the Docs.
+
+version: 2
+# -------------------------------------------------------------------
+# Build definition
+# -------------------------------------------------------------------
+build:
+  # Specify the operating system to build on
+  os: "ubuntu-lts-latest"
+  # Specify the programming language and version
+  tools:
+    python: "3.10" # Must match or exceed the Python 3.10+ requirement from your README
+
+# -------------------------------------------------------------------
+# Python configuration (used to install your project and dependencies)
+# -------------------------------------------------------------------
+python:
+  install:
+    # We install the package in editable mode with the [docs] dependencies.
+    - method: pip
+      path: .
+      extra_requirements: [docs]
+
+# -------------------------------------------------------------------
+# Sphinx configuration
+# -------------------------------------------------------------------
+sphinx:
+  # Tell RTD where your configuration file is located
+  configuration: docs/source/conf.py
+
+# -------------------------------------------------------------------
+# Optional: Specify the documentation output format
+# -------------------------------------------------------------------
+formats:
+  - pdf
+  # - epub  <-- You can add other valid formats here
+  # - htmlzip

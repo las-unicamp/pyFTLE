@@ -183,7 +183,10 @@ class ParallelExecutor:
             identity and number of progress steps, respectively.
         worker_fn : callable
             Function with signature `worker_fn(task, queue)` that performs the
-            actual work for each task. The function must:
+            actual work for each task.
+
+            The function must:
+
             - Report progress by placing `(task.id, step)` or `(task.id, "done")`
               messages into the shared queue.
             - Return a result (e.g., NumPy array) or raise an exception on failure.
