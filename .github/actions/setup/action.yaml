@@ -1,3 +1,5 @@
+name: 'Setup UV'
+description: 'Installs the UV package manager'
 runs:
   using: composite
   steps:
