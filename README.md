@@ -154,6 +154,35 @@ python -c "import pyftle; from pyftle import AnalyticalSolver"
 
 > [!TIP]
 > Use volume mounts (`-v`) to access your data files and configuration files from inside the container. The `-w` flag sets the working directory inside the container.
+>
+> **Examples:**
+>
+> ```bash
+> # Mount current directory and set it as working directory
+> docker run --rm \
+>     -v $(pwd):/data \
+>     -w /data \
+>     pyftle:latest -c config.yaml
+>
+> # Mount specific data directory
+> docker run --rm \
+>     -v /path/to/velocity/data:/data/velocity \
+>     -v /path/to/output:/data/output \
+>     -w /data \
+>     pyftle:latest \
+>     --experiment_name "my_experiment" \
+>     --list_velocity_files "velocity/velocity_files.txt" \
+>     --list_coordinate_files "velocity/coordinate_files.txt" \
+>     --list_particle_files "velocity/particle_files.txt" \
+>     --snapshot_timestep 0.1 \
+>     --flow_map_period 5.0
+>
+> # Mount configuration file from host
+> docker run --rm \
+>     -v $(pwd)/config.yaml:/app/config.yaml \
+>     -w /app \
+>     pyftle:latest -c config.yaml
+> ```
 
 ---
 
