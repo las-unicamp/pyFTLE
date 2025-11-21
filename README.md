@@ -73,6 +73,117 @@ pyftle -c config.yaml
 
 To uninstall, just run `uv tool uninstall pyftle`
 
+### **Using Docker**
+
+You can run `pyFTLE` inside a Docker container without installing dependencies locally. The Docker image includes all required dependencies and the compiled C++ extension.
+
+#### **Building the Docker Image**
+
+From the repository root directory:
+
+```bash
+docker build -t pyftle:latest .
+```
+
+#### **Running pyFTLE Commands**
+
+Run the `pyftle` CLI tool directly:
+
+```bash
+docker run --rm pyftle:latest --help
+```
+
+Run with a configuration file (mount your data directory):
+
+```bash
+docker run --rm \
+    -v /path/to/your/data:/data \
+    -w /data \
+    pyftle:latest -c config.yaml
+```
+
+Run with command-line arguments:
+
+```bash
+docker run --rm \
+    -v /path/to/your/data:/data \
+    -w /data \
+    pyftle:latest \
+    --experiment_name "my_experiment" \
+    --list_velocity_files "velocity_files.txt" \
+    --list_coordinate_files "coordinate_files.txt" \
+    --list_particle_files "particle_files.txt" \
+    --snapshot_timestep 0.1 \
+    --flow_map_period 5.0 \
+    --integrator "rk4" \
+    --interpolator "cubic" \
+    --num_processes 4 \
+    --output_format "vtk"
+```
+
+#### **Running Python Scripts**
+
+Execute Python code inside the container:
+
+```bash
+docker run --rm --entrypoint python pyftle:latest -c "import pyftle; print('pyFTLE imported successfully')"
+```
+
+Run a Python script from your local machine:
+
+```bash
+docker run --rm \
+    -v /path/to/your/script:/app/script.py \
+    --entrypoint python \
+    pyftle:latest script.py
+```
+
+#### **Interactive Usage**
+
+Start an interactive shell inside the container:
+
+```bash
+docker run -it --rm --entrypoint sh pyftle:latest
+```
+
+Inside the container, you can run:
+```bash
+pyftle --help
+python -c "import pyftle; from pyftle import AnalyticalSolver"
+```
+
+> [!TIP]
+> Use volume mounts (`-v`) to access your data files and configuration files from inside the container. The `-w` flag sets the working directory inside the container.
+>
+> **Examples:**
+>
+> ```bash
+> # Mount current directory and set it as working directory
+> docker run --rm \
+>     -v $(pwd):/data \
+>     -w /data \
+>     pyftle:latest -c config.yaml
+>
+> # Mount specific data directory
+> docker run --rm \
+>     -v /path/to/velocity/data:/data/velocity \
+>     -v /path/to/output:/data/output \
+>     -w /data \
+>     pyftle:latest \
+>     --experiment_name "my_experiment" \
+>     --list_velocity_files "velocity/velocity_files.txt" \
+>     --list_coordinate_files "velocity/coordinate_files.txt" \
+>     --list_particle_files "velocity/particle_files.txt" \
+>     --snapshot_timestep 0.1 \
+>     --flow_map_period 5.0
+>
+> # Mount configuration file from host
+> docker run --rm \
+>     -v $(pwd)/config.yaml:/app/config.yaml \
+>     -w /app \
+>     pyftle:latest -c config.yaml
+> ```
+
 ---
 
 ## **USAGE**
