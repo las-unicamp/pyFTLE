@@ -144,7 +144,9 @@ class CubicInterpolator(Interpolator):
 
         velocities_cmplx = self.velocities[0] + 1j * self.velocities[1]
 
-        if self.tri is None:
+        # If there is no previous triangulation or if we have new points, then
+        # recreate the interpolator from scratch, else use existing triangulation
+        if self.tri is None or self.points is not None:
             self.interpolator = CloughTocher2DInterpolator(
                 self.points.T, velocities_cmplx
             )
@@ -213,7 +215,9 @@ class LinearInterpolator(Interpolator):
 
         velocities_cmplx = self.velocities[0] + 1j * self.velocities[1]
 
-        if self.tri is None:
+        # If there is no previous triangulation or if we have new points, then
+        # recreate the interpolator from scratch, else use existing triangulation
+        if self.tri is None or self.points is not None:
             self.interpolator = LinearNDInterpolator(self.points.T, velocities_cmplx)
             self.tri = self.interpolator.tri  # type: ignore[attr-defined]
         else:
@@ -437,6 +441,35 @@ class HighPerfInterpolator(Interpolator):
             self._v_buffer = np.empty(n)
             if dim == 3:
                 self._w_buffer = np.empty(n)
+
+    # ------------------------------------------------------------------
+    def update(
+        self,
+        velocities: Array2xN | Array3xN,
+        points: Optional[Array2xN | Array3xN] = None,
+    ) -> None:
+        """
+        Update the interpolator with new velocity and coordinate data.
+
+        Parameters
+        ----------
+        velocities : Array2xN or Array3xN
+            Velocity components at each grid or sample point.
+        points : Array2xN or Array3xN, optional
+            Spatial coordinates corresponding to each velocity sample.
+            If omitted, previously stored points are reused.
+        """
+
+        self.velocities = velocities
+        if points is not None:
+            self.points = points
+            self._initialize_interpolator()
+        else:
+            if self.interpolator_x and self.interpolator_y:
+                self.interpolator_x.v = velocities[0, :]
+                self.interpolator_y.v = velocities[1, :]
+            if self.interpolator_z:
+                self.interpolator_z.v = velocities[2, :]
 
     # ------------------------------------------------------------------
     def interpolate(
