@@ -45,11 +45,35 @@ pyFTLE is a modular, high-performance package for computing FTLE fields. It trac
 ### **Requirements**
 - Python 3.10+
 
-### **Using UV (Recommended)**
 
-[UV](https://docs.astral.sh/uv/) is a modern Python package and project manager that simplifies dependency management.
+### **Using pip**
 
-#### **Installation Steps:**
+You can easily install `pyFTLE` using `pip` by running the following command:
+
+```bash
+pip install pyftle
+```
+
+### **Using Docker**
+
+You can run `pyFTLE` inside a Docker container without installing dependencies locally.
+The Docker image includes all required dependencies and the compiled C++ extension.
+
+From the repository root directory we can build the image by running:
+
+```bash
+docker pull lasunicamp/pyftle:latest
+```
+Refer to [section Running pyFTLE with Docker](#running-pyftle-with-docker) for more details
+about how to use `pyFTLE` from within Docker containers.
+
+
+### **Installing from Source**
+
+We recommend using [UV](https://docs.astral.sh/uv/) to install `pyFTLE` from source code.
+UV is a modern Python package and project manager that simplifies dependency management.
+
+**Installation Steps:**
 1. Clone the repository:
    ```bash
    git clone https://github.com/las-unicamp/pyFTLE.git
@@ -70,21 +94,14 @@ and also run the CLI tool directly from the terminal with:
 pyftle -c config.yaml
 ```
 
+### **Uninstalling**
 
-To uninstall, just run `uv tool uninstall pyftle`
-
-#### **Using Docker**
-
-You can run `pyFTLE` inside a Docker container without installing dependencies locally. The Docker image includes all required dependencies and the compiled C++ extension.
-
-**Building the Docker Image**
-
-From the repository root directory:
-
+To uninstall, simply run:
 ```bash
-docker pull lasunicamp/pyftle:latest
+pip uninstall pyftle  # if you downloaded it from pip
+# or
+uv tool uninstall pyftle  # if you build it from source
 ```
-Refer to [section Running pyFTLE with Docker](#running-pyftle-with-docker) for more details about the Docker workflow.
 
 ---
 
