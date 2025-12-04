@@ -1,25 +1,25 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
-        git \
+LABEL maintainer="lasunicamp"
+LABEL description="Container with pyFTLE installed and ready to use."
+
+# Install system dependencies for PyVista/VTK
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Create a non-root user
+RUN useradd -m pyuser
+USER pyuser
+WORKDIR /home/pyuser
 
-COPY pyproject.toml uv.lock ./
+# Install package directly from PyPI
+RUN pip install --user --no-cache-dir pyftle
 
-RUN pip install --no-cache-dir uv
+# Add user installation path into PATH
+ENV PATH="/home/pyuser/.local/bin:${PATH}"
 
-RUN uv pip compile pyproject.toml -o requirements.txt && \
-    uv pip install --system --no-cache -r requirements.txt
-
-COPY CMakeLists.txt ./
-COPY README.md ./
-COPY src/ ./src/
-
-RUN uv pip install --system --no-cache .
-
+# Entrypoint and default command
 ENTRYPOINT ["pyftle"]
+CMD ["--help"]

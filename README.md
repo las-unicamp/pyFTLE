@@ -82,7 +82,7 @@ You can run `pyFTLE` inside a Docker container without installing dependencies l
 From the repository root directory:
 
 ```bash
-docker build -t pyftle:latest .
+docker pull lasunicamp/pyftle:latest
 ```
 Refer to [section Running pyFTLE with Docker](#running-pyftle-with-docker) for more details about the Docker workflow.
 
@@ -262,7 +262,7 @@ This ensures that the temporal integration for each FTLE remains consistent with
 Run the `pyftle` CLI tool directly:
 
 ```bash
-docker run --rm pyftle:latest --help
+docker run --rm lasunicamp/pyftle:latest --help
 ```
 
 Run with a configuration file (mount your data directory):
@@ -271,7 +271,7 @@ Run with a configuration file (mount your data directory):
 docker run --rm \
     -v /path/to/your/data:/data \
     -w /data \
-    pyftle:latest -c config.yaml
+    lasunicamp/pyftle:latest -c config.yaml
 ```
 
 Run with command-line arguments:
@@ -280,7 +280,7 @@ Run with command-line arguments:
 docker run --rm \
     -v /path/to/your/data:/data \
     -w /data \
-    pyftle:latest \
+    lasunicamp/pyftle:latest \
     --experiment_name "my_experiment" \
     --list_velocity_files "velocity_files.txt" \
     --list_coordinate_files "coordinate_files.txt" \
@@ -293,29 +293,12 @@ docker run --rm \
     --output_format "vtk"
 ```
 
-**Running Python Scripts**
-
-Execute Python code inside the container:
-
-```bash
-docker run --rm --entrypoint python pyftle:latest -c "import pyftle; print('pyFTLE imported successfully')"
-```
-
-Run a Python script from your local machine:
-
-```bash
-docker run --rm \
-    -v /path/to/your/script:/app/script.py \
-    --entrypoint python \
-    pyftle:latest script.py
-```
-
 **Interactive Usage**
 
 Start an interactive shell inside the container:
 
 ```bash
-docker run -it --rm --entrypoint sh pyftle:latest
+docker run -it --rm --entrypoint sh lasunicamp/pyftle:latest
 ```
 
 Inside the container, you can run:
@@ -334,14 +317,14 @@ python -c "import pyftle; from pyftle import AnalyticalSolver"
 > docker run --rm \
 >     -v $(pwd):/data \
 >     -w /data \
->     pyftle:latest -c config.yaml
+>     lasunicamp/pyftle:latest -c config.yaml
 >
 > # Mount specific data directory
 > docker run --rm \
 >     -v /path/to/velocity/data:/data/velocity \
 >     -v /path/to/output:/data/output \
 >     -w /data \
->     pyftle:latest \
+>     lasunicamp/pyftle:latest \
 >     --experiment_name "my_experiment" \
 >     --list_velocity_files "velocity/velocity_files.txt" \
 >     --list_coordinate_files "velocity/coordinate_files.txt" \
@@ -353,7 +336,7 @@ python -c "import pyftle; from pyftle import AnalyticalSolver"
 > docker run --rm \
 >     -v $(pwd)/config.yaml:/app/config.yaml \
 >     -w /app \
->     pyftle:latest -c config.yaml
+>     lasunicamp/pyftle:latest -c config.yaml
 > ```
 
 </details>
@@ -403,6 +386,17 @@ We use `pytest` for unit tests. To run the entire test suit, we recommend the fo
 ```bash
 PYTHONPATH=${PWD} uv run python -m pytest
 ```
+
+### **For Developers Using Docker**
+
+If you are using Docker, you might want to build the docker image locally:
+
+```bash
+docker build -t pyftle:latest .
+```
+
+All commands shown in [section Running pyFTLE with Docker](#running-pyftle-with-docker) will work, but we need to remove the `lasunicamp/` from it to tell Docker to use the source code version and not the version from the Docker Hub.
+
 
 ---
 
