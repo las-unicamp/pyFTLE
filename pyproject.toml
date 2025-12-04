@@ -4,7 +4,7 @@
 
 [project]
 name = "pyFTLE"
-version = "1.0.2"
+version = "1.0.3"
 description = "Python package to compute Finite Time Lyapunov Exponents (FTLE)."
 readme = "README.md"
 requires-python = ">=3.10"

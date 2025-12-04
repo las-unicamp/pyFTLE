@@ -5,7 +5,7 @@ LABEL description="Container with pyFTLE installed and ready to use."
 
 # Install system dependencies for PyVista/VTK
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    libgl1 \
     libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
