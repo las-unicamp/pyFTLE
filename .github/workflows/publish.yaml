@@ -24,6 +24,7 @@ jobs:
         uses: pypa/cibuildwheel@v2.22.0
         # Configurations informed via environment variable
         env:
+          CIBW_BEFORE_ALL_LINUX: "yum install -y libatomic"
           # Avoids unnecessary builds (optional, modify build time)
           # Ask for Python 3.10, 3.11, 3.12, 3.13 and ignore PyPy, musllinux
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"

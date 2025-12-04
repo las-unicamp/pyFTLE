@@ -59,7 +59,7 @@ pyftle = "pyftle.__main__:main"
 # ==============================================
 
 [build-system]
-requires = ["scikit-build-core", "pybind11", "cmake"]
+requires = ["scikit-build-core>=0.10", "pybind11"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
