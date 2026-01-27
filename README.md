@@ -368,7 +368,7 @@ A list of scientific works using pyFTLE includes:
 
 1. [de Souza, Miotto, Wolf. _Active flow control of vertical-axis wind turbines: Insights from large-eddy simulation and finite-time resolvent analysis_. Journal of Fluids and Structures, 2025.](https://doi.org/10.1016/j.jfluidstructs.2025.104410)
 2. [de Souza, Wolf, Safari, Yeh. _Control of Deep Dynamic Stall by Duty-Cycle Actuation Informed by Stability Analysis_. AIAA Journal, 2025.](https://doi.org/10.2514/1.J064980)
-3. Lui, Wolf. _Interplay between streaks and vortices in shock-boundary layer interactions with conditional bubble events over a turbine airfoil_. Physical Review Fluids, 2025.
+3. [Lui, Wolf. _Interplay between streaks and vortices in shock-boundary layer interactions with conditional bubble events over a turbine airfoil_. Physical Review Fluids, 2026.](https://doi.org/10.1103/sy5g-jz1m)
 4. [Lui, Wolf, Ricciardi, Gaitonde. _Analysis of Streamwise Vortices in a Supersonic Turbine Cascade_. AIAA Aviation Forum and Ascend, 2024.](https://doi.org/10.2514/6.2024-3800)
 
 
