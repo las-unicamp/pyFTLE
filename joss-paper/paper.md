@@ -5,6 +5,7 @@ tags:
   - fluid dynamics
   - finite-time lyapunov exponents
   - lagrangian coherent structures
+  - high-performance computing
 authors:
   - name: Renato Fuzaro Miotto
     orcid: 0000-0002-7813-8873
@@ -39,11 +40,9 @@ elucidating transport mechanisms and identifying separatrices in fluid flows [@B
 This work presents a Python-based solver for computing FTLE fields from velocity data, featuring
 optimized integration techniques and parallel computations.
 
-The proposed implementation is designed for high performance using Numba, along with a
-SIMD-optimized C++ backend for efficient 2D and 3D interpolations on regular grids.
-These optimizations allow for fast Lagrangian particle advection and efficient gradient
-estimation. The solver is flexible and modular, supporting structured and unstructured grids
-and arbitrary velocity fields while maintaining a well-documented and user-friendly interface.
+This work presents pyFTLE, a Python-based solver for computing FTLE fields from velocity data, featuring optimized particle integration, flexible interpolation strategies, and parallel execution. The software provides both a command-line interface (CLI) for large-scale, file-based workflows and a lightweight in-memory API suitable for interactive use in Jupyter notebooks.
+
+The implementation emphasizes performance and reproducibility, combining Numba-accelerated Python kernels with a SIMD-optimized C++/Eigen backend for efficient 2D and 3D interpolation on structured grids. The package is distributed via PyPI, archived on Zenodo, and can be executed natively or within Docker containers, facilitating transparent deployment across platforms.
 
 # Statement of Need
 
@@ -61,6 +60,8 @@ computationally expensive, or lack extensibility.
 - Includes a SIMD-optimized C++ backend for efficient 2D and 3D interpolations on regular grids;
 - Features an extensible design supporting multiple file formats;
 - Offers a modular, well-structured codebase for easy customization and extension.
+
+In addition to numerical performance, modern FTLE workflows require reproducible execution, flexible data ingestion, and scalable deployment. pyFTLE addresses these needs by offering a configuration-driven CLI, standardized MATLAB-based I/O, containerized execution via Docker, and continuous integration testing. This design allows researchers to apply FTLE analysis consistently across experimental, numerical, and analytical datasets, while remaining extensible for method development and benchmarking.
 
 # Implementation
 
@@ -111,6 +112,8 @@ present study. A reference mesh (indicated by the red dots in \autoref{fig:numer
 placed on top of the flow grid and the overlapping points on the airfoil solid surface are removed.
 The auxiliary grid (represented by the black dots) is then constructed with the maximum distance allowed
 from the reference points to the airfoil surface ensuring that all points remain outside the solid body.
+
+From a software architecture perspective, pyFTLE distinguishes between structured and unstructured velocity data. When grid topology is provided, the solver exploits rectilinear grid assumptions to enable fast bi- and trilinear interpolation using a custom C++/Eigen backend. For unstructured datasets, interpolation relies on Delaunay triangulations, preserving flexibility at the cost of higher computational overhead. Parallelism is implemented at the snapshot level, where independent FTLE fields are computed concurrently using Python’s multiprocessing framework.
 
 To facilitate efficient I/O for time-resolved data, the implementation expects a set of plain text (`.txt`)
 files listing paths to the data: one list for velocity files, one for coordinate files, and one for particle
@@ -180,6 +183,8 @@ python main.py -c config.yaml
 | `particles_grid_shape`  | `list[int]` | (Optional) Grid shape for structured particle points. It must be a comma-separated list of integers.       |
 
 
+In addition to the CLI, pyFTLE exposes a lightweight Python API that allows FTLE computation directly from in-memory velocity fields, enabling compact, self-contained examples and interactive exploration in Jupyter notebooks without intermediate file I/O.
+
 ### Optimized Interpolation
 
 The solver's performance relies heavily on the definition of the grid shape. If `flow_grid_shape` is
@@ -189,10 +194,13 @@ interpolator to `grid`), achieving up to 10x speedup compared to standard implem
 If `flow_grid_shape` is omitted, the data is treated as unstructured, and the solver defaults to
 Delaunay triangulation-based interpolation (cubic, linear, or nearest).
 
+# Software Quality
+
+The software adheres to modern best practices in scientific Python development, including comprehensive automated testing with pytest, static code analysis, continuous integration, and fully automated online documentation generated with Sphinx. Versioned releases are published on PyPI and DockerHub and archived on Zenodo with a persistent DOI, ensuring long-term reproducibility, accessibility, and citability.
 
 # Recent works using pyFTLE
 
-To date, the works that have utilized pyFTLE include: @Lucas_aiaaj_2025, @Lucas_jfs_2025, @SLui_2024, and @Lucas_2024
+To date, the works that have utilized pyFTLE include: @SLui_2026, @Lucas_aiaaj_2025, @Lucas_jfs_2025, and @Lucas_2024
 
 
 # Acknowledgements
