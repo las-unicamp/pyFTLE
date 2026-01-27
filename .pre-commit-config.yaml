@@ -1,32 +1,41 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0
     hooks:
-    -   id: check-yaml
-    -   id: end-of-file-fixer
-    -   id: trailing-whitespace
-    -   id: check-added-large-files
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
 
--   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.9  # Match the latest Ruff version you're using
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.9 # Match the latest Ruff version you're using
     hooks:
-    -   id: ruff
-        args: [--fix, "src/", "tests/"]  # Lint only relevant files
-    -   id: ruff-format
-        args: ["src/", "tests/"]  # Format only relevant files
+      - id: ruff
+        args: [--fix, "src/", "tests/"] # Lint only relevant files
+      - id: ruff-format
+        args: ["src/", "tests/"] # Format only relevant files
 
--   repo: https://github.com/astral-sh/uv-pre-commit
+  - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.5.10
     hooks:
-    -   id: uv-lock  # Ensures the lockfile is updated
+      - id: uv-lock # Ensures the lockfile is updated
 
--   repo: https://github.com/crate-ci/typos
+  - repo: https://github.com/crate-ci/typos
     rev: v1.29.10
     hooks:
-    -   id: typos
+      - id: typos
         args: ["--config", "typos.toml"]
 
--   repo: https://github.com/jorisroovers/gitlint
-    rev: v0.19.1  # Check for the latest version
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: v0.19.1 # Check for the latest version
     hooks:
-    -   id: gitlint
+      - id: gitlint
+
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright
+        entry: uv run pyright
+        language: system
+        types: [python]
+        pass_filenames: false

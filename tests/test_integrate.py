@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock
-
 import numpy as np
 import pytest
 
@@ -9,33 +7,6 @@ from pyftle.integrate import (
     RungeKutta4Integrator,
     create_integrator,
 )
-from pyftle.interpolate import Interpolator
-from pyftle.particles import NeighboringParticles
-
-
-@pytest.fixture
-def mock_interpolator():
-    mock = MagicMock(spec=Interpolator)
-    mock.interpolate.side_effect = lambda x: x * 0.1  # Fake velocity field
-    return mock
-
-
-@pytest.fixture
-def initial_conditions():
-    # Create a positions array with shape (4 * N, 2)
-    positions = np.array(
-        [
-            [1.0, 2.0],
-            [3.0, 4.0],  # Left neighbors
-            [5.0, 6.0],
-            [7.0, 8.0],  # Right neighbors
-            [9.0, 10.0],
-            [11.0, 12.0],  # Top neighbors
-            [13.0, 14.0],
-            [15.0, 16.0],  # Bottom neighbors
-        ]
-    )
-    return NeighboringParticles(positions=positions)
 
 
 def test_euler_integrator(mock_interpolator, initial_conditions):
@@ -90,7 +61,3 @@ def test_get_integrator(mock_interpolator):
         create_integrator("invalid", mock_interpolator)
     with pytest.raises(ValueError, match="Invalid integrator name ''.*"):
         create_integrator("", mock_interpolator)
-
-
-if __name__ == "__main__":
-    pytest.main()
