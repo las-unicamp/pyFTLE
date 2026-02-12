@@ -177,20 +177,20 @@ python main.py -c config.yaml
 
 ### Parameters
 
-| Parameter               | Type    | Description                                                                                   |
-| ----------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `experiment_name`       | `str`   | Name of the subdirectory where the FTLE fields will be saved.                                 |
-| `list_velocity_files`   | `str`   | Path to a text file listing velocity data files.                                              |
-| `list_coordinate_files` | `str`   | Path to a text file listing coordinate files.                                                 |
-| `list_particle_files`   | `str`   | Path to a text file listing particle data files.                                              |
-| `snapshot_timestep`     | `float` | Timestep between snapshots (positive for forward-time FTLE, negative for backward-time FTLE). |
-| `flow_map_period`       | `float` | Integration period for computing the flow map.                                                |
-| `integrator`            | `str`   | Time-stepping method (`euler`, `ab2`, `rk4`).                                                 |
-| `interpolator`          | `str`   | Interpolation method (`cubic`, `linear`, `nearest`, `grid`).                                  |
-| `num_processes`         | `int`   | Number of workers in the multiprocessing pool. Each worker computes the FTLE of a snapshot.   |
-| `output_format`         | `str`   | Output format (`mat`, `vtk`).                                                                 |
-| `flow_grid_shape`       | `list[int]` | (Optional) Grid shape for structured velocity measurements. It must be a comma-separated list of integers. |
-| `particles_grid_shape`  | `list[int]` | (Optional) Grid shape for structured particle points. It must be a comma-separated list of integers.       |
+| Parameter               | Type          | Description                                                                                   |
+| ---------------------------------------- | :----------: | --------------------------------------------------------------------------------------------- |
+| `experiment_name`       | `str`         | Name of the subdirectory where the FTLE fields will be saved.                                 |
+| `list_velocity_files`   | `str`         | Path to a text file listing velocity data files.                                              |
+| `list_coordinate_files` | `str`         | Path to a text file listing coordinate files.                                                 |
+| `list_particle_files`   | `str`         | Path to a text file listing particle data files.                                              |
+| `snapshot_timestep`     | `float`       | Timestep between snapshots (positive for forward-time FTLE, negative for backward-time FTLE). |
+| `flow_map_period`       | `float`       | Integration period for computing the flow map.                                                |
+| `integrator`            | `str`         | Time-stepping method (`euler`, `ab2`, `rk4`).                                                 |
+| `interpolator`          | `str`         | Interpolation method (`cubic`, `linear`, `nearest`, `grid`).                                  |
+| `num_processes`         | `int`         | Number of workers in the multiprocessing pool. Each worker computes the FTLE of a snapshot.   |
+| `output_format`         | `str`         | Output format (`mat`, `vtk`).                                                                 |
+| `flow_grid_shape`       | `list[int]`   | (Optional) Grid shape for structured velocity measurements. It must be a comma-separated list of integers. |
+| `particles_grid_shape`  | `list[int]`   | (Optional) Grid shape for structured particle points. It must be a comma-separated list of integers.       |
 
 
 In addition to the CLI, pyFTLE exposes a lightweight Python API that allows FTLE computation directly from in-memory velocity fields, enabling compact, self-contained examples and interactive exploration in Jupyter notebooks without intermediate file I/O.
