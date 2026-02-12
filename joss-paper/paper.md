@@ -63,7 +63,17 @@ computationally expensive, or lack extensibility.
 
 In addition to numerical performance, modern FTLE workflows require reproducible execution, flexible data ingestion, and scalable deployment. pyFTLE addresses these needs by offering a configuration-driven CLI, standardized MATLAB-based I/O, containerized execution via Docker, and continuous integration testing. This design allows researchers to apply FTLE analysis consistently across experimental, numerical, and analytical datasets, while remaining extensible for method development and benchmarking.
 
+# State of the Field
+
+Several tools exist for computing FTLE fields and Lagrangian coherent structures. NumbaCS [@Jarvis2025] is a Python package that implements FTLE alongside other coherent-structure diagnostics (iLE, LAVD, IVD) and ridge extraction, targeting geophysical and general dynamical systems. UVaFTLE [@CarratalaSaez2023] provides a high-performance C implementation with OpenMP and CUDA parallelization for large-scale applications, while MATLAB-based implementations and ad hoc scripts remain common in research groups. pyFTLE occupies a distinct niche: it focuses exclusively on FTLE computation with a dual interface—a file-based CLI for production runs on experimental or simulation data, and an in-memory API for analytical flows and interactive Jupyter workflows. Unlike NumbaCS, which emphasizes breadth of diagnostics, pyFTLE prioritizes performance and flexibility for structured *and* unstructured velocity data, offering a SIMD-optimized C++/Eigen backend for structured grids alongside Delaunay-based interpolation for scattered data. Unlike UVaFTLE, pyFTLE is Python-native and avoids GPU dependencies, lowering the barrier for integration into typical scientific Python workflows. The package exists because existing tools either lack the combination of file-based reproducibility, dual API design, and dual-mode interpolation (structured vs. unstructured) needed for consistent FTLE analysis across diverse data sources in aerodynamics and experimental fluid mechanics.
+
+# Software Design
+
+pyFTLE is designed around pluggable abstractions for integrators, interpolators, and data sources. The `Interpolator` base class and factory (`create_interpolator`) support multiple strategies—cubic, linear, nearest, grid (C++/Eigen), and analytical—selected at runtime. When `flow_grid_shape` is provided, the solver uses the SIMD-optimized C++ backend for bi- and trilinear interpolation on structured grids, achieving up to 10× speedup over SciPy; otherwise, it falls back to Delaunay-based methods (cubic, linear, nearest) for unstructured data. Integrators (Euler, AB2, RK4) follow the same pattern, with Numba-accelerated kernels for in-place particle updates. The `BatchSource` protocol decouples data ingestion from the solver, allowing both file-based and analytical velocity sources to share the same `FTLESolver` without code duplication. Parallelism is applied at the snapshot level: each FTLE field is computed independently by a worker process, maximizing throughput for time-resolved sequences. Trade-offs were made explicitly: the C++ backend favors structured grids for speed; unstructured support preserves generality at higher cost. The dual API (CLI for batch runs, `AnalyticalSolver` for notebooks) reflects distinct usage patterns—reproducible pipelines vs. exploratory analysis—without conflating them in a single interface.
+
 # Implementation
+
+The formulation below is presented in 2D for illustration purposes; the implementation supports both 2D and 3D velocity fields and particle configurations.
 
 Initially, a grid of particles $X_{0} \subset \mathbb{R}^{2}$ is established across the
 domain of interest. These particles are integrated in the velocity field from the initial
@@ -198,10 +208,13 @@ Delaunay triangulation-based interpolation (cubic, linear, or nearest).
 
 The software adheres to modern best practices in scientific Python development, including comprehensive automated testing with pytest, static code analysis, continuous integration, and fully automated online documentation generated with Sphinx. Versioned releases are published on PyPI and DockerHub and archived on Zenodo with a persistent DOI, ensuring long-term reproducibility, accessibility, and citability.
 
-# Recent works using pyFTLE
+# Research Impact Statement
 
-To date, the works that have utilized pyFTLE include: @SLui_2026, @Lucas_aiaaj_2025, @Lucas_jfs_2025, and @Lucas_2024
+pyFTLE has already enabled peer-reviewed research in fluid mechanics and aerodynamics. Four published works cite or use the software: analyses of vertical-axis wind turbines [@Lucas_jfs_2025; @Lucas_2024], control of deep dynamic stall [@Lucas_aiaaj_2025], and shock–boundary layer interactions over turbine airfoils [@SLui_2026]. These applications span large-eddy simulation, finite-time resolvent analysis, and experimental flow visualization, demonstrating applicability across computational and experimental data sources. Reproducibility is supported by configuration-driven execution, automated tests (pytest), continuous integration, and containerized deployment via Docker. The package is distributed on PyPI, archived on Zenodo with a persistent DOI, and documented on Read the Docs. Example Jupyter notebooks in the repository illustrate closed-form and file-based workflows, lowering the barrier for adoption. The SIMD-optimized C++ backend offers measurable performance gains (up to 10× over SciPy for structured grids, as noted in the Implementation section), enabling practical FTLE analysis on large 3D datasets. Near-term impact includes continued use in turbulent flow analysis, wind-energy research, and educational settings where the dual API (CLI and notebook) supports both reproducible pipelines and interactive exploration.
 
+# AI Usage Disclosure
+
+The authors used generative AI (Claude Sonnet 4.5) only to improve unit tests by considering edge cases. No generative AI was used during development of the core software or preparation of the manuscript.
 
 # Acknowledgements
 
